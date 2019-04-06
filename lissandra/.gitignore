@@ -1,0 +1,4 @@
+#Ignoro cosas del ide y carpetas de compilación que no hay que subir
+/.settings/language.settings.xml
+/Debug/
+/Release/
