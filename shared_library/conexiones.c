@@ -73,22 +73,6 @@ int conectar_a_servidor(char* ip, int puerto){
 		exit(1);
 	}
 
-	//enviamos un mensaje de que se conecto
-	char* hola = "hola\0";
-	//Sumo uno por el barra cero.
-	int largo_palabra = strlen(hola)+1;
-	int numero_a_mandar = 5;
-	size_t tamanio_buffer = sizeof(int)*2 + largo_palabra;
-	void* buffer = malloc(tamanio_buffer);
-
-	memset(buffer, 0, tamanio_buffer);
-	memcpy(buffer, &numero_a_mandar, sizeof(int));
-	memcpy(buffer+sizeof(int), &largo_palabra, sizeof(int));
-	memcpy(buffer + sizeof(int)*2, hola, largo_palabra);
-
-	printf("el tamanio del buffer tiene que ser %d\n",tamanio_buffer);
-
-	prot_enviar_mensaje(socket_cliente, CONEXION, tamanio_buffer, buffer);
 	return socket_cliente;
 }
 

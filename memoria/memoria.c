@@ -7,6 +7,7 @@ int main() {
 	logger = log_create("memoria.log","MEMORIA", true,
 			memoria_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
+	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
 	log_info(logger, "Memoria %d iniciado", memoria_config.numero_memoria);
 	printear_configuraciones();
 
@@ -22,6 +23,7 @@ int main() {
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
+	atender_memoria(socket_servidor);
 	pthread_join(hilo_consola, NULL);
 	//log_info(logger, "Finalizó la consola, debería morir el proceso");
 	pthread_join(hilo_observer_configs, NULL);
@@ -79,4 +81,36 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 
 	}
 
+}
+
+void atender_memoria(int socket_servidor) {
+	int socket_memoria;
+	struct sockaddr_in direccion_cliente;
+	unsigned int tamanio_direccion = sizeof(direccion_cliente);
+	//Burocracia...
+
+	//Se aceptan clientes cuando los haya
+	// accept es una funcion bloqueante, si no hay ningun cliente esperando ser atendido, se queda esperando a que venga uno.
+	log_debug(logger, "[Conexión] Esperando conexión de kernel");
+	socket_memoria = accept(socket_servidor, (void*) &direccion_cliente, &tamanio_direccion);
+	if(socket_memoria < 0) {
+		perror("no se pudo aceptar conexión.");
+	}
+	while(!finalizar_proceso_normal) {
+
+		t_prot_mensaje* mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
+		if(mensaje_de_memoria->head == CONEXION) {
+			log_info(logger, "[Conexión] Kernel conectado");
+			int tamanio_buffer = mensaje_de_memoria->tamanio_total - sizeof(t_header);
+			void *path_recibido = malloc(tamanio_buffer);
+			int numero;
+			int largo_de_handshake;
+
+			numero = *((int*)mensaje_de_memoria->payload);
+			largo_de_handshake= *((int*)mensaje_de_memoria->payload + sizeof(int));
+			char handshake[largo_de_handshake];
+			memcpy(handshake, mensaje_de_memoria->payload + sizeof(int)*2, largo_de_handshake);
+			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+		}
+	}
 }

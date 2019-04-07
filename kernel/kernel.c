@@ -22,6 +22,11 @@ int main() {
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
+	//Lo dejo comentado, porque entiendo que el flujo lo dispara el kernel cuando tenga algo para ejecutar
+	pthread_create(&hilo_manejo_memorias, NULL, (void*)manejar_memorias, NULL);
+
+	pthread_join(hilo_manejo_memorias, NULL);
+
 	pthread_join(hilo_consola, NULL);
 	log_info(logger, "Finalizó la consola, debería morir todo");
 	pthread_join(hilo_observer_configs, NULL);

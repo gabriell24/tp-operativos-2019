@@ -14,14 +14,17 @@
 #include <commons/string.h>
 #include "configuracion.h"
 #include "consola.h"
+#include "manejo_memoria.h"
 
 //Defines
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * (EVENT_SIZE + 18) )
 
 //Variables globales
+int socket_servidor;
 pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
+pthread_t hilo_manejo_memorias;
 
 //Prototipos
 void printear_configuraciones();
