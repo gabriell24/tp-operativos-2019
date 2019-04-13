@@ -15,6 +15,7 @@
 #include <commons/string.h>
 #include "configuracion.h"
 #include "consola.h"
+#include "gossiping.h"
 #include "../shared_library/conexiones.h"
 #include "../shared_library/protocolo.h"
 
@@ -31,5 +32,6 @@ int socket_servidor;
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones(void *);
 void atender_memoria(int socket_servidor);
+void escuchar_kernel(int *socket_kernel);
 
 #endif /* MEMORIA_H_ */

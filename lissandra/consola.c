@@ -8,7 +8,7 @@ void consola(){
 	    	add_history(linea);
 	    if(!strncmp(linea, "exit", 4)) {
 	    	free(linea);
-	    	finalizar_proceso_normal = true;
+	    	consola_ejecuto_exit = true;
 	    	break;
 	    }
 	    t_consola comando = parse(linea);
