@@ -38,16 +38,28 @@ t_consola parse(char* linea){
 	char* comando = split[0];
 	char* argumento1 = split[1];
 	char* argumento2 = split[2];
+	char* argumento3 = split[3];
+	char* argumento4 = split[4];
 
 	t_consola retorno = {._aux = split};
 
 	if(string_equals_ignore_case(comando, SELECT)) {
 	}
+
 	else if(string_equals_ignore_case(comando, INSERT)) {
+		if(argumento1 == NULL || argumento2 == NULL || argumento3 == NULL) {
+			log_error(logger, "Error: ejemplo de uso \"INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\"\n");
+		}
+		else {
+			int epoch = argumento4 != NULL ? atoi(argumento4) : get_timestamp();
+			kernel_insert(argumento1, argumento2, argumento3, argumento4);
+		}
+
 	}
 	else if(string_equals_ignore_case(comando, CREATE)) {
 	}
 	else if(string_equals_ignore_case(comando, DESCRIBE)) {
+
 	}
 	else if(string_equals_ignore_case(comando, DROP)) {
 	}
