@@ -52,8 +52,7 @@ void crear_socket(int *socket_destino){
 	}
 }
 
-
-int conectar_a_servidor(char* ip, int puerto){
+int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process){
 	int socket_cliente;
 	crear_socket(&socket_cliente);
 
@@ -69,10 +68,31 @@ int conectar_a_servidor(char* ip, int puerto){
 	//Conectarse con el IP - Puerto del servidor
 	if(connect(socket_cliente, (void*) &direccion_servidor, sizeof(direccion_servidor)) < 0){
 		close(socket_cliente);
-		print_error(ERROR_CONECTAR_SERVIDOR);
-		exit(1);
+		if(exit_process) {
+			print_error(ERROR_CONECTAR_SERVIDOR);
+			exit(1);
+		}
+		else {
+			socket_cliente = -1;
+		}
+	}
+
+	if(socket_cliente != -1) {
+		prot_enviar_mensaje(socket_cliente, CONEXION, sizeof(t_cliente), &cliente);
 	}
 
 	return socket_cliente;
+}
+
+
+int conectar_a_servidor(char* ip, int puerto, t_cliente cliente){
+	return conectar_servidor(ip, puerto, cliente, true);
+}
+
+/* Se agrega esta función para cuando falle el gossiping no cierre el proceso,
+ * en cambio, devuelve -1 como si hubiese fallado el connect
+ */
+int conectar_a_servidor_sin_exit(char* ip, int puerto, t_cliente cliente){
+	return conectar_servidor(ip, puerto, cliente, false);
 }
 

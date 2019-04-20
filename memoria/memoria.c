@@ -2,15 +2,19 @@
 
 int main() {
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
-	finalizar_proceso_normal = false;
+	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
 	logger = log_create("memoria.log","MEMORIA", true,
 			memoria_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
 	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
 	log_info(logger, "Memoria %d iniciado", memoria_config.numero_memoria);
+	/*DESARROLLAR: Conectar a LFS y pedirle el tamaño máximo del value(se puede
+	 * realizar de manera similar a la conexión del kernel), el exit viene gratis*/
 	printear_configuraciones();
+	//DESARROLLAR: Inicializar memoria. Si falla al reserver => exit
 
+	//intentar_conectar_seed();
 	//<<1- inotify
 	int fd_inotify = inotify_init();
 	if (fd_inotify < 0) {
@@ -25,12 +29,13 @@ int main() {
 
 	atender_memoria(socket_servidor);
 	pthread_join(hilo_consola, NULL);
-	//log_info(logger, "Finalizó la consola, debería morir el proceso");
+	log_info(logger, "[Memoria] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
 	close(fd_inotify);
 	free(ptr_fd_inotify);
+	log_destroy(logger);
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify
@@ -47,7 +52,7 @@ void printear_configuraciones() {
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 	int file_descriptor = *((int *) ptr_fd);
 
-	while(!finalizar_proceso_normal) {
+	while(!consola_ejecuto_exit) {
 	    char buffer[BUF_LEN];
 	    struct inotify_event *event = NULL;
 
@@ -84,22 +89,29 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 }
 
 void atender_memoria(int socket_servidor) {
-	int socket_memoria;
+	int socket_cliente;
 	struct sockaddr_in direccion_cliente;
 	unsigned int tamanio_direccion = sizeof(direccion_cliente);
-	//Burocracia...
 
-	//Se aceptan clientes cuando los haya
-	// accept es una funcion bloqueante, si no hay ningun cliente esperando ser atendido, se queda esperando a que venga uno.
-	log_debug(logger, "[Conexión] Esperando conexión de kernel");
-	socket_memoria = accept(socket_servidor, (void*) &direccion_cliente, &tamanio_direccion);
-	if(socket_memoria < 0) {
-		perror("no se pudo aceptar conexión.");
-	}
-	while(!finalizar_proceso_normal) {
-
-		t_prot_mensaje* mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
-		if(mensaje_de_memoria->head == CONEXION) {
+	while((!consola_ejecuto_exit) && (socket_cliente = accept(socket_servidor, (void*) &direccion_cliente, &tamanio_direccion)) > 0) {
+		t_prot_mensaje* mensaje_del_cliente = prot_recibir_mensaje(socket_cliente);
+		t_cliente cliente_recibido = *((t_cliente*) mensaje_del_cliente->payload);
+		switch(cliente_recibido) {
+		case KERNEL: {
+			log_debug(logger, "[Conexión] Viene del kernel");
+			pthread_t recibir_mensajes_de_kernel;
+			int* socket_kernel = (int*) malloc (sizeof(int));
+			*socket_kernel = socket_cliente;
+			pthread_create(&recibir_mensajes_de_kernel,NULL, (void*)escuchar_kernel, socket_kernel);
+		} break;
+		case MEMORIA: {
+			log_info(logger, "[Conexión] Memoria conectada");
+		} break;
+		default:
+			log_error(logger, "[Conexión] Cliente desconocido");
+		}
+		prot_destruir_mensaje(mensaje_del_cliente);
+		/*if(mensaje_del_cliente->head == CONEXION) {
 			log_info(logger, "[Conexión] Kernel conectado");
 			int tamanio_buffer = mensaje_de_memoria->tamanio_total - sizeof(t_header);
 			void *path_recibido = malloc(tamanio_buffer);
@@ -111,6 +123,33 @@ void atender_memoria(int socket_servidor) {
 			char handshake[largo_de_handshake];
 			memcpy(handshake, mensaje_de_memoria->payload + sizeof(int)*2, largo_de_handshake);
 			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+		}*/
+	}
+}
+
+/* Esta es la parte pasiva del intercambio de gossiping. */
+void recibir_datos_gossiping() {
+
+
+}
+
+void escuchar_kernel(int *socket_origen) {
+	int socket_kernel = *socket_origen;
+	free(socket_origen);
+	//t_prot_mensaje *mensaje_de_kernel;
+	while (!consola_ejecuto_exit) {
+		t_prot_mensaje *mensaje_de_kernel = prot_recibir_mensaje(socket_kernel);
+		if(mensaje_de_kernel->head == ENVIO_DATOS) {
+			log_info(logger, "[Conexión] Kernel conectado");
+			int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
+			int numero;
+			int largo_de_handshake;
+			memcpy(&numero, mensaje_de_kernel->payload, sizeof(int));
+			memcpy(&largo_de_handshake, mensaje_de_kernel->payload+sizeof(int), sizeof(int));
+			char handshake[largo_de_handshake+1];
+			memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
+			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
 		}
+		prot_destruir_mensaje(mensaje_de_kernel);
 	}
 }

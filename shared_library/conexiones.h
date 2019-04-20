@@ -9,6 +9,7 @@
 #include <commons/string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <readline/readline.h>
@@ -39,7 +40,9 @@
 /*Prototipos*/
 int levantar_servidor(int puerto);
 void crear_socket(int *socket);
-int conectar_a_servidor(char* ip, int puerto);
+int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process);
+int conectar_a_servidor(char* ip, int puerto, t_cliente cliente);
+int conectar_a_servidor_sin_exit(char* ip, int puerto, t_cliente cliente);
 
 //Otras
 void print_error(char *mensaje);

@@ -2,7 +2,7 @@
 
 int main() {
 	//Variable global para avisarle al hilo del observer que frene.
-	finalizar_proceso_normal = false;
+	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
 	logger = log_create("lissandra.log","LISSANDRA", true,
 			fs_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
@@ -23,12 +23,13 @@ int main() {
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
 	pthread_join(hilo_consola, NULL);
-	log_info(logger, "Finalizó la consola, debería morir todo");
+	log_info(logger, "[Lissandra] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
 	close(fd_inotify);
 	free(ptr_fd_inotify);
+	log_destroy(logger);
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify
@@ -44,7 +45,7 @@ void printear_configuraciones() {
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 	int file_descriptor = *((int *) ptr_fd);
 
-	while(!finalizar_proceso_normal) {
+	while(!consola_ejecuto_exit) {
 	    char buffer[BUF_LEN];
 	    struct inotify_event *event = NULL;
 

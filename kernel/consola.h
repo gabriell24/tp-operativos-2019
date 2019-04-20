@@ -11,6 +11,7 @@
 #include <readline/history.h>
 #include <commons/string.h>
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include "../shared_library/colores.h"
 #include "interfaz.h"
 
@@ -23,6 +24,7 @@
 #define JOURNAL "journal"
 #define ADD "add"
 #define RUN "run"
+#define METRICS "metrics"
 
 //Variables
 typedef struct{
@@ -31,7 +33,7 @@ typedef struct{
 	char** _aux;
 } t_consola;
 t_log *logger;
-bool finalizar_proceso_normal;
+bool consola_ejecuto_exit;
 
 //Prototipos
 t_consola parse(char* linea);

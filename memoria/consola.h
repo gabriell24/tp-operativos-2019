@@ -26,7 +26,7 @@ typedef struct{
 	char** _aux;
 } t_consola;
 t_log *logger;
-bool finalizar_proceso_normal;
+bool consola_ejecuto_exit;
 
 t_consola parse(char* linea);
 void destruir_operacion(t_consola);

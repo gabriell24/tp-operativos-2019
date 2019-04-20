@@ -8,7 +8,7 @@ void consola(){
 	    	add_history(linea);
 	    if(!strncmp(linea, "exit", 4)) {
 	    	free(linea);
-	    	finalizar_proceso_normal = true;
+	    	consola_ejecuto_exit = true;
 	    	break;
 	    }
 	    t_consola comando = parse(linea);
@@ -68,6 +68,9 @@ t_consola parse(char* linea){
 	else if(string_equals_ignore_case(comando, ADD)) {
 	}
 	else if(string_equals_ignore_case(comando, RUN)) {
+	}
+	else if(string_equals_ignore_case(comando, METRICS)) {
+		imprimir_metricas();
 	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.\n");
