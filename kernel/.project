@@ -25,6 +25,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>shared</name>
+			<type>2</type>
+			<location>/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library</location>
+		</link>
+		<link>
 			<name>shared_library</name>
 			<type>2</type>
 			<location>/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library</location>

@@ -44,6 +44,12 @@ t_consola parse(char* linea){
 	t_consola retorno = {._aux = split};
 
 	if(string_equals_ignore_case(comando, SELECT)) {
+		if(argumento1 == NULL || argumento2 == NULL) {
+			log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"\n");
+		}
+		else {
+			kernel_select(argumento1, argumento2);
+		}
 	}
 
 	else if(string_equals_ignore_case(comando, INSERT)) {
@@ -57,6 +63,12 @@ t_consola parse(char* linea){
 
 	}
 	else if(string_equals_ignore_case(comando, CREATE)) {
+		if(argumento1 == NULL || argumento2 == NULL || argumento3 == NULL || argumento4 == NULL) {
+			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"\n");
+		}
+		else {
+			kernel_create(argumento1, argumento2, atoi(argumento3), atoi(argumento4));
+		}
 	}
 	else if(string_equals_ignore_case(comando, DESCRIBE)) {
 
@@ -79,5 +91,13 @@ t_consola parse(char* linea){
 	free(auxLine);
 
 	return retorno;
+}
+
+int get_timestamp() {
+	time_t result = time(NULL);
+	if(result == ((time_t) -1)) {
+		perror("no se pudo obtener epoch");
+	}
+	return result;
 }
 

@@ -15,7 +15,6 @@
 #include <commons/string.h>
 #include "configuracion.h"
 #include "consola.h"
-#include "gossiping.h"
 #include "../shared_library/conexiones.h"
 #include "../shared_library/protocolo.h"
 

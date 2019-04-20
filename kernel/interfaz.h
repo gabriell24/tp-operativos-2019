@@ -5,6 +5,7 @@
 //Includes
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 //Defines
 
 //estructuras y variables a globales
@@ -18,7 +19,8 @@ void imprimir_metricas();
 
 //Prototipos
 void kernel_insert(char* nombre_tabla, char* key, char* value, int epoch);
-
+void kernel_select(char *tabla, char *clave);
+void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compactation_time);
 
 
 #endif /* INTERFAZ_H_ */
