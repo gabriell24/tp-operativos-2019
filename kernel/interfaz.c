@@ -19,3 +19,17 @@ void imprimir_metricas() {
 	printf("Implementando métricas version: %d\n", 1);
 
 }
+
+
+
+void kernel_describe(){
+	// me trae todas la metadata de las tablas del FS
+	// diferenciar si llega null o no en el argumento, C no permite argumentos opcionales
+	printf("DESCRIBE DE TODAS LAS TABLAS DE FS::::::::::::::::::::");
+}
+
+
+void kernel_drop(char* nombre_tabla){
+	// drop a la tabla de la tabla
+	printf("DROP A LA TABLA:::::::::::::::::::::::::");
+}
