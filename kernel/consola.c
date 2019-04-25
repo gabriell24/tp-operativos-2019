@@ -58,7 +58,7 @@ t_consola parse(char* linea){
 		}
 		else {
 			int epoch = argumento4 != NULL ? atoi(argumento4) : get_timestamp();
-			kernel_insert(argumento1, argumento2, argumento3, argumento4);
+			kernel_insert(argumento1, argumento2, argumento3, atoi(argumento4));
 		}
 
 	}

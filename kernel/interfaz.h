@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "manejo_memoria.h"
+#include "../shared_library/estructuras_compartidas.h"
 //Defines
 
 //estructuras y variables a globales

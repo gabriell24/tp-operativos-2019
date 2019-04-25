@@ -18,7 +18,11 @@ typedef enum{
 	CONEXION, //Un cliente informa a un servidor que se ha conectado. Payload: Algun t_cliente
 	FALLO_AL_RECIBIR,//Indica que un mensaje no se recibio correctamente en prot_recibir_mensaje
 	DESCONEXION, //Indica que un cliente se ha desconectado
-	ENVIO_DATOS
+	ENVIO_DATOS,
+
+
+	//Compartidos del request select
+	FUNCION_SELECT
 
 } t_header;
 

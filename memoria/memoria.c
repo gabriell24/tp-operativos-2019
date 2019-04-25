@@ -139,7 +139,8 @@ void escuchar_kernel(int *socket_origen) {
 	//t_prot_mensaje *mensaje_de_kernel;
 	while (!consola_ejecuto_exit) {
 		t_prot_mensaje *mensaje_de_kernel = prot_recibir_mensaje(socket_kernel);
-		if(mensaje_de_kernel->head == ENVIO_DATOS) {
+		switch(mensaje_de_kernel->head) {
+		case ENVIO_DATOS: {
 			log_info(logger, "[Conexión] Kernel conectado");
 			int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
 			int numero;
@@ -149,6 +150,16 @@ void escuchar_kernel(int *socket_origen) {
 			char handshake[largo_de_handshake+1];
 			memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
 			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+		} break;
+		case FUNCION_SELECT: {
+			log_debug(logger, "[Conexión] pre deserializar resquest select");
+			t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
+			log_info(logger, "Hacer select con [TABLA = %s, KEY = %s]", buffer->tabla, buffer->key);
+			//free(buffer->tabla);
+			//free(buffer->key);
+			//free(buffer);
+		} break;
+		default: log_warning(logger, "Me llegó un mensaje desconocido");
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
 	}
