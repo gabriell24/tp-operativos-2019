@@ -71,9 +71,18 @@ t_consola parse(char* linea){
 		}
 	}
 	else if(string_equals_ignore_case(comando, DESCRIBE)) {
+			kernel_describe(argumento1);
 
 	}
+
 	else if(string_equals_ignore_case(comando, DROP)) {
+		if( argumento1 == NULL ) {
+			log_error(logger, "Error: El argumento de drop no puede ser null\"\n");
+			}
+		else {
+			kernel_drop(argumento1);
+		}
+
 	}
 	else if(string_equals_ignore_case(comando, JOURNAL)) {
 	}
