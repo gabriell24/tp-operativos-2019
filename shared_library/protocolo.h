@@ -22,7 +22,8 @@ typedef enum{
 
 
 	//Compartidos del request select
-	FUNCION_SELECT
+	FUNCION_SELECT,
+	FUNCION_CREATE
 
 } t_header;
 

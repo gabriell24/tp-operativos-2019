@@ -33,7 +33,7 @@ t_consola parse(char* linea){
 
 	char* auxLine = string_duplicate(linea);
 	string_trim(&auxLine);
-	char** split = string_n_split(auxLine,3," ");
+	char** split = string_n_split(auxLine,5," ");
 
 	char* comando = split[0];
 	char* argumento1 = split[1];
