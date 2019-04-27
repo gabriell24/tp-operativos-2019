@@ -12,6 +12,11 @@ void kernel_select(char *tabla, char *clave) {
 void kernel_insert(char* nombre_tabla, char* key, char* value, int epoch){
 
 	printf("Hola mundo :) hiciste un insert a kernel (?");
+	size_t tamanio_del_buffer = strlen(nombre_tabla) + strlen(key) + strlen(value) + sizeof(int)*4 ;
+		void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
+		prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
+		log_info(logger, "Insert enviado a memoria");
+
 }
 
 void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compactation_time){

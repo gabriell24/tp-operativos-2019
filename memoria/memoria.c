@@ -152,9 +152,17 @@ void escuchar_kernel(int *socket_origen) {
 			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
 		} break;
 		case FUNCION_SELECT: {
-			log_debug(logger, "[Conexión] pre deserializar resquest select");
+			log_debug(logger, "[Conexión] pre deserializar request select");
 			t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
 			log_info(logger, "Hacer select con [TABLA = %s, KEY = %s]", buffer->tabla, buffer->key);
+			//free(buffer->tabla);
+			//free(buffer->key);
+			//free(buffer);
+		} break;
+		case FUNCION_INSERT: {
+			log_debug(logger, "[Conexión] pre deserializar request insert");
+			t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
+			log_info(logger, "Hacer insert con [TABLA = %s, KEY = %s, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 			//free(buffer->tabla);
 			//free(buffer->key);
 			//free(buffer);

@@ -33,7 +33,7 @@ t_consola parse(char* linea){
 
 	char* auxLine = string_duplicate(linea);
 	string_trim(&auxLine);
-	char** split = string_n_split(auxLine,3," ");
+	char** split = string_n_split(auxLine,85000," ");
 
 	char* comando = split[0];
 	char* argumento1 = split[1];
@@ -54,11 +54,11 @@ t_consola parse(char* linea){
 
 	else if(string_equals_ignore_case(comando, INSERT)) {
 		if(argumento1 == NULL || argumento2 == NULL || argumento3 == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\"\n");
+			log_error(logger, "Error: ejemplo de uso \"INSERT TABLA1 3 'Mi nombre es kernel' 1548421507\n");
 		}
 		else {
 			int epoch = argumento4 != NULL ? atoi(argumento4) : get_timestamp();
-			kernel_insert(argumento1, argumento2, argumento3, atoi(argumento4));
+			kernel_insert(argumento1, argumento2, argumento3, epoch);
 		}
 
 	}

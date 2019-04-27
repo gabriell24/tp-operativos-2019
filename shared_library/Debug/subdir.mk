@@ -5,14 +5,17 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../conexiones.c \
+../estructuras_compartidas.c \
 ../protocolo.c 
 
 OBJS += \
 ./conexiones.o \
+./estructuras_compartidas.o \
 ./protocolo.o 
 
 C_DEPS += \
 ./conexiones.d \
+./estructuras_compartidas.d \
 ./protocolo.d 
 
 
