@@ -19,8 +19,14 @@ void kernel_insert(char* nombre_tabla, char* key, char* value, int epoch){
 
 }
 
-void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compactation_time){
-	printf("Holis :) hiciste un create desde kernel");
+void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compaction_time){
+
+	size_t tamanio_buffer = sizeof(int)*4 + strlen(nombre_tabla) + strlen(tipo_consistencia);
+	void* buffer = serializar_request_create(nombre_tabla, tipo_consistencia, numero_particiones, compaction_time);
+	prot_enviar_mensaje(socket_memoria, FUNCION_CREATE, tamanio_buffer, buffer);
+	log_info(logger, "===========ENVIADO KERNEL/=======CREAATEEEE==============================");
+
+	//printf("Holis :) hiciste un create desde kernel");
 }
 
 

@@ -22,10 +22,26 @@ typedef struct {
 } t_request_insert;
 //Variables
 
+
+typedef struct {
+	char* nombre_tabla;
+	char* tipo_consistencia;
+	int numero_particiones;
+	int compaction_time;
+} t_request_create;
+
+
+
 //Prototipos
 void* serializar_request_select(char *key, char*value);
 t_request_select *deserializar_request_select(t_prot_mensaje *msje);
 
 void* serializar_request_insert(char* nombre_tabla, char* key, char* value, int epoch);
 t_request_insert *deserializar_request_insert(t_prot_mensaje *msje);
+
+void* serializar_request_create(char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compaction_time);
+t_request_create *deserializar_request_create(t_prot_mensaje *msje);
+
+
 #endif
+

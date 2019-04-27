@@ -159,6 +159,7 @@ void escuchar_kernel(int *socket_origen) {
 			//free(buffer->key);
 			//free(buffer);
 		} break;
+
 		case FUNCION_INSERT: {
 			log_debug(logger, "[Conexión] pre deserializar request insert");
 			t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
@@ -167,6 +168,16 @@ void escuchar_kernel(int *socket_origen) {
 			//free(buffer->key);
 			//free(buffer);
 		} break;
+
+		case FUNCION_CREATE: {
+			log_debug(logger, "[Conexión] pre deserializar resquest CREATE");
+			t_request_create *buffer = deserializar_request_create(mensaje_de_kernel);
+			log_info(logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
+			//free(buffer->tabla);
+			//free(buffer->key);
+			//free(buffer);
+		} break;
+
 		default: log_warning(logger, "Me llegó un mensaje desconocido");
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);

@@ -27,16 +27,92 @@ void* serializar_request_select(char *tabla, char*key) {
 
 }
 
+void* serializar_request_create(char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compaction_time){
+	int largo_nombre_tabla = strlen(nombre_tabla);
+	int largo_tipo_consistencia = strlen(tipo_consistencia);
+
+	size_t tamanio_paquete = sizeof(int)*4 + largo_nombre_tabla + largo_tipo_consistencia;
+
+	void* buffer = malloc(tamanio_paquete);
+	int desplazamiento = 0;
+	memset(buffer, 0, tamanio_paquete);
+
+	memcpy(buffer+desplazamiento, &largo_nombre_tabla, sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(buffer+desplazamiento, nombre_tabla, largo_nombre_tabla);
+	desplazamiento+= largo_nombre_tabla;
+
+	memcpy(buffer+desplazamiento, &largo_tipo_consistencia, sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(buffer+desplazamiento, tipo_consistencia, largo_tipo_consistencia);
+	desplazamiento += largo_tipo_consistencia;
+
+	memcpy(buffer+desplazamiento, &numero_particiones, sizeof(int));
+	desplazamiento += sizeof(int);
+
+	memcpy(buffer+desplazamiento, &compaction_time, sizeof(int));
+	desplazamiento += sizeof(int);
+
+	if (tamanio_paquete != desplazamiento)
+	{
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
+		exit(1);
+	}
+
+	return buffer;
+}
+
+t_request_create *deserializar_request_create(t_prot_mensaje *mensaje){
+	int largo_nombre_tabla, largo_tipo_consistencia, desplazamiento, numero_particiones, compaction_time;
+	char *nombre_tabla, *tipo_consistencia;
+	desplazamiento = 0;
+	size_t tamanio_paquete = mensaje->tamanio_total - sizeof(t_header);
+	t_request_create *retorno = malloc(sizeof(t_request_create));
+
+	memcpy(&largo_nombre_tabla, mensaje->payload+desplazamiento, sizeof(int));
+	desplazamiento += sizeof(int);
+	nombre_tabla = malloc(largo_nombre_tabla+1);
+	memset(nombre_tabla, 0, largo_nombre_tabla+1);
+	memcpy(nombre_tabla, mensaje->payload+desplazamiento, largo_nombre_tabla);
+	desplazamiento += largo_nombre_tabla;
+	nombre_tabla[largo_nombre_tabla] = '\0';
+	retorno->nombre_tabla = nombre_tabla;
+
+	memcpy(&largo_tipo_consistencia,mensaje->payload+desplazamiento, sizeof(int));
+	desplazamiento += sizeof(int);
+	tipo_consistencia = malloc(largo_tipo_consistencia +1);
+	memset(tipo_consistencia,0, largo_tipo_consistencia+1);
+	memcpy(tipo_consistencia, mensaje->payload+desplazamiento, largo_tipo_consistencia);
+	desplazamiento += largo_tipo_consistencia;
+	tipo_consistencia[largo_tipo_consistencia] = '\0';
+	retorno->tipo_consistencia = tipo_consistencia;
+
+	//deserializo int
+
+	memcpy(&numero_particiones, mensaje->payload+desplazamiento, sizeof(int));
+	desplazamiento += sizeof(int);
+	retorno->numero_particiones = numero_particiones;
+
+	memcpy(&compaction_time, mensaje->payload+desplazamiento, sizeof(int));
+	desplazamiento += sizeof(int);
+	retorno->compaction_time = compaction_time;
+
+
+	return retorno;
+}
+
 t_request_select *deserializar_request_select(t_prot_mensaje *mensaje) {
 	int largo_tabla, largo_key, desplazamiento;
 	char *tabla,*key;
 	desplazamiento = 0;
 	size_t tamanio_del_paquete = mensaje->tamanio_total - sizeof(t_header);
 	t_request_select *retorno = malloc(sizeof(t_request_select));
+
 	memcpy(&largo_tabla, mensaje->payload+desplazamiento, sizeof(int));
 	tabla = malloc(largo_tabla+1);
 	memset(tabla, 0, largo_tabla+1);
 	desplazamiento += sizeof(int);
+
 	memcpy(tabla, mensaje->payload+desplazamiento, largo_tabla);
 	tabla[largo_tabla] = '\0';
 	//El arreglo está en base 0, largo tabla comienza en uno, entonces
@@ -49,6 +125,7 @@ t_request_select *deserializar_request_select(t_prot_mensaje *mensaje) {
 	key = malloc(largo_key+1);
 	memset(key, 0, largo_key+1);
 	desplazamiento += sizeof(int);
+
 	memcpy(key, mensaje->payload+desplazamiento, largo_key);
 	key[largo_key] = '\0';
 	retorno->key = key;
