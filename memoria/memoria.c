@@ -182,12 +182,40 @@ void escuchar_kernel(int *socket_origen) {
 			//free(buffer->key);
 			//free(buffer);
 		} break;
+		case FUNCION_DESCRIBE: {
+			log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
+			char* tamanio = mensaje_de_kernel->payload;
+			int tam = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
+			if(tam == 0){
+				printf("Describe nulo\n");
+			}
+			else{
+				char* tabla = malloc(tam+1);
+				memset(tabla, 0, tam+1 );
+				memcpy(tabla, mensaje_de_kernel->payload,tam);
+				tabla[tam]='\0';
+				printf("Describe con tabla: %s\n",tabla);
+				free(tabla);
+			}
+		} break;
+
+		case FUNCION_DROP: {
+			int tab = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
+			char* tabla = malloc(tab+1);
+			memset(tabla, 0, tab+1 );
+			memcpy(tabla, mensaje_de_kernel->payload,tab);
+			tabla[tab]='\0';
+			printf("Drop con tabla: %s\n",tabla);
+			free(tabla);
+
+		} break;
 
 		default: {
-			cortar_while = true;
-			log_warning(logger, "[ Header: %d ]Me llegó un mensaje desconocido", mensaje_de_kernel->head);
-			break;
-			}
+		cortar_while = true;
+		log_warning(logger, "[ Header: %d ]Me llegó un mensaje desconocido", mensaje_de_kernel->head);
+		break;
+		}
+
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
 	}

@@ -29,7 +29,29 @@ void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_part
 	//printf("Holis :) hiciste un create desde kernel");
 }
 
+void kernel_describe(char* nombre_tabla){
+	printf("Hola mundo :) hiciste un describe a kernel (?\n");
+	if(nombre_tabla == NULL){
+		prot_enviar_mensaje(socket_memoria, FUNCION_DESCRIBE, 0, NULL);
+	}
+	else{
+		prot_enviar_mensaje(socket_memoria, FUNCION_DESCRIBE, strlen(nombre_tabla), nombre_tabla);
+	}
+	log_info(logger, "Describe enviado a memoria");
+	// me trae todas la metadata de las tablas del FS
+	// diferenciar si llega null o no en el argumento, C no permite argumentos opcionales
+}
 
+
+void kernel_drop(char* nombre_tabla){
+	printf("Hola mundo :) Dropeaste una tabla (?");
+	prot_enviar_mensaje(socket_memoria, FUNCION_DROP,strlen(nombre_tabla), nombre_tabla);
+	log_info(logger, "Drop enviado a memoria");
+}
+
+void kernel_journal(char* nombre_tabla){
+	printf("Hola mundo :) Estás haciendo journaling (?");
+}
 void imprimir_metricas() {
 	printf("Implementando métricas version: %d\n", 1);
 
@@ -37,14 +59,4 @@ void imprimir_metricas() {
 
 
 
-void kernel_describe(){
-	// me trae todas la metadata de las tablas del FS
-	// diferenciar si llega null o no en el argumento, C no permite argumentos opcionales
-	printf("DESCRIBE DE TODAS LAS TABLAS DE FS::::::::::::::::::::");
-}
 
-
-void kernel_drop(char* nombre_tabla){
-	// drop a la tabla de la tabla
-	printf("DROP A LA TABLA:::::::::::::::::::::::::");
-}
