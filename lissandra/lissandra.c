@@ -10,6 +10,9 @@ int main() {
 	log_info(logger, "Lissandra iniciado");
 	printear_configuraciones();
 
+	t_list_memtable = list_create();
+	cargar_datos_fake();
+
 	//<<1- inotify
 	int fd_inotify = inotify_init();
 	if (fd_inotify < 0) {
@@ -77,5 +80,48 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 	    }
 
 	}
+
+}
+
+void cargar_datos_fake() {
+	printf("##################### INICIO TESTS ###################");
+	char *tabla = "miTabla";
+	uint16_t key = 15;
+	int timestamp = 1556415179;
+	char *value = "unValue"; //Notar que no se libera por no reservar con malloc
+
+	t_registro unRegistro;
+	unRegistro.key = key;
+	unRegistro.timestamp = timestamp;
+	unRegistro.value = value;
+
+	t_list *registros = list_create();
+	list_add(registros, &unRegistro);
+
+	t_memtable unaTabla;
+	unaTabla.tabla = tabla;
+	unaTabla.t_registro = registros;
+
+	printf("Key value: %hu\n", key);
+	printf("Key en memtable: %hu\n", ((t_registro*)list_get(unaTabla.t_registro, 0))->key);
+
+	FILE* fd;
+	char *pathfinal = strdup(fs_config.punto_montaje);
+	string_append_with_format(&pathfinal, "Tables/%s/%s", tabla, "fake.txt");
+	printf("Path a buscar: %s\n", pathfinal);
+	fd = fopen(pathfinal, "a");
+	fwrite(((t_registro*)list_get(unaTabla.t_registro, 0))->value, strlen(value), 1, fd);
+	fwrite("\n", 1, 1, fd);
+	fclose(fd);
+
+	/*libero memoria:
+	 * Limpio los datos en medida de no perder referencia,
+	 * es decir, no destruyo una lista, sin antes liberar
+	 * los datos en el heap que haya guardado
+	 */
+
+	list_destroy(registros);
+	free(pathfinal);
+	printf("##################### FIN TESTS ###################\n");
 
 }

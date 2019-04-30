@@ -108,7 +108,7 @@ void atender_memoria(int socket_servidor) {
 			log_info(logger, "[Conexión] Memoria conectada");
 		} break;
 		default:
-			log_error(logger, "[Conexión] Cliente desconocido");
+			log_error(logger, "[Conexión | Header: %d] Cliente desconocido", (int)cliente_recibido);
 		}
 		prot_destruir_mensaje(mensaje_del_cliente);
 		/*if(mensaje_del_cliente->head == CONEXION) {
@@ -136,10 +136,15 @@ void recibir_datos_gossiping() {
 void escuchar_kernel(int *socket_origen) {
 	int socket_kernel = *socket_origen;
 	free(socket_origen);
+	bool cortar_while = false;
 	//t_prot_mensaje *mensaje_de_kernel;
-	while (!consola_ejecuto_exit) {
+	while (!consola_ejecuto_exit && !cortar_while) {
 		t_prot_mensaje *mensaje_de_kernel = prot_recibir_mensaje(socket_kernel);
 		switch(mensaje_de_kernel->head) {
+		case DESCONEXION: {
+			log_info(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
+			cortar_while = true;
+		} break;
 		case ENVIO_DATOS: {
 			log_info(logger, "[Conexión] Kernel conectado");
 			int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
@@ -178,7 +183,11 @@ void escuchar_kernel(int *socket_origen) {
 			//free(buffer);
 		} break;
 
-		default: log_warning(logger, "Me llegó un mensaje desconocido");
+		default: {
+			cortar_while = true;
+			log_warning(logger, "[ Header: %d ]Me llegó un mensaje desconocido", mensaje_de_kernel->head);
+			break;
+			}
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
 	}

@@ -108,6 +108,7 @@ t_prot_mensaje* mensaje_error_al_recibir(){
 	//no hace falta poner el tamanio total en estos casos
 	retorno->head = FALLO_AL_RECIBIR;
 	retorno->payload = NULL;
+	perror("Error al recibir: ");
 	return retorno;
 }
 
