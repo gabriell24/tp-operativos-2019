@@ -10,6 +10,7 @@
 #include <readline/history.h>
 #include <dirent.h>
 #include "../shared_library/colores.h"
+#include "../shared_library/utiles.h"
 #include <commons/string.h>
 #include <commons/log.h>
 #include "interfaz.h"
@@ -36,7 +37,7 @@ void destruir_operacion(t_consola);
 
 void consola();
 void operaciones_disponibles();
-int get_timestamp();
+
 
 #endif
 

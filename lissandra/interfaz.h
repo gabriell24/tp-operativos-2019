@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "consola.h"
+#include "filesystem.h"
 //Defines
 
 //Variables

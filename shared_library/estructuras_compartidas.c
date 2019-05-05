@@ -186,45 +186,40 @@ void* serializar_request_insert(char* nombre_tabla, char* key, char* value, int 
 
 t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
 	int epoch, desplazamiento, largo_nombre_de_tabla, largo_key, largo_value;
-	char *value, *key, *nombre_tabla;
+	//char *value, *key, *nombre_tabla;
 	desplazamiento = 0;
 	size_t tamanio_del_paquete = mensaje->tamanio_total - sizeof(t_header);
 	t_request_insert *retorno = malloc(sizeof(t_request_insert));
 
-	memset(retorno, 0, sizeof(t_request_insert));
+	//memset(retorno, 0, sizeof(t_request_insert));
 	memcpy(&largo_nombre_de_tabla, mensaje->payload+desplazamiento, sizeof(int));
-	nombre_tabla = malloc(largo_nombre_de_tabla+1);
-	memset(nombre_tabla, 0, largo_nombre_de_tabla+1);
+	retorno->nombre_tabla = malloc(largo_nombre_de_tabla+1);
+	memset(retorno->nombre_tabla, 0, largo_nombre_de_tabla+1);
 	desplazamiento += sizeof(int);
-	memcpy(nombre_tabla, mensaje->payload+desplazamiento, largo_nombre_de_tabla);
-	nombre_tabla[largo_nombre_de_tabla] = '\0';
+	memcpy(retorno->nombre_tabla, mensaje->payload+desplazamiento, largo_nombre_de_tabla);
+	retorno->nombre_tabla[largo_nombre_de_tabla] = '\0';
 	//El arreglo está en base 0, largo tabla comienza en uno, entonces
 	// estoy pasado de la última letra
-	retorno->nombre_tabla = nombre_tabla;
+	//retorno->nombre_tabla = nombre_tabla;
 	desplazamiento += largo_nombre_de_tabla;
 
 
 	memcpy(&largo_key, mensaje->payload+desplazamiento, sizeof(int));
-	printf("Tamaño de key %d", largo_key);
-	key = malloc(largo_key);
-	memset(key, 0, largo_key);
+	retorno->key = malloc(largo_key+1);
+	memset(retorno->key, 0, largo_key+1);
 	desplazamiento += sizeof(int);
-	memcpy(key, mensaje->payload+desplazamiento, largo_key);
-	printf("Variable: %s", key);
-	key[largo_key] = '\0';
-	//TODO: REVISAR PORQUE NO PUEDO ASIGNARLO CORRECTAMENTE (PARA ESO USAMOS STRDUP)
-	retorno->key = strdup(key);
-	printf("PrintF de retorno key %s", retorno->key);
+	memcpy(retorno->key, mensaje->payload+desplazamiento, largo_key);
+	retorno->key[largo_key] = '\0';
 	desplazamiento += largo_key;
 
 
 	memcpy(&largo_value, mensaje->payload+desplazamiento, sizeof(int));
-	value = malloc(largo_value+1);
-	memset(key, 0, largo_value+1);
+	retorno->value = malloc(largo_value+1);
+	memset(retorno->value, 0, largo_value+1);
 	desplazamiento += sizeof(int);
-	memcpy(value, mensaje->payload+desplazamiento, largo_value);
-	value[largo_value] = '\0';
-	retorno->value = value;
+	memcpy(retorno->value, mensaje->payload+desplazamiento, largo_value);
+	retorno->value[largo_value] = '\0';
+	//retorno->value = value;
 	desplazamiento += largo_value;
 
 

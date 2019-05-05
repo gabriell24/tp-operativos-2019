@@ -6,7 +6,9 @@ int main() {
 	levantar_archivo_configuracion();
 	logger = log_create("lissandra.log","LISSANDRA", true,
 			fs_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
+	iniciar_fs(fs_config.punto_montaje);
 
+	socket_servidor = levantar_servidor(fs_config.puerto_escucha);
 	log_info(logger, "Lissandra iniciado");
 	printear_configuraciones();
 
@@ -21,12 +23,15 @@ int main() {
 	int watch_descriptor = inotify_add_watch(fd_inotify, ".", IN_MODIFY);
 	int *ptr_fd_inotify = malloc(sizeof(int*));
 	*ptr_fd_inotify = fd_inotify;
-	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
+	pthread_create(&hilo_observer_configs, NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
+	int *ptr_socket_server = malloc(sizeof(int));
+	*ptr_socket_server = socket_servidor;
+	pthread_create(&hilo_conexion_memoria, NULL, (void*)aceptar_conexion_de_memoria, ptr_socket_server);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
-
 	pthread_join(hilo_consola, NULL);
 	log_info(logger, "[Lissandra] Proceso finalizado.");
+	//pthread_join(hilo_conexion_memoria, NULL);
 	pthread_join(hilo_observer_configs, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
@@ -125,3 +130,70 @@ void cargar_datos_fake() {
 	printf("##################### FIN TESTS ###################\n");
 
 }
+
+void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
+	int socket_servidor = *ptr_socket_servidor;
+	free(ptr_socket_servidor);
+	int socket_cliente;
+	struct sockaddr_in direccion_cliente;
+	unsigned int tamanio_direccion = sizeof(direccion_cliente);
+
+	while(!consola_ejecuto_exit) {
+		socket_cliente = accept(socket_servidor, (void*) &direccion_cliente, &tamanio_direccion);
+		if(!(socket_cliente > 0)) {
+			perror("No pude aceptar a memoria: ");
+			break;
+		}
+		else {
+			t_prot_mensaje* mensaje_del_cliente = prot_recibir_mensaje(socket_cliente);
+			t_cliente cliente_recibido = *((t_cliente*) mensaje_del_cliente->payload);
+			switch(cliente_recibido) {
+
+			case MEMORIA: {
+				log_info(logger, "[Conexión] Memoria conectada. Enviando tamanio del value");
+
+				//Envio el tamanio del value
+				size_t tamanio_buffer = sizeof(int);
+				void *buffer = malloc(tamanio_buffer);
+				memset(buffer, 0, sizeof(int));
+				memcpy(buffer, &fs_config.tamanio_value, sizeof(int));
+				prot_enviar_mensaje(socket_cliente, ENVIO_DATOS, tamanio_buffer, buffer);
+				//Fin envio del tamanio del value
+
+				pthread_t recibir_mensajes_de_memoria;
+				int* socket_kernel = (int*) malloc (sizeof(int));
+				*socket_kernel = socket_cliente;
+				pthread_create(&recibir_mensajes_de_memoria, NULL, (void*)escuchar_memoria, socket_kernel);
+			} break;
+			default:
+				log_error(logger, "[Conexión] Cliente desconocido");
+			}
+			prot_destruir_mensaje(mensaje_del_cliente);
+		}
+	}
+}
+
+void escuchar_memoria(int *ptr_socket_cliente) {
+	int socket_memoria = *ptr_socket_cliente;
+	free(ptr_socket_cliente);
+	bool cortar_while = false;
+	//t_prot_mensaje *mensaje_de_kernel;
+	while (!consola_ejecuto_exit && !cortar_while) {
+		t_prot_mensaje *mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
+		switch(mensaje_de_memoria->head) {
+			case DESCONEXION: {
+				log_warning(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
+				cortar_while = true;
+			} break;
+
+			default: {
+				cortar_while = true;
+				log_warning(logger, "Me llegó un mensaje desconocido %d", mensaje_de_memoria->head);
+				break;
+			}
+
+		}
+		prot_destruir_mensaje(mensaje_de_memoria);
+	}
+}
+

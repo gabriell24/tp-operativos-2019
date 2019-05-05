@@ -22,9 +22,9 @@ void cargar_metadata(char *path, char *archivo) {
 	log_debug(logger, "\nLevanto configuraciones %s de ejemplo", archivo);
 	fd = open(aux_path, O_RDWR | O_CREAT, S_IRWXU );
 		if(string_contains(archivo, "Metadata.bin")) {
-			escribir(fd, "TAMANIO_BLOQUES=50\n");
-			escribir(fd, "CANTIDAD_BLOQUES=64\n");
-			escribir(fd, "MAGIC_NUMBER=FIFA\n");
+			escribir(fd, "BLOCK_SIZE=64\n");
+			escribir(fd, "BLOCKS=5192\n");
+			escribir(fd, "MAGIC_NUMBER=LISSANDRA\n");
 		}
 		else if(string_contains(archivo, "Bitmap.bin")) {
 			char *bitmap = (char*)calloc(64, sizeof(char));
@@ -37,10 +37,11 @@ void cargar_metadata(char *path, char *archivo) {
 		if(string_contains(archivo, "Metadata.bin")) {
 			//printf("\n\nCARGANDO EL ARCHIVO 1\n\n");
 			metadata = config_create(aux_path);
-			datos_fs.cantidad_bloques = config_get_int_value(metadata, "CANTIDAD_BLOQUES");
-			datos_fs.tamanio_bloques = config_get_int_value(metadata, "TAMANIO_BLOQUES");
+			datos_fs.tamanio_bloques = config_get_int_value(metadata, "BLOCK_SIZE");
+			datos_fs.cantidad_bloques = config_get_int_value(metadata, "BLOCKS");
 
-			free(metadata);
+			config_destroy(metadata);
+			//free(metadata);
 		}
 		else if(string_contains(archivo, "Bitmap.bin")) {
 			char *bitmap = (char*)calloc(datos_fs.cantidad_bloques, sizeof(char));
@@ -87,8 +88,11 @@ int tomar_bloque_libre() {
 
 }
 
+/*
+ * Quizás no sea necesaria.
+ */
 bool crear_sub_rutas(char *archivo) {
-	char *crear_en = string_duplicate(path_archivos());
+	char *crear_en = string_duplicate(path_tablas());
 	char **sub_rutas = string_split(archivo, "/");
 	int posicion = 0;
 	while(sub_rutas[posicion+1]!=NULL) {
@@ -117,6 +121,25 @@ void crear_archivo_bloque(int bloque, char *contenido) {
 	free(ruta);
 }
 
+void crear_carpeta_tabla(char *tabla) {
+	char *crear_en = path_tablas();
+	string_append(&crear_en, tabla);
+	mkdir(crear_en, S_IRWXU);
+	free(crear_en);
+}
+
+//Todo pasarle los parámetros al write
+void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time) {
+	char *crear_en = string_duplicate(path_tablas());
+	string_append(&crear_en, tabla);
+	string_append(&crear_en, "/Metadata");
+	int fd = open(crear_en, O_RDWR | O_CREAT, S_IRWXU );
+	escribir(fd, "CONSISTENCY=SC\n");
+	escribir(fd, "PARTITIONS=4\n");
+	escribir(fd, "COMPACTION_TIME=60000");
+	close(fd);
+}
+
 void guardar_bitmap(char *path_bitmap) {
 	int fd = open(path_bitmap, O_RDWR | O_CREAT, S_IRWXU );
 	//char *bitmap = (char*)calloc(datos_fs.cantidad_bloques, sizeof(char));
@@ -128,9 +151,9 @@ void guardar_bitmap(char *path_bitmap) {
 	//printf("\nguardado en %s\n", path_bitmap);
 }
 
-char *path_archivos() {
+char *path_tablas() {
 	char *ruta_archivo = string_duplicate(datos_fs.path_raiz);
-	string_append(&ruta_archivo, "Archivos/");
+	string_append(&ruta_archivo, "Tables/");
 	return ruta_archivo;
 }
 
@@ -147,6 +170,35 @@ void finalizar_estructuras_fs() {
 	string_append(&ruta_bitmap, "Metadata/Bitmap.bin");
 	guardar_bitmap(ruta_bitmap);
 	free(ruta_bitmap);
-	free(path_archivos());
+	free(path_tablas());
 	bitarray_destroy(datos_fs.bitarray);
+}
+
+bool existe_tabla(char *tabla) {
+	log_info(logger, "[Busqueda] Verifico si existe tabla");
+	char *buscar_en = path_tablas();
+	bool resultado = false;
+	struct dirent *de;
+
+	DIR *dr = opendir(buscar_en);
+
+	if (dr == NULL) //Si falla la apertura mato el proceso, porque no puedo determinar si existe o no
+	{
+		perror("error al abrir directorio");
+		exit(1);
+	}
+
+	//Opcional: ignorar . y ..
+	while ((de = readdir(dr)) != NULL) {
+		//Si la commons nos brinda case insensitive no veo el objetivo de comparar en mayúsculas o minúsculas
+		if(string_equals_ignore_case(de->d_name, tabla)) {
+			resultado = true;
+		}
+	}
+
+	closedir(dr);
+
+	free(buscar_en);
+	log_info(logger, resultado ? "[Busqueda - Resultado] Se encontro la tabla" : "[Busqueda - Resultado] No se encontro la tabla");
+	return resultado;
 }

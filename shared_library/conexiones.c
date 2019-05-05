@@ -38,7 +38,6 @@ int levantar_servidor(int puerto){
 
 void print_error(char *mensaje){
 	printf("ERROR:\t%s\n", mensaje);
-	sleep(TIEMPO_SLEEP);
 }
 
 
@@ -52,7 +51,13 @@ void crear_socket(int *socket_destino){
 	}
 }
 
-int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process){
+
+/*
+ * Se devuelve el scoket o -1 si tiene se invoca sin el exit,
+ * para informar a memoria en el caso de utilizar gossiping
+ */
+int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process, int reintentos){
+	printf("Conectando a servidor, intento número: %d\n", reintentos);
 	int socket_cliente;
 	crear_socket(&socket_cliente);
 
@@ -67,6 +72,10 @@ int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process
 
 	//Conectarse con el IP - Puerto del servidor
 	if(connect(socket_cliente, (void*) &direccion_servidor, sizeof(direccion_servidor)) < 0){
+		if(reintentos < MAX_REINTENTOS_CONEXION) {
+			sleep(SEGUNDOS_ESPERA_RECONEXION);
+			return conectar_servidor(ip, puerto, cliente, exit_process, reintentos+1);
+		}
 		close(socket_cliente);
 		if(exit_process) {
 			print_error(ERROR_CONECTAR_SERVIDOR);
@@ -86,13 +95,13 @@ int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process
 
 
 int conectar_a_servidor(char* ip, int puerto, t_cliente cliente){
-	return conectar_servidor(ip, puerto, cliente, true);
+	return conectar_servidor(ip, puerto, cliente, true, 1);
 }
 
 /* Se agrega esta función para cuando falle el gossiping no cierre el proceso,
  * en cambio, devuelve -1 como si hubiese fallado el connect
  */
 int conectar_a_servidor_sin_exit(char* ip, int puerto, t_cliente cliente){
-	return conectar_servidor(ip, puerto, cliente, false);
+	return conectar_servidor(ip, puerto, cliente, false, 1);
 }
 

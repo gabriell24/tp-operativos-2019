@@ -20,7 +20,7 @@
 typedef struct {
 	int tamanio_bloques;
 	int cantidad_bloques;
-	char magic_number[5];
+	char magic_number[10];
 	t_bitarray *bitarray;
 	int ultimo_bloque_retornado;
 	char *path_raiz;
@@ -40,11 +40,14 @@ void cargar_metadata(char *path, char *archivo);
 void finalizar_estructuras_fs();
 int tomar_bloque_libre();
 void guardar_bitmap(char *path_bitmap);
+void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time);
+void crear_carpeta_tabla(char *tabla);
 void crear_archivo_bloque(int bloque, char *contenido);
-char *path_archivos();
+char *path_tablas();
 char *path_bloques();
 void check(int posicion, bool esCorrecto);
 char bit_in_char(int bit, int mode);
 bool crear_sub_rutas(char*);
+bool existe_tabla(char*);
 
 #endif /* FILESYSTEM_H_ */

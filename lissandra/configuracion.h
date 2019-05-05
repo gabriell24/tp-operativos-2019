@@ -10,7 +10,7 @@ typedef struct {
 	int puerto_escucha;
 	char *punto_montaje;
 	int retardo_ms;
-	int tamanio_bytes;
+	int tamanio_value;
 	int tiempo_dump_ms;
 	bool en_produccion;
 } t_fs_config;

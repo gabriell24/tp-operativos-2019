@@ -7,14 +7,19 @@ int main() {
 	logger = log_create("memoria.log","MEMORIA", true,
 			memoria_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
-	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
-	log_info(logger, "Memoria %d iniciado", memoria_config.numero_memoria);
-	/*DESARROLLAR: Conectar a LFS y pedirle el tamaño máximo del value(se puede
-	 * realizar de manera similar a la conexión del kernel), el exit viene gratis*/
-	printear_configuraciones();
-	//DESARROLLAR: Inicializar memoria. Si falla al reserver => exit
+	/*
+	 * Invierto el orden, para que si no puede iniciar la memoria
+	 * segun start up del tp, tampoco pueda recibir conexiones
+	 */
+	int socket_lissandra = conectar_a_servidor(memoria_config.ip_lissandra, memoria_config.puerto_lissandra, MEMORIA);
+	tamanio_value = recibir_datos_de_fs(socket_lissandra);
+	iniciar_memoria();
 
-	//intentar_conectar_seed();
+	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
+
+	log_info(logger, "Memoria %d iniciado", memoria_config.numero_memoria);
+	printear_configuraciones();
+
 	//<<1- inotify
 	int fd_inotify = inotify_init();
 	if (fd_inotify < 0) {
@@ -27,7 +32,10 @@ int main() {
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
-	atender_memoria(socket_servidor);
+	int *ptr_socket_servidor = malloc(sizeof(int));
+	*ptr_socket_servidor = socket_servidor;
+	pthread_create(&hilo_aceptar_clientes,NULL, (void*)aceptar_clientes, ptr_socket_servidor);
+
 	pthread_join(hilo_consola, NULL);
 	log_info(logger, "[Memoria] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
@@ -35,7 +43,19 @@ int main() {
 	inotify_rm_watch(fd_inotify, watch_descriptor);
 	close(fd_inotify);
 	free(ptr_fd_inotify);
+
+	//Limpiar cada estructura
+	free(memoria);
 	log_destroy(logger);
+}
+
+int recibir_datos_de_fs(int socket) {
+	t_prot_mensaje *mensaje = prot_recibir_mensaje(socket);
+	int value;
+	memcpy(&value, mensaje->payload, sizeof(int));
+	log_info(logger, "[Tamanio] Value = %d", value);
+	prot_destruir_mensaje(mensaje);
+	return value;
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify
@@ -88,7 +108,9 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 
 }
 
-void atender_memoria(int socket_servidor) {
+void aceptar_clientes(int *ptr_socket_servidor) {
+	int socket_servidor = *ptr_socket_servidor;
+	free(ptr_socket_servidor);
 	int socket_cliente;
 	struct sockaddr_in direccion_cliente;
 	unsigned int tamanio_direccion = sizeof(direccion_cliente);
@@ -108,22 +130,9 @@ void atender_memoria(int socket_servidor) {
 			log_info(logger, "[Conexión] Memoria conectada");
 		} break;
 		default:
-			log_error(logger, "[Conexión | Header: %d] Cliente desconocido", (int)cliente_recibido);
+			log_error(logger, "[Conexión] Cliente desconocido");
 		}
 		prot_destruir_mensaje(mensaje_del_cliente);
-		/*if(mensaje_del_cliente->head == CONEXION) {
-			log_info(logger, "[Conexión] Kernel conectado");
-			int tamanio_buffer = mensaje_de_memoria->tamanio_total - sizeof(t_header);
-			void *path_recibido = malloc(tamanio_buffer);
-			int numero;
-			int largo_de_handshake;
-
-			numero = *((int*)mensaje_de_memoria->payload);
-			largo_de_handshake= *((int*)mensaje_de_memoria->payload + sizeof(int));
-			char handshake[largo_de_handshake];
-			memcpy(handshake, mensaje_de_memoria->payload + sizeof(int)*2, largo_de_handshake);
-			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
-		}*/
 	}
 }
 
@@ -141,82 +150,109 @@ void escuchar_kernel(int *socket_origen) {
 	while (!consola_ejecuto_exit && !cortar_while) {
 		t_prot_mensaje *mensaje_de_kernel = prot_recibir_mensaje(socket_kernel);
 		switch(mensaje_de_kernel->head) {
-		case DESCONEXION: {
-			log_info(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
-			cortar_while = true;
-		} break;
-		case ENVIO_DATOS: {
-			log_info(logger, "[Conexión] Kernel conectado");
-			int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
-			int numero;
-			int largo_de_handshake;
-			memcpy(&numero, mensaje_de_kernel->payload, sizeof(int));
-			memcpy(&largo_de_handshake, mensaje_de_kernel->payload+sizeof(int), sizeof(int));
-			char handshake[largo_de_handshake+1];
-			memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
-			log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
-		} break;
-		case FUNCION_SELECT: {
-			log_debug(logger, "[Conexión] pre deserializar request select");
-			t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
-			log_info(logger, "Hacer select con [TABLA = %s, KEY = %s]", buffer->tabla, buffer->key);
-			//free(buffer->tabla);
-			//free(buffer->key);
-			//free(buffer);
-		} break;
+			case DESCONEXION: {
+				log_warning(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
+				cortar_while = true;
+			} break;
 
-		case FUNCION_INSERT: {
-			log_debug(logger, "[Conexión] pre deserializar request insert");
-			t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
-			log_info(logger, "Hacer insert con [TABLA = %s, KEY = %s, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
-			//free(buffer->tabla);
-			//free(buffer->key);
-			//free(buffer);
-		} break;
+			case ENVIO_DATOS: {
+				log_info(logger, "[Conexión] Kernel conectado");
+				int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
+				int numero;
+				int largo_de_handshake;
+				memcpy(&numero, mensaje_de_kernel->payload, sizeof(int));
+				memcpy(&largo_de_handshake, mensaje_de_kernel->payload+sizeof(int), sizeof(int));
+				char handshake[largo_de_handshake+1];
+				memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
+				log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+			} break;
 
-		case FUNCION_CREATE: {
-			log_debug(logger, "[Conexión] pre deserializar resquest CREATE");
-			t_request_create *buffer = deserializar_request_create(mensaje_de_kernel);
-			log_info(logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
-			//free(buffer->tabla);
-			//free(buffer->key);
-			//free(buffer);
-		} break;
-		case FUNCION_DESCRIBE: {
-			log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
-			char* tamanio = mensaje_de_kernel->payload;
-			int tam = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
-			if(tam == 0){
-				printf("Describe nulo\n");
-			}
-			else{
-				char* tabla = malloc(tam+1);
-				memset(tabla, 0, tam+1 );
-				memcpy(tabla, mensaje_de_kernel->payload,tam);
-				tabla[tam]='\0';
-				printf("Describe con tabla: %s\n",tabla);
+			case FUNCION_SELECT: {
+				log_debug(logger, "[Conexión] pre deserializar request select");
+				t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
+				log_info(logger, "Hacer select con [TABLA = %s, KEY = %s]", buffer->tabla, buffer->key);
+				//free(buffer->tabla);
+				//free(buffer->key);
+				//free(buffer);
+			} break;
+
+			case FUNCION_INSERT: {
+				log_debug(logger, "[Conexión] pre deserializar request insert");
+				t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
+				log_info(logger, "Hacer insert con [TABLA = %s, KEY = %s, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
+				free(biffer->nombre_tabla);
+				free(biffer->key);
+				free(biffer->value);
+				free(biffer);
+			} break;
+
+			case FUNCION_CREATE: {
+				log_debug(logger, "[Conexión] pre deserializar resquest CREATE");
+				t_request_create *buffer = deserializar_request_create(mensaje_de_kernel);
+				log_info(logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
+				//free(buffer->tabla);
+				//free(buffer->key);
+				//free(buffer);
+			} break;
+			case FUNCION_DESCRIBE: {
+				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
+				char* tamanio = mensaje_de_kernel->payload;
+				int tam = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
+				if(tam == 0){
+					printf("Describe nulo\n");
+				}
+				else{
+					char* tabla = malloc(tam+1);
+					memset(tabla, 0, tam+1);
+					memcpy(tabla, mensaje_de_kernel->payload,tam);
+					tabla[tam] = '\0';
+					printf("Describe con tabla: %s\n",tabla);
+					free(tabla);
+				}
+			} break;
+
+			case FUNCION_DROP: {
+				int tab = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
+				char* tabla = malloc(tab+1);
+				memset(tabla, 0, tab+1 );
+				memcpy(tabla, mensaje_de_kernel->payload,tab);
+				tabla[tab] = '\0';
+				printf("Drop con tabla: %s\n",tabla);
 				free(tabla);
+
+			} break;
+
+			default: {
+				cortar_while = true;
+				log_warning(logger, "Me llegó un mensaje desconocido");
+				break;
 			}
-		} break;
-
-		case FUNCION_DROP: {
-			int tab = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
-			char* tabla = malloc(tab+1);
-			memset(tabla, 0, tab+1 );
-			memcpy(tabla, mensaje_de_kernel->payload,tab);
-			tabla[tab]='\0';
-			printf("Drop con tabla: %s\n",tabla);
-			free(tabla);
-
-		} break;
-
-		default: {
-		cortar_while = true;
-		log_warning(logger, "[ Header: %d ]Me llegó un mensaje desconocido", mensaje_de_kernel->head);
-		break;
-		}
-
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
 	}
+}
+
+
+void iniciar_memoria() {
+	memoria = malloc(memoria_config.tamanio_de_memoria);
+	log_debug(logger, "Inicio de memoria: [Hex]=%p", memoria);
+	size_t tamanio_key = sizeof(uint16_t);
+	size_t tamanio_timestamp = sizeof(int);
+	log_debug(logger, "SizeOf Key: %d, SizeOf Timestamp:%d", tamanio_key, tamanio_timestamp);
+	tamanio_de_pagina = tamanio_value + tamanio_key + tamanio_timestamp;
+	tdp = list_create();
+	tds = list_create();
+	int total_de_frames = memoria_config.tamanio_de_memoria / tamanio_de_pagina;
+	log_debug(logger, "Tamanio de memoria: %d, Tamanio de página: %d, Total de frames: %d", memoria_config.tamanio_de_memoria, tamanio_de_pagina, total_de_frames);
+	int i = 1;
+	for(;i <= total_de_frames; i++) {
+		t_est_tdp pagina;
+		pagina.modificado = 0;
+		pagina.nro_pag = i;
+		pagina.ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
+		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina.ptr_posicion);
+		list_add(tdp, &pagina);
+	}
+
+
 }

@@ -33,6 +33,9 @@
 
 
 //Valores hardcodeados
+#define MAX_REINTENTOS_CONEXION 3
+#define SEGUNDOS_ESPERA_RECONEXION 3
+
 #define TIEMPO_SLEEP 2
 #define VALOR_EXIT 1 //Valor de la salida de ejecución, 0 normal, cualquier otro error
 #define MAX_CLIENTES_ENCOLADOS 30 //Máximo de clientes esparando el accept
@@ -40,7 +43,7 @@
 /*Prototipos*/
 int levantar_servidor(int puerto);
 void crear_socket(int *socket);
-int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process);
+int conectar_servidor(char* ip, int puerto, t_cliente cliente, bool exit_process, int reintentos);
 int conectar_a_servidor(char* ip, int puerto, t_cliente cliente);
 int conectar_a_servidor_sin_exit(char* ip, int puerto, t_cliente cliente);
 

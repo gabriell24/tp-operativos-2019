@@ -97,13 +97,3 @@ void operaciones_disponibles() {
 	printf("describe(0,1 para tabla específica)\n");
 	printf("drop(1)\n");
 }
-
-int get_timestamp() {
-	time_t result = time(NULL);
-	if(result == ((time_t) -1)) {
-		perror("no se pudo obtener epoch");
-	}
-	return result;
-}
-
-

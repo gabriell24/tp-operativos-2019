@@ -13,6 +13,7 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include "../shared_library/colores.h"
+#include "../shared_library/utiles.h"
 #include "interfaz.h"
 
 //Defines
