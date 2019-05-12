@@ -4,7 +4,7 @@ void kernel_select(char *tabla, uint16_t key) {
 	printf("Holis soy Rodrigos");
 	//Dummy
 	size_t tamanio_del_buffer = sizeof(int) + strlen(tabla) + sizeof(uint16_t);
-	void *buffer = serializar_request_select(tabla, 1);
+	void *buffer = serializar_request_select(tabla, key);
 	printf(":::::::::::::::select %u::::::::::::::::::::::::::::::::::::::::::", key);
 	prot_enviar_mensaje(socket_memoria, FUNCION_SELECT, tamanio_del_buffer, buffer);
 	log_info(logger, "Select enviado a memoria");
