@@ -1,0 +1,54 @@
+17:21:01 **** Build of configuration Debug for project kernel ****
+make all 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/conexiones.d" -MT"shared/conexiones.o" -o "shared/conexiones.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/estructuras_compartidas.d" -MT"shared/estructuras_compartidas.o" -o "shared/estructuras_compartidas.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c"
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c: In function ‘deserializar_request_create’:
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c:69:9: warning: unused variable ‘tamanio_paquete’ [-Wunused-variable]
+  size_t tamanio_paquete = mensaje->tamanio_total - sizeof(t_header);
+         ^
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/protocolo.d" -MT"shared/protocolo.o" -o "shared/protocolo.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/utiles.d" -MT"shared/utiles.o" -o "shared/utiles.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+ 
+Building file: ../consola.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"consola.d" -MT"consola.o" -o "consola.o" "../consola.c"
+Finished building: ../consola.c
+ 
+Building file: ../interfaz.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"interfaz.d" -MT"interfaz.o" -o "interfaz.o" "../interfaz.c"
+Finished building: ../interfaz.c
+ 
+Building file: ../kernel.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"kernel.d" -MT"kernel.o" -o "kernel.o" "../kernel.c"
+Finished building: ../kernel.c
+ 
+Building file: ../manejo_memoria.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"manejo_memoria.d" -MT"manejo_memoria.o" -o "manejo_memoria.o" "../manejo_memoria.c"
+Finished building: ../manejo_memoria.c
+ 
+Building target: kernel
+Invoking: GCC C Linker
+gcc  -o "kernel"  ./shared/conexiones.o ./shared/estructuras_compartidas.o ./shared/protocolo.o ./shared/utiles.o  ./configuracion.o ./consola.o ./interfaz.o ./kernel.o ./manejo_memoria.o   -lcommons -lreadline -lpthread
+Finished building target: kernel
+ 
+
+17:21:05 Build Finished (took 3s.817ms)
+

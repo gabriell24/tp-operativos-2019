@@ -1,0 +1,63 @@
+17:23:26 **** Incremental Build of configuration Debug for project lissandra ****
+make all 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared_library/conexiones.d" -MT"shared_library/conexiones.o" -o "shared_library/conexiones.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared_library/estructuras_compartidas.d" -MT"shared_library/estructuras_compartidas.o" -o "shared_library/estructuras_compartidas.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c"
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c: In function ‘deserializar_request_create’:
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c:69:9: warning: unused variable ‘tamanio_paquete’ [-Wunused-variable]
+  size_t tamanio_paquete = mensaje->tamanio_total - sizeof(t_header);
+         ^
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared_library/protocolo.d" -MT"shared_library/protocolo.o" -o "shared_library/protocolo.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared_library/utiles.d" -MT"shared_library/utiles.o" -o "shared_library/utiles.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+ 
+Building file: ../configuracion.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"configuracion.d" -MT"configuracion.o" -o "configuracion.o" "../configuracion.c"
+Finished building: ../configuracion.c
+ 
+Building file: ../consola.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"consola.d" -MT"consola.o" -o "consola.o" "../consola.c"
+Finished building: ../consola.c
+ 
+Building file: ../filesystem.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"filesystem.d" -MT"filesystem.o" -o "filesystem.o" "../filesystem.c"
+Finished building: ../filesystem.c
+ 
+Building file: ../interfaz.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"interfaz.d" -MT"interfaz.o" -o "interfaz.o" "../interfaz.c"
+../interfaz.c: In function ‘fs_describe’:
+../interfaz.c:22:7: warning: unused variable ‘mostrar_todo’ [-Wunused-variable]
+  bool mostrar_todo = tabla == NULL;
+       ^
+Finished building: ../interfaz.c
+ 
+Building file: ../lissandra.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"lissandra.d" -MT"lissandra.o" -o "lissandra.o" "../lissandra.c"
+Finished building: ../lissandra.c
+ 
+Building target: lissandra
+Invoking: GCC C Linker
+gcc  -o "lissandra"  ./shared_library/conexiones.o ./shared_library/estructuras_compartidas.o ./shared_library/protocolo.o ./shared_library/utiles.o  ./configuracion.o ./consola.o ./filesystem.o ./interfaz.o ./lissandra.o   -lcommons -lreadline -lpthread -lpthread -lreadline
+Finished building target: lissandra
+ 
+
+17:23:29 Build Finished (took 3s.235ms)
+

@@ -1,18 +1,19 @@
 #include "interfaz.h"
 
-void kernel_select(char *tabla, char *clave) {
+void kernel_select(char *tabla, uint16_t key) {
 	printf("Holis soy Rodrigos");
 	//Dummy
-	size_t tamanio_del_buffer = sizeof(int)*3 + strlen(tabla) + strlen(clave);
-	void *buffer = serializar_request_select(tabla, clave);
+	size_t tamanio_del_buffer = sizeof(int) + strlen(tabla) + sizeof(uint16_t);
+	void *buffer = serializar_request_select(tabla, 1);
+	printf(":::::::::::::::select %u::::::::::::::::::::::::::::::::::::::::::", key);
 	prot_enviar_mensaje(socket_memoria, FUNCION_SELECT, tamanio_del_buffer, buffer);
 	log_info(logger, "Select enviado a memoria");
 }
 
-void kernel_insert(char* nombre_tabla, char* key, char* value, int epoch){
+void kernel_insert(char* nombre_tabla, uint16_t key, char* value, int epoch){
 
 	printf("Hola mundo :) hiciste un insert a kernel (?");
-	size_t tamanio_del_buffer = strlen(nombre_tabla) + strlen(key) + strlen(value) + sizeof(int)*4 ;
+	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*3 ;
 		void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
 		prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
 		log_info(logger, "Insert enviado a memoria");

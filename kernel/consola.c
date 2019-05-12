@@ -48,7 +48,7 @@ t_consola parse(char* linea) {
 		if (argumento1 == NULL || argumento2 == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"\n");
 		} else {
-			kernel_select(argumento1, argumento2);
+			kernel_select(argumento1, (uint16_t)strtoul(argumento2, NULL, 10));
 		}
 	}
 
@@ -58,7 +58,7 @@ t_consola parse(char* linea) {
 					"Error: ejemplo de uso \"INSERT TABLA1 3 'Mi nombre es kernel' 1548421507\n");
 		} else {
 			int epoch = argumento4 != NULL ? atoi(argumento4) : get_timestamp();
-			kernel_insert(argumento1, argumento2, argumento3, epoch);
+			kernel_insert(argumento1, (uint16_t)strtoul(argumento2, NULL, 10), argumento3, epoch);
 		}
 
 	} else if (string_equals_ignore_case(comando, CREATE)) {

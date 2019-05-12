@@ -1,0 +1,46 @@
+17:23:35 **** Build of configuration Debug for project memoria ****
+make all 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/conexiones.d" -MT"shared/conexiones.o" -o "shared/conexiones.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/conexiones.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/estructuras_compartidas.d" -MT"shared/estructuras_compartidas.o" -o "shared/estructuras_compartidas.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c"
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c: In function ‘deserializar_request_create’:
+/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c:69:9: warning: unused variable ‘tamanio_paquete’ [-Wunused-variable]
+  size_t tamanio_paquete = mensaje->tamanio_total - sizeof(t_header);
+         ^
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/estructuras_compartidas.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/protocolo.d" -MT"shared/protocolo.o" -o "shared/protocolo.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/protocolo.c
+ 
+Building file: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"shared/utiles.d" -MT"shared/utiles.o" -o "shared/utiles.o" "/home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c"
+Finished building: /home/utnso/workspace/tp-2019-1c-Last-Time/shared_library/utiles.c
+ 
+Building file: ../memoria.c
+Invoking: GCC C Compiler
+gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"memoria.d" -MT"memoria.o" -o "memoria.o" "../memoria.c"
+../memoria.c: In function ‘escuchar_kernel’:
+../memoria.c:160:9: warning: unused variable ‘tamanio_buffer’ [-Wunused-variable]
+     int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
+         ^
+../memoria.c:199:11: warning: unused variable ‘tamanio’ [-Wunused-variable]
+     char* tamanio = mensaje_de_kernel->payload;
+           ^
+Finished building: ../memoria.c
+ 
+Building target: memoria
+Invoking: GCC C Linker
+gcc  -o "memoria"  ./shared/conexiones.o ./shared/estructuras_compartidas.o ./shared/protocolo.o ./shared/utiles.o  ./configuracion.o ./consola.o ./interfaz.o ./memoria.o   -lcommons -lpthread -lreadline
+Finished building target: memoria
+ 
+
+17:23:37 Build Finished (took 1s.571ms)
+
