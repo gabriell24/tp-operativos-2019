@@ -4,7 +4,6 @@ void iniciar_fs(char *path) {
 	datos_fs.path_raiz = string_duplicate(path);
 	cargar_metadata(path, "Metadata/Metadata.bin");
 	cargar_metadata(path, "Metadata/Bitmap.bin");
-
 	/*printf("\nTOTAL BLOQUES EN BYTES DESDE BITMAP: %d\n", datos_fs.bitarray->size);
 	bitarray_set_bit(datos_fs.bitarray, 16);
 	//bitarray_set_bit(datos_fs.bitarray, 5191*8);
@@ -128,15 +127,36 @@ void crear_carpeta_tabla(char *tabla) {
 	free(crear_en);
 }
 
-//Todo pasarle los parámetros al write
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time) {
 	char *crear_en = string_duplicate(path_tablas());
+	char *raiz=malloc(strlen(crear_en));
+	for (int i=0; i<particiones; i++){
+		int largo_raiz = strlen(raiz)==0?strlen(crear_en):strlen(raiz);
+		memset(raiz,0,largo_raiz);
+		string_append_with_format(&raiz,"%s%s/%d.bin",crear_en,tabla,i);
+		printf("%s\n",raiz);
+		int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
+		escribir(fd,"");
+		close(fd);
+	}
+
+	free(raiz);
+
 	string_append(&crear_en, tabla);
 	string_append(&crear_en, "/Metadata");
+	char *consistency = malloc(sizeof (char)*15);
+	string_append_with_format(&consistency,"CONSISTENCY=%s\n",criterio);
+	char *partition = malloc(sizeof (char)*15);
+	string_append_with_format(&partition,"PARTITIONS=%d\n",particiones);
+	char *compaction = malloc(sizeof (char)*15);
+	string_append_with_format(&compaction,"COMPACTION_TIME=%d\n",compaction_time);
 	int fd = open(crear_en, O_RDWR | O_CREAT, S_IRWXU );
-	escribir(fd, "CONSISTENCY=SC\n");
-	escribir(fd, "PARTITIONS=4\n");
-	escribir(fd, "COMPACTION_TIME=60000");
+	escribir(fd, consistency);
+	escribir(fd, partition);
+	escribir(fd, compaction);
+	free(consistency);
+	free(partition);
+	free(compaction);
 	close(fd);
 }
 

@@ -48,7 +48,7 @@ t_consola parse(char* linea){
 			log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"\n");
 		}
 		else {
-			fs_select(argumento1, argumento2);
+			fs_select(argumento1, (uint16_t)strtoul(argumento2, NULL, 10));
 		}
 	}
 	else if(string_equals_ignore_case(comando, INSERT)) {
@@ -57,7 +57,7 @@ t_consola parse(char* linea){
 		}
 		else {
 			int epoch = argumento4 != NULL ? atoi(argumento4) : get_timestamp();
-			fs_insert(argumento1, argumento2, argumento3, epoch);
+			fs_insert(argumento1, (uint16_t)strtoul(argumento2, NULL, 10), argumento3, epoch);
 		}
 	}
 	else if(string_equals_ignore_case(comando, CREATE)) {

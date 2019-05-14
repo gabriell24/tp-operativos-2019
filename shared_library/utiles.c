@@ -7,3 +7,6 @@ int get_timestamp() {
 	}
 	return result;
 }
+int calcular_particion(int particion,uint16_t key) {
+	return key%particion;
+}

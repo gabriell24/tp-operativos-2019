@@ -14,8 +14,8 @@
 //Variables
 
 //Prototipos
-void fs_select(char *tabla, char *clave);
-void fs_insert(char *tabla, char *clave, char *value, int timestamp);
+void fs_select(char *tabla, uint16_t key);
+void fs_insert(char *tabla, uint16_t key, char *value, int timestamp);
 void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion);
 void fs_describe(char *tabla);
 void fs_drop(char *tabla);
