@@ -32,6 +32,7 @@ pthread_mutex_t mutex_journaling;
 int socket_servidor;
 int tamanio_value;
 int tamanio_de_pagina;
+int socket_lissandra;
 t_list *tdp;
 t_list *tds;
 void *memoria;

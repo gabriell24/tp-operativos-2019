@@ -11,7 +11,7 @@ int main() {
 	 * Invierto el orden, para que si no puede iniciar la memoria
 	 * segun start up del tp, tampoco pueda recibir conexiones
 	 */
-	int socket_lissandra = conectar_a_servidor(memoria_config.ip_lissandra, memoria_config.puerto_lissandra, MEMORIA);
+	socket_lissandra = conectar_a_servidor(memoria_config.ip_lissandra, memoria_config.puerto_lissandra, MEMORIA);
 	tamanio_value = recibir_datos_de_fs(socket_lissandra);
 	iniciar_memoria();
 
@@ -174,6 +174,9 @@ void escuchar_kernel(int *socket_origen) {
 				t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
 				log_debug(logger, "[Conexión] POSSSSTTTTTT deserializar request select");
 				log_info(logger, "Hacer select con [TABLA = %s, KEY = %d]", buffer->tabla, buffer->key);
+				size_t tamanio_del_buffer = sizeof(int) + strlen(buffer->tabla) + sizeof(uint16_t);
+					void *buffer_serializado = serializar_request_select(buffer->tabla, buffer->key);
+					prot_enviar_mensaje(socket_lissandra, FUNCION_SELECT, tamanio_del_buffer, buffer_serializado);
 				//free(buffer->tabla);
 				//free(buffer->key);
 				//free(buffer);

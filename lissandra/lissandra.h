@@ -17,6 +17,7 @@
 #include "filesystem.h"
 #include "../shared_library/conexiones.h"
 #include "../shared_library/protocolo.h"
+#include "../shared_library/estructuras_compartidas.h"
 
 //Defines
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )

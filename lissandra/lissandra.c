@@ -186,6 +186,11 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				cortar_while = true;
 			} break;
 
+			case FUNCION_SELECT: {
+				t_request_select *buffer = deserializar_request_select(mensaje_de_memoria);
+				log_info(logger, "[Select] Tabla: %s", buffer->tabla);
+			} break;
+
 			default: {
 				cortar_while = true;
 				log_warning(logger, "Me llegó un mensaje desconocido %d", mensaje_de_memoria->head);
