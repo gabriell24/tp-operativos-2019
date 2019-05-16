@@ -12,6 +12,14 @@ void fs_select(char *tabla, uint16_t key) {
 	printf ("PARTITIONS%d\n",particiones);
 	int particion_a_leer = calcular_particion(particiones,key);
 	printf ("Calcule la partición %d\n",particion_a_leer);
+	char *path_a_particion = malloc(sizeof(char));
+	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
+	printf ("Calcule la partición %s\n",path_a_particion);
+	char *datos = string_new();
+	datos = string_duplicate(obtener_datos(path_a_particion));
+	printf("Obtener Datos: %s\n", datos);
+	char **separador = string_n_split(datos, 3, ";");
+	printf("%s\n", separador[2]);
 	config_destroy(conf);
 	free (ruta);
 }
@@ -27,6 +35,13 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 	}
 	crear_carpeta_tabla(tabla);
 	guardar_archivo_metadata(tabla, tipo_consistencia, particiones, tiempo_compactacion);
+	for(int b=0; b<particiones;b++){
+		int bloque_asignado = tomar_bloque_libre();
+		if(bloque_asignado == -1){
+			log_error(logger, "[CREATE] ERROR: No hay mas bloques libres.");
+		}
+		crear_archivo_bloque(bloque_asignado, "");
+	}
 }
 
 void fs_describe(char *tabla) {

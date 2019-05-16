@@ -49,5 +49,6 @@ void check(int posicion, bool esCorrecto);
 char bit_in_char(int bit, int mode);
 bool crear_sub_rutas(char*);
 bool existe_tabla(char*);
+char* obtener_datos(char *path);
 
 #endif /* FILESYSTEM_H_ */

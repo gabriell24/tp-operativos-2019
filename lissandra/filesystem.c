@@ -222,3 +222,56 @@ bool existe_tabla(char *tabla) {
 	log_info(logger, resultado ? "[Busqueda - Resultado] Se encontro la tabla" : "[Busqueda - Resultado] No se encontro la tabla");
 	return resultado;
 }
+
+
+char* obtener_datos(char *path) {
+	//if(validar_archivo(path)) {
+		char *buscar_en = string_duplicate(path_tablas());
+		string_append(&buscar_en, path);
+		FILE *archivo;
+		//char *buffer;
+		long filelen;
+
+		datos_archivo = config_create(buscar_en);
+		int max_tamanio = config_get_int_value(datos_archivo, "TAMANIO");
+		char** bloques_usados = config_get_array_value(datos_archivo, "BLOQUES");
+		config_destroy(datos_archivo);
+		/*if((offset + size) > max_tamanio) {
+			printf("\nError al obtener datos: se pasa del tamanio del archivo\n");
+			exit(1);
+		}*/
+
+		int total_de_bloques_usados_por_archivo = 0;
+
+		while(bloques_usados[total_de_bloques_usados_por_archivo] != NULL) {
+			total_de_bloques_usados_por_archivo++;
+		}
+		/*
+		int *bloques = (int*)calloc(aux_bloques_usados, sizeof(int));
+		for(int i = 0; i < aux_bloques_usados;i++) {
+			bloques[i] = atoi(strdup(bloques_usados[i]));
+			//printf("\nlectura bloque: %d\n", bloques[i]);
+		}*/
+		char *nombre_del_bloque = string_new();
+		nombre_del_bloque = string_duplicate(path_bloques());
+
+		//TODO: 0 HARDCODEADO
+		string_append_with_format(&nombre_del_bloque, "%d.bin", 0);
+		archivo = fopen(nombre_del_bloque, "rb");
+		fseek(archivo, 0, SEEK_END);
+		int size = ftell(archivo);
+		fseek(archivo, 0, SEEK_SET);
+		char *buffer = malloc(sizeof(char) * size +1);
+		fread(buffer, size, 1, archivo);
+		buffer[size] = '\0';
+		printf("\nBuffer: %s\n", buffer);
+		fclose(archivo);
+
+		free(nombre_del_bloque);
+		//free(bloques);
+		string_iterate_lines(bloques_usados, (void*) free);
+		free(bloques_usados);
+		free(buscar_en);
+		return buffer;
+	//}
+}

@@ -14,6 +14,7 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include "interfaz.h"
+#include "filesystem.h"
 
 //Defines
 #define SELECT "select"
