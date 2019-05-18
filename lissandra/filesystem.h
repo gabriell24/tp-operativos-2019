@@ -14,6 +14,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "consola.h"
+#include "configuracion.h"
 
 #define SIN_BLOQUES_LIBRES -1
 
@@ -49,6 +50,6 @@ void check(int posicion, bool esCorrecto);
 char bit_in_char(int bit, int mode);
 bool crear_sub_rutas(char*);
 bool existe_tabla(char*);
-char* obtener_datos(char *path);
+char* obtener_datos(char *path, uint16_t key);
 
 #endif /* FILESYSTEM_H_ */

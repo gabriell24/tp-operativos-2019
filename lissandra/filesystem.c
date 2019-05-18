@@ -224,13 +224,13 @@ bool existe_tabla(char *tabla) {
 }
 
 
-char* obtener_datos(char *path) {
+char* obtener_datos(char *path, uint16_t key) {
 	//if(validar_archivo(path)) {
 		char *buscar_en = string_duplicate(path_tablas());
 		string_append(&buscar_en, path);
 		FILE *archivo;
 		//char *buffer;
-		long filelen;
+		//long filelen;
 
 		datos_archivo = config_create(buscar_en);
 		int max_tamanio = config_get_int_value(datos_archivo, "TAMANIO");
@@ -246,28 +246,51 @@ char* obtener_datos(char *path) {
 		while(bloques_usados[total_de_bloques_usados_por_archivo] != NULL) {
 			total_de_bloques_usados_por_archivo++;
 		}
+		printf("Total de bloques: %d", total_de_bloques_usados_por_archivo);
 		/*
 		int *bloques = (int*)calloc(aux_bloques_usados, sizeof(int));
 		for(int i = 0; i < aux_bloques_usados;i++) {
 			bloques[i] = atoi(strdup(bloques_usados[i]));
 			//printf("\nlectura bloque: %d\n", bloques[i]);
 		}*/
-		char *nombre_del_bloque = string_new();
-		nombre_del_bloque = string_duplicate(path_bloques());
+		int maximo_caracteres_linea = 12 + 2 + 5+ fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , un uint16, y el value
+		char *buffer;
+		bool key_encontrada = false;
+		for(int indice_bloque = 0; indice_bloque < total_de_bloques_usados_por_archivo; indice_bloque++) {
+			char *nombre_del_bloque = string_new();
+			nombre_del_bloque = string_duplicate(path_bloques());
+			string_append_with_format(&nombre_del_bloque, "%s.bin", bloques_usados[indice_bloque]);
+			printf("Estoy en el archivo: %s\n", nombre_del_bloque);
+			archivo = fopen(nombre_del_bloque, "rb");
+			buffer = malloc(sizeof(char) * maximo_caracteres_linea);
 
-		//TODO: 0 HARDCODEADO
-		string_append_with_format(&nombre_del_bloque, "%d.bin", 0);
-		archivo = fopen(nombre_del_bloque, "rb");
-		fseek(archivo, 0, SEEK_END);
-		int size = ftell(archivo);
-		fseek(archivo, 0, SEEK_SET);
-		char *buffer = malloc(sizeof(char) * size +1);
-		fread(buffer, size, 1, archivo);
-		buffer[size] = '\0';
-		printf("\nBuffer: %s\n", buffer);
-		fclose(archivo);
+			/*fread(buffer, size, 1, archivo);
+			buffer[size] = '\0';
+			printf("\nBuffer: %s\n", buffer);*/
+			while(fgets(buffer, maximo_caracteres_linea, archivo) != NULL) {
+				char **separador = string_n_split(buffer, 3, ";");
+				uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
+				if(key == key_from_file) {
+					printf("Encontre la key!!!!!\n");
+					key_encontrada = true;
+					break;
+				}
+				/*
+				strtoul al key con el que recibo por arguemnto
+				si lo encuentra corto el while, salgo del for.
+				retorno el value o la linea .*/
+				//printf("Value en esta linea: %s", separador[2]);
+			}
+			if(key_encontrada) {
+				break;
+			} else {
+				free(buffer);
+			}
+			fclose(archivo);
 
-		free(nombre_del_bloque);
+		}
+
+		//free(nombre_del_bloque);
 		//free(bloques);
 		string_iterate_lines(bloques_usados, (void*) free);
 		free(bloques_usados);

@@ -1,27 +1,26 @@
 #include "interfaz.h"
 
-void fs_select(char *tabla, uint16_t key) {
+char *fs_select(char *tabla, uint16_t key) {
 	if(!existe_tabla(tabla)) {
 		log_error(logger, "[CREATE] ERROR: No existe una tabla con ese nombre.");
-		return;
+		return "error";
 	}
-	char * ruta = path_tablas();
+	char *ruta = path_tablas();
 	string_append_with_format(&ruta,"%s/Metadata",tabla);
 	t_config *conf = config_create(ruta);
 	int particiones = config_get_int_value(conf,"PARTITIONS");
-	printf ("PARTITIONS%d\n",particiones);
-	int particion_a_leer = calcular_particion(particiones,key);
-	printf ("Calcule la partición %d\n",particion_a_leer);
-	char *path_a_particion = malloc(sizeof(char));
-	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
-	printf ("Calcule la partición %s\n",path_a_particion);
-	char *datos = string_new();
-	datos = string_duplicate(obtener_datos(path_a_particion));
-	printf("Obtener Datos: %s\n", datos);
-	char **separador = string_n_split(datos, 3, ";");
-	printf("%s\n", separador[2]);
 	config_destroy(conf);
 	free (ruta);
+
+	//printf ("PARTITIONS%d\n",particiones);
+	int particion_a_leer = calcular_particion(particiones,key);
+	//printf ("Calcule la partición %d\n",particion_a_leer);
+	char *path_a_particion = malloc(sizeof(char));
+	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
+	//printf ("Calcule la partición %s\n",path_a_particion);
+	char *linea_con_la_key = string_new();
+	return obtener_datos(path_a_particion, key);
+
 }
 
 void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {

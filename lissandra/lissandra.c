@@ -189,6 +189,17 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			case FUNCION_SELECT: {
 				t_request_select *buffer = deserializar_request_select(mensaje_de_memoria);
 				log_info(logger, "[Select] Tabla: %s", buffer->tabla);
+				char *buffer_send = string_new();
+
+				buffer_send = string_duplicate(fs_select(buffer->tabla, buffer->key));
+				if(string_equals_ignore_case(buffer_send, "error")) {
+					log_error(logger, "Error no hay q¿ky");
+				}
+				else {
+					prot_enviar_mensaje(socket_memoria, REGISTRO_TABLA, strlen(buffer_send), buffer_send);
+				}
+				free(buffer_send);
+
 			} break;
 
 			default: {
