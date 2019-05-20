@@ -3,7 +3,7 @@
 char *fs_select(char *tabla, uint16_t key) {
 	if(!existe_tabla(tabla)) {
 		log_error(logger, "[CREATE] ERROR: No existe una tabla con ese nombre.");
-		return "error";
+		return ERROR_NO_EXISTE_TABLA;
 	}
 	char *ruta = path_tablas();
 	string_append_with_format(&ruta,"%s/Metadata",tabla);
@@ -15,10 +15,10 @@ char *fs_select(char *tabla, uint16_t key) {
 	//printf ("PARTITIONS%d\n",particiones);
 	int particion_a_leer = calcular_particion(particiones,key);
 	//printf ("Calcule la partición %d\n",particion_a_leer);
-	char *path_a_particion = malloc(sizeof(char));
+	char *path_a_particion = string_new();
 	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
 	//printf ("Calcule la partición %s\n",path_a_particion);
-	char *linea_con_la_key = string_new();
+	//char *linea_con_la_key = string_new();
 	return obtener_datos(path_a_particion, key);
 
 }

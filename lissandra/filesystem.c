@@ -232,10 +232,12 @@ char* obtener_datos(char *path, uint16_t key) {
 		//char *buffer;
 		//long filelen;
 
+		log_debug(logger, "Busco en: %s", buscar_en);
 		datos_archivo = config_create(buscar_en);
 		int max_tamanio = config_get_int_value(datos_archivo, "TAMANIO");
 		char** bloques_usados = config_get_array_value(datos_archivo, "BLOQUES");
 		config_destroy(datos_archivo);
+		free(buscar_en);
 		/*if((offset + size) > max_tamanio) {
 			printf("\nError al obtener datos: se pasa del tamanio del archivo\n");
 			exit(1);
@@ -246,7 +248,6 @@ char* obtener_datos(char *path, uint16_t key) {
 		while(bloques_usados[total_de_bloques_usados_por_archivo] != NULL) {
 			total_de_bloques_usados_por_archivo++;
 		}
-		printf("Total de bloques: %d", total_de_bloques_usados_por_archivo);
 		/*
 		int *bloques = (int*)calloc(aux_bloques_usados, sizeof(int));
 		for(int i = 0; i < aux_bloques_usados;i++) {
@@ -260,26 +261,18 @@ char* obtener_datos(char *path, uint16_t key) {
 			char *nombre_del_bloque = string_new();
 			nombre_del_bloque = string_duplicate(path_bloques());
 			string_append_with_format(&nombre_del_bloque, "%s.bin", bloques_usados[indice_bloque]);
-			printf("Estoy en el archivo: %s\n", nombre_del_bloque);
+			log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
 			archivo = fopen(nombre_del_bloque, "rb");
 			buffer = malloc(sizeof(char) * maximo_caracteres_linea);
 
-			/*fread(buffer, size, 1, archivo);
-			buffer[size] = '\0';
-			printf("\nBuffer: %s\n", buffer);*/
 			while(fgets(buffer, maximo_caracteres_linea, archivo) != NULL) {
 				char **separador = string_n_split(buffer, 3, ";");
 				uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
 				if(key == key_from_file) {
-					printf("Encontre la key!!!!!\n");
+					log_info(logger, "[Key encontrada] %s", buffer);
 					key_encontrada = true;
 					break;
 				}
-				/*
-				strtoul al key con el que recibo por arguemnto
-				si lo encuentra corto el while, salgo del for.
-				retorno el value o la linea .*/
-				//printf("Value en esta linea: %s", separador[2]);
 			}
 			if(key_encontrada) {
 				break;
@@ -294,7 +287,7 @@ char* obtener_datos(char *path, uint16_t key) {
 		//free(bloques);
 		string_iterate_lines(bloques_usados, (void*) free);
 		free(bloques_usados);
-		free(buscar_en);
+		if(!key_encontrada) return ERROR_KEY_NO_ENCONTRADA;
 		return buffer;
 	//}
 }

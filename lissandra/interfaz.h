@@ -11,6 +11,8 @@
 #include "filesystem.h"
 #include "lissandra.h"
 //Defines
+#define ERROR_NO_EXISTE_TABLA "NO_EXISTE_TABLA"
+#define ERROR_KEY_NO_ENCONTRADA "KEY_NO_ENCONTRADA"
 
 //Variables
 

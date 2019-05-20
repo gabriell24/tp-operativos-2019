@@ -19,7 +19,7 @@ void* serializar_request_select(char *tabla, uint16_t key) {
 	memcpy(buffer+desplazamiento, &key , sizeof(uint16_t));
 	desplazamiento += sizeof(uint16_t);
 
-	printf("SALIMOS DE SERIALIZAR_REQUEST_SELECT");
+	printf("SALIMOS DE SERIALIZAR_REQUEST_SELECT\n");
 
 	return buffer;
 
@@ -51,9 +51,8 @@ void* serializar_request_create(char* nombre_tabla, char* tipo_consistencia, int
 	memcpy(buffer+desplazamiento, &compaction_time, sizeof(int));
 	desplazamiento += sizeof(int);
 
-	if (tamanio_paquete != desplazamiento)
-	{
-		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
+	if (tamanio_paquete != desplazamiento) {
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
 		exit(1);
 	}
 
@@ -94,11 +93,10 @@ t_request_create *deserializar_request_create(t_prot_mensaje *mensaje){
 	desplazamiento += sizeof(int);
 	retorno->compaction_time = compaction_time;
 
-	if (tamanio_paquete != desplazamiento)
-		{
-			printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
-			exit(1);
-		}
+	if (tamanio_paquete != desplazamiento) {
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
+		exit(1);
+	}
 
 	return retorno;
 }
@@ -124,14 +122,10 @@ t_request_select *deserializar_request_select(t_prot_mensaje *mensaje) {
 	memcpy(&retorno->key, mensaje->payload+desplazamiento, sizeof(uint16_t));
 	desplazamiento += sizeof(uint16_t);
 
-	if (tamanio_del_paquete != desplazamiento)
-		{
-			printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
-			exit(1);
-		}
-
-	printf("Sizeof buffer: %d, desplazamiento: %d", tamanio_del_paquete, desplazamiento);
-
+	if (tamanio_del_paquete != desplazamiento) {
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
+		exit(1);
+	}
 
 	return retorno;
 
@@ -175,11 +169,10 @@ void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, i
 	memcpy(buffer+desplazamiento, &epoch, sizeof(int));
 	desplazamiento += sizeof(int);
 
-	if (tamanio_del_paquete != desplazamiento)
-		{
-			printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
-			exit(1);
-		}
+	if (tamanio_del_paquete != desplazamiento) {
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
+		exit(1);
+	}
 
 
 	return buffer;
@@ -225,13 +218,10 @@ t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
 	retorno->epoch = epoch;
 
 
-	if (tamanio_del_paquete != desplazamiento)
-		{
-			printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!");
-			exit(1);
-		}
-
-	printf("Sizeof buffer: %d, desplazamiento: %d", tamanio_del_paquete, desplazamiento);
+	if (tamanio_del_paquete != desplazamiento) {
+		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
+		exit(1);
+	}
 
 	return retorno;
 

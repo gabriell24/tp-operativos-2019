@@ -169,14 +169,17 @@ void escuchar_kernel(int *socket_origen) {
 
 			case FUNCION_SELECT: {
 				log_debug(logger, "[Conexión] pre deserializar request select");
-				log_debug(logger, "[Conexión] pre deserializar request select");
-				log_debug(logger, "[Conexión] pre deserializar request select");
 				t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
-				log_debug(logger, "[Conexión] POSSSSTTTTTT deserializar request select");
 				log_info(logger, "Hacer select con [TABLA = %s, KEY = %d]", buffer->tabla, buffer->key);
 				size_t tamanio_del_buffer = sizeof(int) + strlen(buffer->tabla) + sizeof(uint16_t);
-					void *buffer_serializado = serializar_request_select(buffer->tabla, buffer->key);
-					prot_enviar_mensaje(socket_lissandra, FUNCION_SELECT, tamanio_del_buffer, buffer_serializado);
+				void *buffer_serializado = serializar_request_select(buffer->tabla, buffer->key);
+				prot_enviar_mensaje(socket_lissandra, FUNCION_SELECT, tamanio_del_buffer, buffer_serializado);
+				free(buffer_serializado);
+				t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
+				if(mensaje_de_lissandra->head == REGISTRO_TABLA) {
+					log_info(logger, "LLego el dato de fs");
+				}
+				prot_destruir_mensaje(mensaje_de_lissandra);
 				//free(buffer->tabla);
 				//free(buffer->key);
 				//free(buffer);
