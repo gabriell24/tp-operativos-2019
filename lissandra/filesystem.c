@@ -128,36 +128,36 @@ void crear_carpeta_tabla(char *tabla) {
 }
 
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time) {
-	char *crear_en = string_duplicate(path_tablas());
-	char *raiz=malloc(strlen(crear_en));
+	char *crear_en = path_tablas();
+	string_append(&crear_en, tabla);
 	for (int i=0; i<particiones; i++){
-		int largo_raiz = strlen(raiz)==0?strlen(crear_en):strlen(raiz);
-		memset(raiz,0,largo_raiz);
-		string_append_with_format(&raiz,"%s%s/%d.bin",crear_en,tabla,i);
-		printf("%s\n",raiz);
+		//int largo_raiz = strlen(raiz)==0?strlen(crear_en):strlen(raiz);
+		//memset(raiz,0,largo_raiz);
+		char *raiz = string_new();
+		string_append_with_format(&raiz,"%s/%d.bin", crear_en, i);
+		log_debug(logger, "[Particion] ruta: %s\n",raiz);
 		int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
-		escribir(fd,"");
+		//escribir(fd,"");
 		close(fd);
+		free(raiz);
 	}
 
-	free(raiz);
-
-	string_append(&crear_en, tabla);
 	string_append(&crear_en, "/Metadata");
-	char *consistency = malloc(sizeof (char)*15);
+	char *consistency = string_new();
 	string_append_with_format(&consistency,"CONSISTENCY=%s\n",criterio);
-	char *partition = malloc(sizeof (char)*15);
+	char *partition = string_new();
 	string_append_with_format(&partition,"PARTITIONS=%d\n",particiones);
-	char *compaction = malloc(sizeof (char)*15);
-	string_append_with_format(&compaction,"COMPACTION_TIME=%d\n",compaction_time);
+	char *compaction = string_new();
+	string_append_with_format(&compaction,"COMPACTION_TIME=%d",compaction_time);
 	int fd = open(crear_en, O_RDWR | O_CREAT, S_IRWXU );
 	escribir(fd, consistency);
 	escribir(fd, partition);
 	escribir(fd, compaction);
+	close(fd);
 	free(consistency);
 	free(partition);
 	free(compaction);
-	close(fd);
+	free(crear_en);
 }
 
 void guardar_bitmap(char *path_bitmap) {

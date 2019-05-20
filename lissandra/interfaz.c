@@ -32,6 +32,15 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 		log_error(logger, "[CREATE] ERROR: Ya existe tabla con ese nombre.");
 		return;
 	}
+	string_to_upper(tipo_consistencia);
+	if(!string_equals_ignore_case(tipo_consistencia, "SC") && !string_equals_ignore_case(tipo_consistencia, "SHC") && !string_equals_ignore_case(tipo_consistencia, "EC")) {
+		log_error(logger, "[Error] Consistencia no reconocida");
+		return;
+	}
+	if(particiones < 0 || tiempo_compactacion < 0) {
+		log_error(logger, "[Error] Los tiempos y/o cantidades deben ser positivas");
+		return;
+	}
 	crear_carpeta_tabla(tabla);
 	guardar_archivo_metadata(tabla, tipo_consistencia, particiones, tiempo_compactacion);
 	for(int b=0; b<particiones;b++){
