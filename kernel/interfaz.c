@@ -11,8 +11,6 @@ void kernel_select(char *tabla, uint16_t key) {
 }
 
 void kernel_insert(char* nombre_tabla, uint16_t key, char* value, int epoch){
-
-	printf("Hola mundo :) hiciste un insert a kernel (?");
 	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*3 ;
 	void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
 	prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);

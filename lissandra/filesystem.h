@@ -29,6 +29,12 @@ typedef struct {
 	//char *ruta_bitmap_file;
 } t_datos_fs;
 
+typedef struct {
+	char *consistency;
+	uint16_t partitions;
+	int compaction_time;
+} t_metadata;
+
 //t_bitarray *bitarray;
 t_datos_fs datos_fs;
 t_config *metadata;
@@ -53,5 +59,6 @@ bool crear_sub_rutas(char*);
 bool existe_tabla(char*);
 char* obtener_datos(char *path, uint16_t key);
 bool matchea_key_en_linea(char *linea, uint16_t key);
+t_metadata obtener_metadata(char *tabla);
 
 #endif /* FILESYSTEM_H_ */

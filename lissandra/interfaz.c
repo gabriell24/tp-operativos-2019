@@ -2,18 +2,14 @@
 
 char *fs_select(char *tabla, uint16_t key) {
 	if(!existe_tabla(tabla)) {
-		log_error(logger, "[CREATE] ERROR: No existe una tabla con ese nombre.");
+		log_error(logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
 		return ERROR_NO_EXISTE_TABLA;
 	}
-	char *ruta = path_tablas();
-	string_append_with_format(&ruta,"%s/Metadata",tabla);
-	t_config *conf = config_create(ruta);
-	int particiones = config_get_int_value(conf,"PARTITIONS");
-	config_destroy(conf);
-	free (ruta);
+	t_metadata metadata = obtener_metadata(tabla);
 
 	//printf ("PARTITIONS%d\n",particiones);
-	int particion_a_leer = calcular_particion(particiones,key);
+	int particion_a_leer = calcular_particion(metadata.partitions, key);
+	free(metadata.consistency);
 	//printf ("Calcule la partición %d\n",particion_a_leer);
 	char *path_a_particion = string_new();
 	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
@@ -24,6 +20,10 @@ char *fs_select(char *tabla, uint16_t key) {
 }
 
 void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
+	if(!existe_tabla(tabla)) {
+		log_error(logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
+		return;
+	}
 	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
 	if(strlen(value) > fs_config.tamanio_value) {
 		log_error(logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);

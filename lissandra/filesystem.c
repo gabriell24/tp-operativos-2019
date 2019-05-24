@@ -339,3 +339,16 @@ bool matchea_key_en_linea(char *linea, uint16_t key) {
 	uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
 	return key == key_from_file;
 }
+
+t_metadata obtener_metadata(char *tabla) {
+	t_metadata retorno;
+	char *ruta = path_tablas();
+	string_append_with_format(&ruta,"%s/Metadata",tabla);
+	t_config *conf = config_create(ruta);
+	retorno.consistency = strdup(config_get_string_value(conf,"CONSISTENCY"));
+	retorno.partitions = (uint16_t)config_get_int_value(conf,"PARTITIONS");
+	retorno.compaction_time = config_get_int_value(conf,"COMPACTION_TIME");
+	config_destroy(conf);
+	free (ruta);
+	return retorno;
+}
