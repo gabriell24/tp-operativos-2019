@@ -9,6 +9,7 @@
 #include <readline/history.h>
 #include <dirent.h>
 #include "../shared_library/colores.h"
+#include "../shared_library/utiles.h"
 #include <commons/string.h>
 #include <commons/log.h>
 #include "interfaz.h"

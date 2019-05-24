@@ -50,7 +50,7 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
-				//Invocar a la interfaz
+				memoria_select(tabla, (uint16_t)strtoul(key, NULL, 10));
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
@@ -60,7 +60,7 @@ t_consola parse(char* linea){
 		if(!argumentos) {
 			log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es memoria\"\'");
 		} else {
-			char** comillas = string_n_split(argumentos, 2, "\"");
+			char** comillas = string_n_split(argumentos, 3, "\"");
 			char** separador = string_n_split(comillas[0], 2, " ");
 
 			char *tabla = separador[0];
@@ -70,7 +70,7 @@ t_consola parse(char* linea){
 				log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\"\'");
 			} else {
 				int epoch = get_timestamp();
-				//Invocar a la interfaz
+				memoria_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
@@ -90,24 +90,24 @@ t_consola parse(char* linea){
 			if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			} else {
-				//Invocar a la interfaz
+				memoria_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
 		}
 	}
 	else if(string_equals_ignore_case(comando, DESCRIBE)) {
-		//Validar acá y llamar a método en interfaz
+		memoria_describe(argumentos);
 	}
 	else if(string_equals_ignore_case(comando, DROP)) {
 		if (argumentos == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"DROP TABLA1\n");
 		} else {
-			//Invocar a la interfaz
+			memoria_drop(argumentos);
 		}
 	}
 	else if(string_equals_ignore_case(comando, JOURNAL)) {
-		//Validar acá y llamar a método en interfaz
+		journal();
 	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.\n");

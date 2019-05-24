@@ -39,7 +39,7 @@ void *memoria;
 
 typedef struct {
 	char *nombre_segmento;
-	t_list *segmentos;
+	t_list *paginas;
 } t_est_tds;
 
 typedef struct {
@@ -61,5 +61,12 @@ int recibir_datos_de_fs(int socket);
 void escuchar_cambios_en_configuraciones(void *);
 void aceptar_clientes(int *socket_servidor);
 void escuchar_kernel(int *socket_kernel);
-
+t_est_tds *obtener_segmento_por_tabla(char *tabla);
+t_est_tdp *obtener_pagina(int numero_pagina);
+t_est_tdp *obtener_pagina_por_key(t_list *lista, uint16_t key);
+t_est_tdp *obtener_frame_libre();
+uint16_t obtener_key_de_pagina(void *frame);
+char *obtener_value_de_pagina(void *frame);
+void crear_asignar_segmento(t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value);
+void limpiar_memoria();
 #endif /* MEMORIA_H_ */

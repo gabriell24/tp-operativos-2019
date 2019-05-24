@@ -44,8 +44,7 @@ int main() {
 	close(fd_inotify);
 	free(ptr_fd_inotify);
 
-	//Limpiar cada estructura
-	free(memoria);
+	limpiar_memoria();
 	log_destroy(logger);
 }
 
@@ -254,13 +253,104 @@ void iniciar_memoria() {
 	log_debug(logger, "Tamanio de memoria: %d, Tamanio de página: %d, Total de frames: %d", memoria_config.tamanio_de_memoria, tamanio_de_pagina, total_de_frames);
 	int i = 1;
 	for(;i <= total_de_frames; i++) {
-		t_est_tdp pagina;
-		pagina.modificado = 0;
-		pagina.nro_pag = i;
-		pagina.ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
-		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina.ptr_posicion);
-		list_add(tdp, &pagina);
+		t_est_tdp *pagina = malloc(sizeof(t_est_tdp));
+		pagina->modificado = 0;
+		pagina->nro_pag = i;
+		pagina->ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
+		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
+		list_add(tdp, pagina);
 	}
+}
 
+t_est_tdp *obtener_pagina(int numero_pagina) {
+	bool _buscar_por_frame(t_est_tdp *unaPagina) {
+		return unaPagina->nro_pag = numero_pagina;
+	}
+	return (t_est_tdp*)list_find(tdp, (void*)_buscar_por_frame);
+}
 
+t_est_tdp *obtener_pagina_por_key(t_list *lista, uint16_t key) {
+	bool _buscar_por_frame(t_est_tdp *unaPagina) {
+		return obtener_key_de_pagina(unaPagina->ptr_posicion) == key;
+	}
+	return (t_est_tdp*)list_find(lista, (void*)_buscar_por_frame);
+}
+
+t_est_tds *obtener_segmento_por_tabla(char *tabla) {
+	bool _buscar_por_nombre(t_est_tds *unSegmento) {
+		return string_equals_ignore_case(unSegmento->nombre_segmento, tabla);
+	}
+	return (t_est_tds*)list_find(tds, (void*)_buscar_por_nombre);
+}
+
+t_est_tdp *obtener_frame_libre() {
+	bool _buscar_por_pagina_libre(t_est_tdp *unaPagina) {
+		return unaPagina->modificado == 0;
+	}
+	return (t_est_tdp*)list_find(tdp, (void*)_buscar_por_pagina_libre);
+}
+
+uint16_t obtener_key_de_pagina(void *frame) {
+	uint16_t retorno;
+	memset(&retorno, 0, sizeof(uint16_t));
+	memcpy(&retorno, frame+sizeof(int), sizeof(uint16_t));
+	return retorno;
+}
+
+int obtener_timestamp_de_pagina(void *frame) {
+	int retorno;
+	memset(&retorno, 0, sizeof(int));
+	memcpy(&retorno, frame, sizeof(int));
+	return retorno;
+}
+
+char *obtener_value_de_pagina(void *frame) {
+	char *retorno = malloc(sizeof(char)*tamanio_value);
+	memset(retorno, 0, tamanio_value);
+	memcpy(retorno, frame+sizeof(int)+sizeof(uint16_t), tamanio_value);
+	return retorno;
+}
+
+void crear_asignar_segmento(t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value) {
+	frame_libre->modificado = 1;
+	log_warning(logger, "Frame recibido: %d", frame_libre->nro_pag);
+	memset(frame_libre->ptr_posicion, 0, tamanio_de_pagina);
+	memcpy(frame_libre->ptr_posicion, &timestamp, sizeof(int));
+	memcpy(frame_libre->ptr_posicion+sizeof(int), &key, sizeof(uint16_t));
+	//memcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value, strlen(value));
+	strcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value);
+	if(!segmento) {
+		t_est_tds *nuevo_segmento = malloc(sizeof(t_est_tds));
+		nuevo_segmento->nombre_segmento = string_duplicate(tabla);
+		nuevo_segmento->paginas = list_create();
+		list_add(nuevo_segmento->paginas, frame_libre);
+		list_add(tds, nuevo_segmento);
+	} else {
+		list_add(segmento->paginas, frame_libre);
+	}
+}
+
+void limpiar_tds() {
+	void _limpiar_segmentos(t_est_tds *segmento) {
+		/*void _limpiar_paginas(t_est_tdp pagina) {
+			free(pagina);
+		}*/
+		free(segmento->nombre_segmento);
+		list_clean(segmento->paginas);
+		free(segmento);
+	}
+	list_clean_and_destroy_elements(tds, (void*)_limpiar_segmentos);
+}
+
+void limpiar_tdp() {
+	void _limpiar_paginas(t_est_tdp *pagina) {
+		free(pagina);
+	}
+	list_clean_and_destroy_elements(tdp, (void*)_limpiar_paginas);
+}
+
+void limpiar_memoria() {
+	limpiar_tds();
+	limpiar_tdp();
+	free(memoria);
 }
