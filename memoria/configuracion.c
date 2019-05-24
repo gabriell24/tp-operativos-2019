@@ -19,3 +19,11 @@ void levantar_archivo_configuracion()
 
 	config_destroy(configuracion);
 }
+
+void limpiar_configuraciones() {
+	free(memoria_config.ip_lissandra);
+	string_iterate_lines(memoria_config.ip_seeds, (void*)free);
+	free(memoria_config.ip_seeds);
+	string_iterate_lines(memoria_config.puerto_seeds, (void*)free);
+	free(memoria_config.puerto_seeds);
+}

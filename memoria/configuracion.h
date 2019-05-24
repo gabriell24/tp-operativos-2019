@@ -3,8 +3,10 @@
 #define CONFIGURACION_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <commons/config.h>
+#include <commons/string.h>
 #include <commons/collections/list.h>
 
 typedef struct {
@@ -26,4 +28,5 @@ t_config *configuracion;
 t_memoria_config memoria_config;
 
 void levantar_archivo_configuracion();
+void limpiar_configuraciones();
 #endif /* CONFIGURACION_H_ */

@@ -45,6 +45,7 @@ int main() {
 	free(ptr_fd_inotify);
 
 	limpiar_memoria();
+	limpiar_configuraciones();
 	log_destroy(logger);
 }
 
@@ -337,9 +338,11 @@ void limpiar_tds() {
 		}*/
 		free(segmento->nombre_segmento);
 		list_clean(segmento->paginas);
+		list_destroy(segmento->paginas);
 		free(segmento);
 	}
 	list_clean_and_destroy_elements(tds, (void*)_limpiar_segmentos);
+	list_destroy(tds);
 }
 
 void limpiar_tdp() {
@@ -347,6 +350,7 @@ void limpiar_tdp() {
 		free(pagina);
 	}
 	list_clean_and_destroy_elements(tdp, (void*)_limpiar_paginas);
+	list_destroy(tdp);
 }
 
 void limpiar_memoria() {
