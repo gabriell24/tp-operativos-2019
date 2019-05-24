@@ -13,7 +13,7 @@ int main() {
 	printear_configuraciones();
 
 	t_list_memtable = list_create();
-	cargar_datos_fake();
+	//cargar_datos_fake();
 
 	//<<1- inotify
 	int fd_inotify = inotify_init();
@@ -198,6 +198,23 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				else {
 					//Valido que para hacer free sea sobre memoria dinamica
 					free(buffer_send);
+				}
+
+			} break;
+
+			case FUNCION_DESCRIBE: {
+				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
+				int tam = mensaje_de_memoria->tamanio_total-sizeof(mensaje_de_memoria->head);
+				if(tam == 0){
+					log_info(logger, "Describe nulo");
+				}
+				else{
+					char* tabla = malloc(tam+1);
+					memset(tabla, 0, tam+1);
+					memcpy(tabla, mensaje_de_memoria->payload,tam);
+					tabla[tam] = '\0';
+					log_info(logger, "Describe con tabla: %s", tabla);
+					free(tabla);
 				}
 
 			} break;

@@ -88,6 +88,11 @@ t_consola parse(char* linea) {
 
 	else if (string_equals_ignore_case(comando, ADD)) {
 	} else if (string_equals_ignore_case(comando, RUN)) {
+		if (argumento1 == NULL) {
+			log_error(logger, "Error: ejemplo de uso \"RUN UNLQL.txt\n");
+		} else {
+			kernel_run(argumento1);
+		}
 	} else if (string_equals_ignore_case(comando, METRICS)) {
 		imprimir_metricas();
 	} else {

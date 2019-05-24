@@ -19,5 +19,6 @@ void manejar_memorias() {
 	log_debug(logger, "[Conexión] El tamanio del buffer de handshake es: %d", tamanio_buffer);
 	prot_enviar_mensaje(socket_memoria, ENVIO_DATOS, tamanio_buffer, buffer);
 
-	log_info(logger, "[Conexión] Memoria conectada");
+	log_info(logger, "[Conexión] Memoria conectada, hago un describe");
+	kernel_describe("tablatest"); //########## OJO DEBE SER GLOBAL
 }

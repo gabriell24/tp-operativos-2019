@@ -14,9 +14,9 @@ void kernel_insert(char* nombre_tabla, uint16_t key, char* value, int epoch){
 
 	printf("Hola mundo :) hiciste un insert a kernel (?");
 	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*3 ;
-		void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
-		prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
-		log_info(logger, "Insert enviado a memoria");
+	void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
+	prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
+	log_info(logger, "Insert enviado a memoria");
 
 }
 
@@ -56,6 +56,31 @@ void kernel_journal(char* nombre_tabla){
 void imprimir_metricas() {
 	printf("Implementando métricas version: %d\n", 1);
 
+}
+
+void kernel_run(char *archivo) {
+	FILE *file;
+	char *ruta = string_new();
+	string_append_with_format(&ruta, "../otros/lql/%s", archivo);
+
+	file = fopen(ruta, "r");
+	if(file != NULL) {
+		log_debug(logger, "archivo abierto");
+		char *linea = malloc(100*sizeof(char));
+		memset(linea, 0, 100*sizeof(char));
+		while(fgets(linea, 100, file)!=NULL) {
+			log_debug(logger, "linea leida");
+			t_parser parser = leer(linea);
+			if (parser.valido){
+				log_debug(logger, "Leego a leer, es un %s", comando_leido(parser.token));
+			}
+		}
+		free(linea);
+		fclose(file);
+	}
+	else {
+		log_error(logger, "[RUN] Error: archivo no encontrado. Ruta: %s", ruta);
+	}
 }
 
 

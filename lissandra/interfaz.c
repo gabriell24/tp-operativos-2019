@@ -25,6 +25,9 @@ char *fs_select(char *tabla, uint16_t key) {
 
 void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
+	if(strlen(value) > fs_config.tamanio_value) {
+		log_error(logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
+	}
 }
 
 void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion) {
@@ -37,23 +40,39 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 		log_error(logger, "[Error] Consistencia no reconocida");
 		return;
 	}
-	if(particiones < 0 || tiempo_compactacion < 0) {
-		log_error(logger, "[Error] Los tiempos y/o cantidades deben ser positivas");
+	if(particiones < 1 || tiempo_compactacion < 1) {
+		log_error(logger, "[Error] Los tiempos y/o cantidades deben ser mayores a cero");
 		return;
 	}
+	int bloques_necesarios[particiones];
+	for(int indice_bloque = 0; indice_bloque < particiones; indice_bloque++){
+		bloques_necesarios[indice_bloque] = tomar_bloque_libre();
+		if(bloques_necesarios[indice_bloque] == -1){
+			log_error(logger, "[CREATE] ERROR: No hay más bloques libres. No voy a crear tu tabla, limpio los solicitados");
+			for(int base = 0; base < indice_bloque; base++) {
+				bitarray_clean_bit(datos_fs.bitarray, bloques_necesarios[base]);
+			}
+			return;
+		}
+	}
+
 	crear_carpeta_tabla(tabla);
 	guardar_archivo_metadata(tabla, tipo_consistencia, particiones, tiempo_compactacion);
 	for(int b=0; b<particiones;b++){
-		int bloque_asignado = tomar_bloque_libre();
-		if(bloque_asignado == -1){
-			log_error(logger, "[CREATE] ERROR: No hay mas bloques libres.");
-		}
-		crear_archivo_bloque(bloque_asignado, "");
+		crear_archivo_particion(tabla, b, bloques_necesarios[b]);
+		crear_archivo_bloque(bloques_necesarios[b], "");
+
 	}
 }
 
 void fs_describe(char *tabla) {
 	bool mostrar_todo = tabla == NULL;
+	if(mostrar_todo) {
+
+	} else {
+		char *path = string_new();
+		string_append_with_format(&path, "%s%s/%s", path_tablas(), tabla, "Metadata");
+	}
 	//Dummy
 }
 

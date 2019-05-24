@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "manejo_memoria.h"
+#include "parser.h"
 #include "../shared_library/estructuras_compartidas.h"
 //Defines
 
@@ -27,6 +28,7 @@ void kernel_create(char* nombre_tabla, char* tipo_consistencia, int numero_parti
 void kernel_describe(char* nombre_tabla);
 void kernel_drop(char* nombre_tabla);
 void kernel_journal();
+void kernel_run(char *archivo);
 
 
 #endif /* INTERFAZ_H_ */

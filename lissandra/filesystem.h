@@ -44,6 +44,7 @@ void guardar_bitmap(char *path_bitmap);
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time);
 void crear_carpeta_tabla(char *tabla);
 void crear_archivo_bloque(int bloque, char *contenido);
+void crear_archivo_particion(char*, int, int);
 char *path_tablas();
 char *path_bloques();
 void check(int posicion, bool esCorrecto);
@@ -51,5 +52,6 @@ char bit_in_char(int bit, int mode);
 bool crear_sub_rutas(char*);
 bool existe_tabla(char*);
 char* obtener_datos(char *path, uint16_t key);
+bool matchea_key_en_linea(char *linea, uint16_t key);
 
 #endif /* FILESYSTEM_H_ */

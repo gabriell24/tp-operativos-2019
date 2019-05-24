@@ -23,14 +23,16 @@ void cargar_metadata(char *path, char *archivo) {
 		if(string_contains(archivo, "Metadata.bin")) {
 			escribir(fd, "BLOCK_SIZE=64\n");
 			escribir(fd, "BLOCKS=5192\n");
-			escribir(fd, "MAGIC_NUMBER=LISSANDRA\n");
+			escribir(fd, "MAGIC_NUMBER=LISSANDRA");
 		}
 		else if(string_contains(archivo, "Bitmap.bin")) {
-			char *bitmap = (char*)calloc(64, sizeof(char));
-			bitmap = string_repeat('0', 64);
-			escribir(fd, bitmap);
-			free(bitmap);
+			FILE *bitmap_file;
+			unsigned char buffer_vacio[5192/8] = {'\0'};
+			bitmap_file = fopen(aux_path, "wb");
+			fwrite(&buffer_vacio, 5192/8, 1, bitmap_file);
+			fclose(bitmap_file);
 		}
+
 	}
 	if(fd != -1) {
 		if(string_contains(archivo, "Metadata.bin")) {
@@ -38,7 +40,6 @@ void cargar_metadata(char *path, char *archivo) {
 			metadata = config_create(aux_path);
 			datos_fs.tamanio_bloques = config_get_int_value(metadata, "BLOCK_SIZE");
 			datos_fs.cantidad_bloques = config_get_int_value(metadata, "BLOCKS");
-
 			config_destroy(metadata);
 			//free(metadata);
 		}
@@ -53,6 +54,7 @@ void cargar_metadata(char *path, char *archivo) {
 			datos_fs.ultimo_bloque_retornado = 0;
 		}
 	}
+	close(fd);
 	free(aux_path);
 }
 
@@ -104,6 +106,22 @@ bool crear_sub_rutas(char *archivo) {
 	return true;
 }
 
+void crear_archivo_particion(char *tabla, int particion, int bloque) {
+	char *crear_en = path_tablas();
+	string_append(&crear_en, tabla);
+	char *raiz = string_new();
+	string_append_with_format(&raiz,"%s/%d.bin", crear_en, particion);
+	log_debug(logger, "[Particion] ruta: %s\n",raiz);
+	int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
+	escribir(fd,"SIZE=0\n");
+	char *blocks = string_new();
+	string_append_with_format(&blocks,"BLOCKS=[%d]", bloque);
+	escribir(fd,blocks);
+	close(fd);
+	free(blocks);
+	free(raiz);
+}
+
 void crear_archivo_bloque(int bloque, char *contenido) {
 	char *ruta = string_duplicate(datos_fs.path_raiz);
 	string_append(&ruta, string_from_format("Bloques/%d.bin", bloque));
@@ -130,18 +148,6 @@ void crear_carpeta_tabla(char *tabla) {
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time) {
 	char *crear_en = path_tablas();
 	string_append(&crear_en, tabla);
-	for (int i=0; i<particiones; i++){
-		//int largo_raiz = strlen(raiz)==0?strlen(crear_en):strlen(raiz);
-		//memset(raiz,0,largo_raiz);
-		char *raiz = string_new();
-		string_append_with_format(&raiz,"%s/%d.bin", crear_en, i);
-		log_debug(logger, "[Particion] ruta: %s\n",raiz);
-		int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
-		//escribir(fd,"");
-		close(fd);
-		free(raiz);
-	}
-
 	string_append(&crear_en, "/Metadata");
 	char *consistency = string_new();
 	string_append_with_format(&consistency,"CONSISTENCY=%s\n",criterio);
@@ -234,8 +240,8 @@ char* obtener_datos(char *path, uint16_t key) {
 
 		log_debug(logger, "Busco en: %s", buscar_en);
 		datos_archivo = config_create(buscar_en);
-		int max_tamanio = config_get_int_value(datos_archivo, "TAMANIO");
-		char** bloques_usados = config_get_array_value(datos_archivo, "BLOQUES");
+		int max_tamanio = config_get_int_value(datos_archivo, "SIZE");
+		char** bloques_usados = config_get_array_value(datos_archivo, "BLOCKS");
 		config_destroy(datos_archivo);
 		free(buscar_en);
 		/*if((offset + size) > max_tamanio) {
@@ -254,8 +260,10 @@ char* obtener_datos(char *path, uint16_t key) {
 			bloques[i] = atoi(strdup(bloques_usados[i]));
 			//printf("\nlectura bloque: %d\n", bloques[i]);
 		}*/
-		int maximo_caracteres_linea = 12 + 2 + 5+ fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , un uint16, y el value
-		char *buffer;
+		int maximo_caracteres_linea = 12 + 2 + 5+ fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), y el value
+		char *linea;
+		char *parte_de_linea = NULL;
+		//log_error(logger, "Tam parte de linea: %d", strlen(parte_de_linea));
 		bool key_encontrada = false;
 		for(int indice_bloque = 0; indice_bloque < total_de_bloques_usados_por_archivo; indice_bloque++) {
 			char *nombre_del_bloque = string_new();
@@ -263,21 +271,55 @@ char* obtener_datos(char *path, uint16_t key) {
 			string_append_with_format(&nombre_del_bloque, "%s.bin", bloques_usados[indice_bloque]);
 			log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
 			archivo = fopen(nombre_del_bloque, "rb");
-			buffer = malloc(sizeof(char) * maximo_caracteres_linea);
+			linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
-			while(fgets(buffer, maximo_caracteres_linea, archivo) != NULL) {
-				char **separador = string_n_split(buffer, 3, ";");
-				uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
+			while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
+				//log_error(logger, "Último caracter en decimal: %d", buffer[strlen(buffer)-1]);
+				char **separador = string_n_split(linea, 3, ";");
+				if(separador[0] == NULL || separador[1] == NULL || separador[2] == NULL) {
+					if(parte_de_linea != NULL) {
+						/*
+						 * Asumo que si la 3-upla no estaba completa en una linea, con leer la próxima si línea lo este.
+						 */
+						char *concatenados = string_new();
+						string_append_with_format(&concatenados, "%s%s", parte_de_linea, linea);
+						linea = realloc(linea, strlen(concatenados));
+						memset(linea, 0, strlen(concatenados));
+						memcpy(linea, concatenados, strlen(concatenados));
+						free(concatenados);
+						free(parte_de_linea);
+						parte_de_linea = NULL;
+						if(matchea_key_en_linea(linea, key)) {
+							log_info(logger, "[Key encontrada] %s", linea);
+							key_encontrada = true;
+							break;
+						}
+					}
+					size_t bytes_leidos = strlen(linea);
+					parte_de_linea = malloc(bytes_leidos);
+					memset(parte_de_linea, 0, bytes_leidos);
+					memcpy(parte_de_linea, linea, bytes_leidos);
+				}
+				else {
+					if(matchea_key_en_linea(linea, key)) {
+						log_info(logger, "[Key encontrada] %s", linea);
+						key_encontrada = true;
+						break;
+					}
+				}
+				string_iterate_lines(separador, (void*)free);
+				free(separador);
+				/*uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
 				if(key == key_from_file) {
 					log_info(logger, "[Key encontrada] %s", buffer);
 					key_encontrada = true;
 					break;
-				}
+				}*/
 			}
 			if(key_encontrada) {
 				break;
 			} else {
-				free(buffer);
+				free(linea);
 			}
 			fclose(archivo);
 
@@ -288,6 +330,12 @@ char* obtener_datos(char *path, uint16_t key) {
 		string_iterate_lines(bloques_usados, (void*) free);
 		free(bloques_usados);
 		if(!key_encontrada) return ERROR_KEY_NO_ENCONTRADA;
-		return buffer;
+		return linea;
 	//}
+}
+
+bool matchea_key_en_linea(char *linea, uint16_t key) {
+	char **separador = string_n_split(linea, 3, ";");
+	uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
+	return key == key_from_file;
 }
