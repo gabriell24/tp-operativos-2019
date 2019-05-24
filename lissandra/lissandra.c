@@ -37,7 +37,11 @@ int main() {
 	inotify_rm_watch(fd_inotify, watch_descriptor);
 	close(fd_inotify);
 	free(ptr_fd_inotify);
+
+	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
 	log_destroy(logger);
+	free(fs_config.punto_montaje);
+	return 0;
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify
@@ -158,6 +162,7 @@ void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
 				memset(buffer, 0, sizeof(int));
 				memcpy(buffer, &fs_config.tamanio_value, sizeof(int));
 				prot_enviar_mensaje(socket_cliente, ENVIO_DATOS, tamanio_buffer, buffer);
+				free(buffer);
 				//Fin envio del tamanio del value
 
 				pthread_t recibir_mensajes_de_memoria;

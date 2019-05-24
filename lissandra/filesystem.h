@@ -7,6 +7,7 @@
 #include <commons/bitarray.h>
 #include <commons/string.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@ typedef struct {
 	t_bitarray *bitarray;
 	int ultimo_bloque_retornado;
 	char *path_raiz;
+	char *_bitmap;
 	//char *ruta_metadata_file;
 	//char *ruta_bitmap_file;
 } t_datos_fs;
@@ -34,6 +36,17 @@ typedef struct {
 	uint16_t partitions;
 	int compaction_time;
 } t_metadata;
+
+typedef struct {
+	int timestamp;
+	uint16_t key;
+	char *value;
+} t_registro;
+
+typedef struct {
+	char *tabla;
+	t_list *t_registro;
+} t_memtable;
 
 //t_bitarray *bitarray;
 t_datos_fs datos_fs;
@@ -60,5 +73,9 @@ bool existe_tabla(char*);
 char* obtener_datos(char *path, uint16_t key);
 bool matchea_key_en_linea(char *linea, uint16_t key);
 t_metadata obtener_metadata(char *tabla);
-
+t_memtable *obtener_tabla_en_memtable(char *tabla);
+t_registro *obtener_registros_por_key(uint16_t key);
+void printear_memtable();
+void limpiar_registros_memtable(t_registro *unRegistro);
+void limpiar_tablas_memtable(t_memtable *unaTabla);
 #endif /* FILESYSTEM_H_ */

@@ -24,9 +24,36 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 		log_error(logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
 		return;
 	}
-	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
 	if(strlen(value) > fs_config.tamanio_value) {
 		log_error(logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
+	}
+	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
+
+	//TODO NO entedí el item 3 del enunciado
+
+	t_memtable *tabla_existente_en_memtable = obtener_tabla_en_memtable(tabla);
+	if(tabla_existente_en_memtable) {
+		log_debug(logger, "[MEMTABLE] Existia el area %s", tabla);
+		t_registro *unRegistro = malloc(sizeof(t_registro));
+		unRegistro->key = key;
+		unRegistro->timestamp = timestamp;
+		unRegistro->value = string_duplicate(value);
+		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
+	}
+	else {
+	t_registro *unRegistro = malloc(sizeof(t_registro));
+	unRegistro->key = key;
+	unRegistro->timestamp = timestamp;
+	unRegistro->value = string_duplicate(value);
+	t_list *registros = list_create();
+	list_add(registros, unRegistro);
+
+	t_memtable *unaTabla = malloc(sizeof(t_memtable));
+	unaTabla->tabla = strdup(tabla);
+	unaTabla->t_registro = registros;
+
+	log_debug(logger, "[MEMTABLE] Agrego el area %s", tabla);
+	list_add(t_list_memtable, unaTabla);
 	}
 }
 

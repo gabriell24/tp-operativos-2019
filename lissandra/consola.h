@@ -22,6 +22,7 @@
 #define CREATE "create"
 #define DESCRIBE "describe"
 #define DROP "drop"
+#define MEMTABLE "memtable"
 
 //Variables
 typedef struct{

@@ -51,6 +51,7 @@ void cargar_metadata(char *path, char *archivo) {
 				bytesBitmap++;
 			}
 			datos_fs.bitarray = bitarray_create_with_mode(bitmap,bytesBitmap,MSB_FIRST);
+			datos_fs._bitmap = bitmap;
 			datos_fs.ultimo_bloque_retornado = 0;
 		}
 	}
@@ -93,7 +94,7 @@ int tomar_bloque_libre() {
  * Quizás no sea necesaria.
  */
 bool crear_sub_rutas(char *archivo) {
-	char *crear_en = string_duplicate(path_tablas());
+	char *crear_en = path_tablas();
 	char **sub_rutas = string_split(archivo, "/");
 	int posicion = 0;
 	while(sub_rutas[posicion+1]!=NULL) {
@@ -120,11 +121,12 @@ void crear_archivo_particion(char *tabla, int particion, int bloque) {
 	close(fd);
 	free(blocks);
 	free(raiz);
+	free(crear_en);
 }
 
 void crear_archivo_bloque(int bloque, char *contenido) {
-	char *ruta = string_duplicate(datos_fs.path_raiz);
-	string_append(&ruta, string_from_format("Bloques/%d.bin", bloque));
+	char *ruta = path_bloques();
+	string_append(&ruta, string_from_format("%d.bin", bloque));
 	//string_append(&ruta, ("Bloques/%d.bin", bloque));
 	//printf("\nArchivo: %s\n", ruta);
 
@@ -192,12 +194,13 @@ char *path_bloques() {
 /* NUNCA LA LLAMO, PERO LA DEJO PREPARADA */
 void finalizar_estructuras_fs() {
 	log_info(logger, "Saliendo...");
-	char *ruta_bitmap = string_duplicate(datos_fs.path_raiz);
+	char *ruta_bitmap = datos_fs.path_raiz;
 	string_append(&ruta_bitmap, "Metadata/Bitmap.bin");
 	guardar_bitmap(ruta_bitmap);
 	free(ruta_bitmap);
-	free(path_tablas());
+
 	bitarray_destroy(datos_fs.bitarray);
+	free(datos_fs._bitmap);
 }
 
 bool existe_tabla(char *tabla) {
@@ -351,4 +354,44 @@ t_metadata obtener_metadata(char *tabla) {
 	config_destroy(conf);
 	free (ruta);
 	return retorno;
+}
+
+t_memtable *obtener_tabla_en_memtable(char *tabla) {
+	bool _buscar_por_nombre(void *elemento) {
+		return string_equals_ignore_case((*(t_memtable*)elemento).tabla, tabla);
+	}
+	return (t_memtable*)list_find(t_list_memtable, _buscar_por_nombre);
+}
+
+t_registro *obtener_registros_por_key(uint16_t key) {
+	bool _buscar_por_key(void *elemento) {
+		return (*(t_registro*)elemento).key = key;
+	}
+	return (t_registro*)list_find(t_list_memtable, _buscar_por_key);
+}
+
+void printear_memtable() {
+	log_debug(logger, "Tablas en la memtable::");
+	void _mostrar_nombre(void *unaTabla) {
+		void _mostrar_valores(void *unRegistro) {
+			log_debug(logger, "%d - %d - %s", ((t_registro*)unRegistro)->timestamp , ((t_registro*)unRegistro)->key, ((t_registro*)unRegistro)->value);
+		}
+		//log_debug(logger, "Tabla - %s", (*(t_memtable*)unaTabla).tabla);
+		log_warning(logger, "Tabla - %s", ((t_memtable*)unaTabla)->tabla);
+		list_iterate(((t_memtable*)unaTabla)->t_registro, _mostrar_valores);
+		printf("______________________________________________\n");
+	}
+	list_iterate(t_list_memtable, _mostrar_nombre);
+	printf("\n\n");
+}
+
+void limpiar_registros_memtable(t_registro *unRegistro) {
+	free(unRegistro->value);
+	free(unRegistro);
+}
+
+void limpiar_tablas_memtable(t_memtable *unaTabla) {
+	free(unaTabla->tabla);
+	list_clean_and_destroy_elements(unaTabla->t_registro, (void*)limpiar_registros_memtable);
+	free(unaTabla);
 }

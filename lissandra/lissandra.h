@@ -28,17 +28,6 @@ pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
 pthread_t hilo_conexion_memoria;
 
-typedef struct {
-	int timestamp;
-	uint16_t key;
-	char *value;
-} t_registro;
-
-typedef struct {
-	char *tabla;
-	t_list *t_registro;
-} t_memtable;
-
 t_list *t_list_memtable;
 int socket_servidor;
 
