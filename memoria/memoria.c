@@ -171,18 +171,53 @@ void escuchar_kernel(int *socket_origen) {
 				log_debug(logger, "[Conexión] pre deserializar request select");
 				t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
 				log_info(logger, "Hacer select con [TABLA = %s, KEY = %d]", buffer->tabla, buffer->key);
-				size_t tamanio_del_buffer = sizeof(int) + strlen(buffer->tabla) + sizeof(uint16_t);
-				void *buffer_serializado = serializar_request_select(buffer->tabla, buffer->key);
-				prot_enviar_mensaje(socket_lissandra, FUNCION_SELECT, tamanio_del_buffer, buffer_serializado);
-				free(buffer_serializado);
-				t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
-				if(mensaje_de_lissandra->head == REGISTRO_TABLA) {
-					log_info(logger, "LLego el dato de fs");
+
+				char *value_desde_memoria = memoria_select(buffer->tabla, buffer->key);
+				if(value_desde_memoria) {
+					prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(value_desde_memoria), value_desde_memoria);
 				}
-				prot_destruir_mensaje(mensaje_de_lissandra);
-				//free(buffer->tabla);
+				else {
+					size_t tamanio_del_buffer = sizeof(int) + strlen(buffer->tabla) + sizeof(uint16_t);
+					void *buffer_serializado = serializar_request_select(buffer->tabla, buffer->key);
+					prot_enviar_mensaje(socket_lissandra, FUNCION_SELECT, tamanio_del_buffer, buffer_serializado);
+					free(buffer_serializado);
+					t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
+					if(mensaje_de_lissandra->head == REGISTRO_TABLA) {
+						log_info(logger, "LLego el dato de fs, tabla %s", buffer->tabla);
+						char *linea = malloc(sizeof(char)*(mensaje_de_lissandra->tamanio_total+1));
+						memcpy(linea, mensaje_de_lissandra->payload, mensaje_de_lissandra->tamanio_total);
+						linea[mensaje_de_lissandra->tamanio_total] = '\0';
+						char **separador = string_n_split(linea, 3, ";");
+
+						t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
+						if(!segmento) {
+							t_est_tdp *registro = obtener_frame_libre();
+							registro->modificado = 0;
+							crear_asignar_segmento(segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+						}
+						else {
+							if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
+								//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
+								log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
+							} else {
+								t_est_tdp *registro = obtener_frame_libre();
+								registro->modificado = 0;
+								settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
+								settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
+								settear_value(registro->ptr_posicion, separador[2]);
+								list_add(segmento->paginas, registro);
+							}
+						}
+						log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
+						prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
+						free(linea);
+						string_iterate_lines(separador, (void*)free);
+						prot_destruir_mensaje(mensaje_de_lissandra);
+					}
+				}
+				free(buffer->tabla);
 				//free(buffer->key);
-				//free(buffer);
+				free(buffer);
 			} break;
 
 			case FUNCION_INSERT: {
@@ -255,7 +290,7 @@ void iniciar_memoria() {
 	int i = 1;
 	for(;i <= total_de_frames; i++) {
 		t_est_tdp *pagina = malloc(sizeof(t_est_tdp));
-		pagina->modificado = 0;
+		pagina->modificado = -1;
 		pagina->nro_pag = i;
 		pagina->ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
 		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
@@ -286,7 +321,7 @@ t_est_tds *obtener_segmento_por_tabla(char *tabla) {
 
 t_est_tdp *obtener_frame_libre() {
 	bool _buscar_por_pagina_libre(t_est_tdp *unaPagina) {
-		return unaPagina->modificado == 0;
+		return unaPagina->modificado == -1;
 	}
 	return (t_est_tdp*)list_find(tdp, (void*)_buscar_por_pagina_libre);
 }
@@ -310,6 +345,18 @@ char *obtener_value_de_pagina(void *frame) {
 	memset(retorno, 0, tamanio_value);
 	memcpy(retorno, frame+sizeof(int)+sizeof(uint16_t), tamanio_value);
 	return retorno;
+}
+
+void settear_timestamp(void* frame, int time) {
+	memcpy(frame, &time, sizeof(int));
+}
+
+void settear_key(void* frame, uint16_t key) {
+	memcpy(frame+sizeof(int), &key, sizeof(uint16_t));
+}
+
+void settear_value(void *frame, char* value) {
+	memcpy(frame+sizeof(int)+sizeof(uint16_t), value, strlen(value));
 }
 
 void crear_asignar_segmento(t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value) {

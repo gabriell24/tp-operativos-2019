@@ -9,6 +9,7 @@
 #include "manejo_memoria.h"
 #include "parser.h"
 #include "../shared_library/estructuras_compartidas.h"
+#include "../shared_library/protocolo.h"
 //Defines
 
 //estructuras y variables a globales

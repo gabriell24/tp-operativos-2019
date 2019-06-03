@@ -15,6 +15,7 @@
 #include "configuracion.h"
 #include "consola.h"
 #include "manejo_memoria.h"
+#include "criterios.h"
 
 //Defines
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
@@ -25,7 +26,9 @@ int socket_servidor;
 pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
 pthread_t hilo_manejo_memorias;
-
+t_list *lista_sc;
+t_list *lista_shc;
+t_list *lista_ec;
 //Prototipos
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();

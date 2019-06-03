@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "configuracion.h"
 #include "consola.h"
+#include "kernel.h"
 #include "../shared_library/conexiones.h"
 #include "../shared_library/protocolo.h"
 

@@ -45,7 +45,7 @@ typedef struct {
 typedef struct {
 	int nro_pag;
 	void* ptr_posicion;
-	uint8_t modificado;
+	int8_t modificado;
 } t_est_tdp;
 
 /*typedef struct {
@@ -69,4 +69,7 @@ uint16_t obtener_key_de_pagina(void *frame);
 char *obtener_value_de_pagina(void *frame);
 void crear_asignar_segmento(t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value);
 void limpiar_memoria();
+void settear_timestamp(void* frame, int time);
+void settear_key(void* frame, uint16_t key);
+void settear_value(void *frame, char* value);
 #endif /* MEMORIA_H_ */

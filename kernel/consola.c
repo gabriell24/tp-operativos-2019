@@ -112,6 +112,15 @@ t_consola parse(char* linea) {
 		kernel_journal(argumentos);
 	}
 	else if (string_equals_ignore_case(comando, ADD)) {
+		char** separador = string_n_split(argumentos, 3, " ");
+		char *numero = separador[0];
+		char *criterio = separador[2];
+		if(numero == NULL || criterio == NULL) {
+			log_error(logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
+		} else {
+			log_debug(logger, "Criterio: %s, Numero: %s", criterio, numero);
+			agregar_memoria_a_criterio(criterio_from_string(criterio), atoi(numero));
+		}
 	}
 	else if (string_equals_ignore_case(comando, RUN)) {
 		if (argumentos == NULL) {
@@ -122,6 +131,14 @@ t_consola parse(char* linea) {
 	}
 	else if (string_equals_ignore_case(comando, METRICS)) {
 		imprimir_metricas();
+	}
+	else if(string_equals_ignore_case(comando, "listas")) {
+		imprimir_elementos(lista_sc, "SC");
+		imprimir_elementos(lista_shc, "SHC");
+		imprimir_elementos(lista_ec, "EC");
+	}
+	else if(string_equals_ignore_case(comando, "quitar")) {
+		quitar_memoria_de_criterio(atoi(argumentos));
 	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.");

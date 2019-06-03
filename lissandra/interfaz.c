@@ -26,6 +26,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	}
 	if(strlen(value) > fs_config.tamanio_value) {
 		log_error(logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
+		return;
 	}
 	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
 
@@ -94,11 +95,33 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 
 void fs_describe(char *tabla) {
 	bool mostrar_todo = tabla == NULL;
+	int cantidad_de_tablas;
 	if(mostrar_todo) {
+		char *path = string_new();
+		string_append_with_format(&path, "%s", path_tablas());
 
+		DIR *dp;
+		struct dirent *ep;
+
+		dp = opendir(path);
+		if (dp != NULL) {
+			while (((ep = readdir (dp)) && !string_contains(ep->d_name, ".")))
+			cantidad_de_tablas++;
+
+			closedir(dp);
+		}
+		else {
+			perror ("No se pudo escanear los directorios");
+		}
 	} else {
+		cantidad_de_tablas = 1;
 		char *path = string_new();
 		string_append_with_format(&path, "%s%s/%s", path_tablas(), tabla, "Metadata");
+		t_config *metadata_config = config_create(path);
+		criterio consistencia = criterio_from_string(strdup(config_get_string_value(metadata_config, "CONSISTENCY")));
+		config_destroy(metadata_config);
+		free(path);
+		log_info(logger, "[Describe - %s] Tipo de consistencia: %s", tabla, criterio_to_string(consistencia));
 	}
 	//Dummy
 }

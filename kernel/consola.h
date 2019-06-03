@@ -12,9 +12,10 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include "interfaz.h"
+#include "criterios.h"
 #include "../shared_library/colores.h"
 #include "../shared_library/utiles.h"
-#include "interfaz.h"
 
 //Defines
 #define SELECT "select"

@@ -9,6 +9,7 @@ int main() {
 
 	log_info(logger, "Kernel iniciado");
 	printear_configuraciones();
+	iniciar_listas_de_criterios();
 
 	//<<1- inotify
 	int fd_inotify = inotify_init();
@@ -32,6 +33,7 @@ int main() {
 	close(fd_inotify);
 	free(ptr_fd_inotify);
 	log_destroy(logger);
+	limpiar_listas();
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify

@@ -7,7 +7,7 @@
 #include "memoria.h"
 
 
-void memoria_select(char *tabla, uint16_t key);
+char *memoria_select(char *tabla, uint16_t key);
 void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp);
 void memoria_create(char *tabla, char *consistencia, int particiones, int compaction_time);
 void memoria_describe(char *tabla);
