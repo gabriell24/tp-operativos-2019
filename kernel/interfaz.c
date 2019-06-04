@@ -67,8 +67,8 @@ void imprimir_metricas() {
 void kernel_run(char *archivo) {
 	FILE *file;
 	char *ruta = string_new();
-	string_append_with_format(&ruta, "../otros/lql/%s", archivo);
-
+	//string_append_with_format(&ruta, "../otros/lql/%s", archivo);
+	string_append(&ruta, archivo);
 	file = fopen(ruta, "r");
 	if(file != NULL) {
 		log_debug(logger, "archivo abierto");
@@ -78,7 +78,24 @@ void kernel_run(char *archivo) {
 			log_debug(logger, "linea leida");
 			t_parser parser = leer(linea);
 			if (parser.valido){
-				log_debug(logger, "Leego a leer, es un %s", comando_leido(parser.token));
+				switch(parser.token){
+				case create:{ kernel_create(parser.parametros.create.tabla,
+								parser.parametros.create.tipo_consistencia,
+								parser.parametros.create.particiones,
+								parser.parametros.create.compaction_time);
+								break;}
+				case describe: {kernel_describe(parser.parametros.describe.tabla);
+								break;}
+				case insert: {kernel_insert(parser.parametros.insert.tabla,
+								parser.parametros.insert.key,
+								parser.parametros.insert.value,
+								parser.parametros.insert.timestamp);
+								break;}
+
+				default: printf("codealo vos e.e");
+
+				}
+
 			}
 		}
 		free(linea);

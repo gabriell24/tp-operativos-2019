@@ -224,6 +224,7 @@ void escuchar_kernel(int *socket_origen) {
 				log_debug(logger, "[Conexión] pre deserializar request insert");
 				t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
 				log_info(logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
+				prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
 				free(biffer->nombre_tabla);
 				free(biffer->value);
 				free(biffer);
@@ -233,9 +234,11 @@ void escuchar_kernel(int *socket_origen) {
 				log_debug(logger, "[Conexión] pre deserializar resquest CREATE");
 				t_request_create *buffer = deserializar_request_create(mensaje_de_kernel);
 				log_info(logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
-				//free(buffer->tabla);
-				//free(buffer->key);
-				//free(buffer);
+				prot_enviar_mensaje(socket_lissandra, FUNCION_CREATE, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
+				free(buffer->nombre_tabla);
+				free(buffer->tipo_consistencia);
+				free(buffer);
+
 			} break;
 			case FUNCION_DESCRIBE: {
 				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");

@@ -13,14 +13,14 @@ void destruir_parseo(t_parser operacion) {
 
 char *comando_leido(tokens token) {
 	switch(token) {
-		case t_select: return "select";
-		case insert: return "insert";
-		case create: return "create";
-		case describe: return "describe";
-		case drop: return "drop";
-		case journal: return "journal";
-		case add: return "add";
-		case metrics: return "metrics";
+		case t_select: return "SELECT";
+		case insert: return "INSERT";
+		case create: return "CREATE";
+		case describe: return "DESCRIBE";
+		case drop: return "DROP";
+		case journal: return "JOURNAL";
+		case add: return "ADD";
+		case metrics: return "METRICS";
 		default: "te comiste un token";
 	}
 	return "";
@@ -38,7 +38,7 @@ t_parser leer(char* linea) {
 
 	char* aux_linea = string_duplicate(linea);
 	string_trim(&aux_linea);
-	char** separador = string_n_split(aux_linea, 4, " ");
+	char** separador = string_n_split(aux_linea, 5, " ");
 
 	char* token_leido = separador[0];
 
@@ -59,10 +59,14 @@ t_parser leer(char* linea) {
 	else if(string_igual_case_sensitive(token_leido, token_create)){
 		retorno.token = create;
 		retorno.parametros.create.tabla = separador[1];
+		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 1");
 		retorno.parametros.create.tipo_consistencia = separador[2];
+		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 2");
 		//TODO validar la consistencia leida: SC, SHC, EC
 		retorno.parametros.create.particiones = atoi(separador[3]);
+		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 3");
 		retorno.parametros.create.compaction_time = atoi(separador[4]);
+		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 4");
 	}
 	else if(string_igual_case_sensitive(token_leido, token_describe)){
 		retorno.token = describe;

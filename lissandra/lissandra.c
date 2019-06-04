@@ -206,6 +206,25 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				}
 
 			} break;
+			case FUNCION_CREATE: {
+				t_request_create *buffer = deserializar_request_create(mensaje_de_memoria);
+				log_info(logger, "[Create] Tabla: %s", buffer->nombre_tabla);
+				fs_create(buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
+				free(buffer->nombre_tabla);
+				free(buffer->tipo_consistencia);
+				free(buffer);
+
+				} break;
+
+			case FUNCION_INSERT: {
+				t_request_insert *buffer = deserializar_request_insert(mensaje_de_memoria);
+				log_info(logger, "[Insert] Tabla: %s", buffer->nombre_tabla);
+				fs_insert(buffer->nombre_tabla, buffer->key , buffer->value, buffer->epoch);
+				free(buffer->nombre_tabla);
+				free(buffer->value);
+				free(buffer);
+
+				} break;
 
 			case FUNCION_DESCRIBE: {
 				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");

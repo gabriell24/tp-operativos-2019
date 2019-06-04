@@ -8,15 +8,16 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include "consola.h"
 
-#define token_select "select"
-#define token_insert "insert"
-#define token_create "create"
-#define token_describe "describe"
-#define token_drop "drop"
-#define token_journal "journal"
-#define token_add "add"
-#define token_metrics "metrics"
+#define token_select "SELECT"
+#define token_insert "INSERT"
+#define token_create "CREATE"
+#define token_describe "DESCRIBE"
+#define token_drop "DROP"
+#define token_journal "JOURNAL"
+#define token_add "ADD"
+#define token_metrics "METRICS"
 
 #define RETURN_ERROR t_parser ERROR={ .valido = false }; return ERROR
 
