@@ -31,10 +31,12 @@ void dumpear() {
 	t_list_memtable = list_create();
 }
 
+//falta a;adir el size (bytes) y los bloquess que ocupa
 FILE *crear_y_devolver_archivo_temporal(char *tabla) {
 	char *ruta = string_new();
 	string_append_with_format(&ruta, "%s%s/", path_tablas(), tabla);
 	char *nombre_archivo = nombre_basado_en_temporales(tabla, ruta);
+	void guardar_archivo_particion(tabla, nombre_archivo , size, bloques[]);
 	string_append_with_format(&ruta, "%s", nombre_archivo);
 	free(nombre_archivo);
 	FILE *archivo;

@@ -145,7 +145,32 @@ void crear_carpeta_tabla(char *tabla) {
 	string_append(&crear_en, tabla);
 	mkdir(crear_en, S_IRWXU);
 	free(crear_en);
+
+
+void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, int bloques[]){
+		char *crear_en = path_tablas();
+		string_append(&crear_en, tabla);
+		char *raiz = string_new();
+		string_append_with_format(&raiz,"%s/%s", crear_en, archivo_temporal);
+		log_debug(logger, "[Particion] ruta: %s\n",raiz);
+		int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
+		char *tamanio = string_new();
+		string_append_with_format(&tamanio, "SIZE=%d\n", size);
+		escribir(fd, tamanio );
+		char *bloques_usados = string_from_format("BLOCKS=[%d", bloques[0]);
+		int index = 0;
+		while (bloques[index]){
+			string_append(&bloques_usados, string_from_format(", %d", bloques[index]));
+			index ++;
+		}
+		string_append(&bloques_usados, "]");
+		escribir(fd,bloques_usados);
+		close(fd);
+		free(bloques_usados);
+		free(raiz);
+		free(crear_en);
 }
+
 
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time) {
 	char *crear_en = path_tablas();

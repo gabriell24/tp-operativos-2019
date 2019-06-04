@@ -84,4 +84,7 @@ void limpiar_tablas_memtable(t_memtable *unaTabla);
 t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_value *otro);
 void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro);
 t_response_describe *devolver_metadata(char *path_tabla, char *tabla);
+void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, int bloques[]);
+
+
 #endif /* FILESYSTEM_H_ */
