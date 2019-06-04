@@ -242,19 +242,19 @@ void escuchar_kernel(int *socket_origen) {
 			} break;
 			case FUNCION_DESCRIBE: {
 				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
-				int tam = mensaje_de_kernel->tamanio_total-sizeof(mensaje_de_kernel->head);
+				size_t tam = mensaje_de_kernel->tamanio_total-sizeof(t_header);
 				if(tam == 0){
 					log_info(logger, "Describe nulo");
 				}
 				else{
 					char* tabla = malloc(tam+1);
 					memset(tabla, 0, tam+1);
-					memcpy(tabla, mensaje_de_kernel->payload,tam);
+					memcpy(tabla, mensaje_de_kernel->payload, tam);
 					tabla[tam] = '\0';
 					log_info(logger, "Describe con tabla: %s", tabla);
 					free(tabla);
 				}
-				prot_enviar_mensaje(socket_lissandra, FUNCION_DESCRIBE, mensaje_de_kernel->tamanio_total, mensaje_de_kernel->payload);
+				prot_enviar_mensaje(socket_lissandra, FUNCION_DESCRIBE, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
 			} break;
 
 			case FUNCION_DROP: {
