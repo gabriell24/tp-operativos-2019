@@ -33,9 +33,9 @@ void recibir_mensajes_de_memoria() {
 		switch(mensaje_de_memoria->head) {
 		case RESPUESTA_DESCRIBE: {
 			log_info(logger, "Llegó el describe");
-			t_list *describe = deserializar_response_describe(mensaje_de_memoria, logger);
-			if(!describe) log_error(logger, "[Describe] Llego vació");
-			imprimir_datos_describe(describe);
+			describe_tablas = deserializar_response_describe(mensaje_de_memoria, logger);
+			if(!describe_tablas) log_error(logger, "[Describe] Llego vació");
+			imprimir_datos_describe(describe_tablas);
 		} break;
 
 		case DESCONEXION: {

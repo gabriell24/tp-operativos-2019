@@ -29,6 +29,7 @@ pthread_t hilo_manejo_memorias;
 t_list *lista_sc;
 t_list *lista_shc;
 t_list *lista_ec;
+t_list *describe_tablas;
 //Prototipos
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();

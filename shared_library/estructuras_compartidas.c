@@ -237,7 +237,7 @@ void *serializar_response_describe(size_t tamanio_del_buffer, t_list *tablas) {
 		desplazamiento += sizeof(int);
 		memcpy(buffer+desplazamiento, tabla->tabla, largo_nombre_tabla);
 		desplazamiento += largo_nombre_tabla;
-		memcpy(buffer+sizeof(int)+largo_nombre_tabla, &tabla->consistencia, sizeof(criterio));
+		memcpy(buffer+desplazamiento, &tabla->consistencia, sizeof(criterio));
 		desplazamiento += sizeof(criterio);
 	}
 	list_iterate(tablas, (void*)_cargar_en_buffer);
@@ -246,30 +246,26 @@ void *serializar_response_describe(size_t tamanio_del_buffer, t_list *tablas) {
 
 t_list *deserializar_response_describe(t_prot_mensaje *mensaje, t_log *logger) {
 	size_t tamanio_del_buffer = mensaje->tamanio_total - sizeof(t_header);
-	log_debug(logger, "Total de buffer: %d", tamanio_del_buffer);
 	int desplazamiento = 0;
 	t_list *retorno = list_create();
 	while(desplazamiento < tamanio_del_buffer) {
+		t_response_describe *describe = malloc(sizeof(t_response_describe));
 		int largo_nombre_tabla = 0;
 		memcpy(&largo_nombre_tabla, mensaje->payload+desplazamiento, sizeof(int));
 		desplazamiento += sizeof(int);
 
-		char *nombre_tabla = malloc(largo_nombre_tabla+1);
-		memset(nombre_tabla, 0, largo_nombre_tabla+1);
-		memcpy(nombre_tabla, mensaje->payload+desplazamiento, largo_nombre_tabla);
-		nombre_tabla[largo_nombre_tabla] = '\0';
-		log_info(logger, "Iteracion, tabla %s", nombre_tabla);
+		describe->tabla = malloc(largo_nombre_tabla+1);
+		memset(describe->tabla, 0, largo_nombre_tabla+1);
+		memcpy(describe->tabla, mensaje->payload+desplazamiento, largo_nombre_tabla);
+		describe->tabla[largo_nombre_tabla] = '\0';
 		desplazamiento += largo_nombre_tabla;
 
 		criterio consistencia = INVALIDO;
 		memcpy(&consistencia, mensaje->payload+desplazamiento, sizeof(criterio));
 		desplazamiento += sizeof(criterio);
-		t_response_describe *describe = malloc(sizeof(t_response_describe));
-		describe->tabla = nombre_tabla;
+
 		describe->consistencia = consistencia;
 		list_add(retorno, describe);
-
-		log_debug(logger, "Fin iteracion, desplazamiento = %d", desplazamiento);
 	}
 	return retorno;
 }

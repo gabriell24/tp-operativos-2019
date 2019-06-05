@@ -84,7 +84,7 @@ t_consola parse(char* linea) {
 		if(!argumentos) {
 			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 		} else {
-			char** separador = string_n_split(argumentos, 3, " ");
+			char** separador = string_n_split(argumentos, 4, " ");
 			char *tabla = separador[0];
 			char *consistencia = separador[1];
 			char *particiones = separador[2];

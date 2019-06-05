@@ -131,14 +131,18 @@ t_list *fs_describe(char *tabla) {
 
 		dp = opendir(path);
 		if (dp != NULL) {
-			while (((ep = readdir (dp)) && !string_contains(ep->d_name, "."))) {
-				char *path_tabla = string_duplicate(path);
-				string_append(&path_tabla, ep->d_name);
-				log_warning(logger, "ruta :%s", path_tabla);
-				t_response_describe *describe = devolver_metadata(path_tabla, ep->d_name);
-				list_add(metadatas, describe);
-				free(path_tabla);
-
+			while ((ep = readdir (dp))) {
+				if(!string_contains(ep->d_name, ".")) {
+					char *path_tabla = string_duplicate(path);
+					string_append(&path_tabla, ep->d_name);
+					log_info(logger, "[Describe] INCLUIDO: %s", ep->d_name);
+					t_response_describe *describe = devolver_metadata(path_tabla, ep->d_name);
+					list_add(metadatas, describe);
+					free(path_tabla);
+				}
+				else {
+					log_debug(logger, "[Describe] IGNORADO: %s", ep->d_name);
+				}
 			}
 
 			closedir(dp);
