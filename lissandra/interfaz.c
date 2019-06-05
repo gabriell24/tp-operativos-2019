@@ -6,16 +6,43 @@ char *fs_select(char *tabla, uint16_t key) {
 		return ERROR_NO_EXISTE_TABLA;
 	}
 	t_metadata metadata = obtener_metadata(tabla);
+	char *retorno = NULL;
+	t_timestamp_value *desde_particion = NULL;
+	t_timestamp_value *desde_memtable = NULL;
+	t_timestamp_value *desde_temporal = NULL;
+	t_timestamp_value *mayor_timestamp = NULL;
 
-	//printf ("PARTITIONS%d\n",particiones);
 	int particion_a_leer = calcular_particion(metadata.partitions, key);
-	free(metadata.consistency);
-	//printf ("Calcule la partición %d\n",particion_a_leer);
 	char *path_a_particion = string_new();
 	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
-	//printf ("Calcule la partición %s\n",path_a_particion);
-	//char *linea_con_la_key = string_new();
-	return obtener_datos(path_a_particion, key);
+	desde_particion = obtener_datos_de_particion(path_a_particion, key);
+	t_registro *datos_memtable;
+	if((datos_memtable = obtener_registros_por_key(tabla, key))) {
+		desde_memtable = malloc(sizeof(t_timestamp_value));
+		desde_memtable->timestamp = datos_memtable->timestamp;
+		desde_memtable->value = string_duplicate(datos_memtable->value);
+	}
+	/*
+	 * BUSCAR EN ARCHIVOS TEMPORALES
+	 * Y ASGINAR A desde_temporal
+	 */
+	mayor_timestamp = devolver_timestamp_mayor(desde_memtable, devolver_timestamp_mayor(desde_particion, desde_temporal));
+	if(!mayor_timestamp) {
+		return ERROR_KEY_NO_ENCONTRADA;
+	} else {
+		size_t tamanio_del_string = strlen(mayor_timestamp->value);
+		retorno = malloc(strlen(mayor_timestamp->value)+1);
+		memset(retorno, 0, tamanio_del_string);
+		memcpy(retorno, mayor_timestamp->value, tamanio_del_string);
+		retorno[tamanio_del_string] = '\0';
+	}
+	limpiar_timestampvalue_si_corresponde(desde_particion);
+	limpiar_timestampvalue_si_corresponde(desde_memtable);
+	limpiar_timestampvalue_si_corresponde(desde_temporal);
+	//mayor_timestamp no se limpiaria, porque es uno de los 3 anteriores
+	free(metadata.consistency);
+
+	return retorno;
 
 }
 
@@ -32,29 +59,26 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 
 	//TODO NO entedí el item 3 del enunciado
 
-	t_memtable *tabla_existente_en_memtable = obtener_tabla_en_memtable(tabla);
-	if(tabla_existente_en_memtable) {
-		log_debug(logger, "[MEMTABLE] Existia el area %s", tabla);
-		t_registro *unRegistro = malloc(sizeof(t_registro));
-		unRegistro->key = key;
-		unRegistro->timestamp = timestamp;
-		unRegistro->value = string_duplicate(value);
-		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
-	}
-	else {
 	t_registro *unRegistro = malloc(sizeof(t_registro));
 	unRegistro->key = key;
 	unRegistro->timestamp = timestamp;
 	unRegistro->value = string_duplicate(value);
-	t_list *registros = list_create();
-	list_add(registros, unRegistro);
+	t_memtable *tabla_existente_en_memtable = obtener_tabla_en_memtable(tabla);
 
-	t_memtable *unaTabla = malloc(sizeof(t_memtable));
-	unaTabla->tabla = strdup(tabla);
-	unaTabla->t_registro = registros;
+	if(tabla_existente_en_memtable) {
+		log_debug(logger, "[MEMTABLE] Existia el area %s", tabla);
+		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
+	}
+	else {
+		t_list *registros = list_create();
+		list_add(registros, unRegistro);
 
-	log_debug(logger, "[MEMTABLE] Agrego el area %s", tabla);
-	list_add(t_list_memtable, unaTabla);
+		t_memtable *unaTabla = malloc(sizeof(t_memtable));
+		unaTabla->tabla = strdup(tabla);
+		unaTabla->t_registro = registros;
+
+		log_debug(logger, "[MEMTABLE] Agrego el area %s", tabla);
+		list_add(t_list_memtable, unaTabla);
 	}
 }
 

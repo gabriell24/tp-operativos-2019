@@ -15,6 +15,11 @@ typedef struct {
 	bool en_produccion;
 } t_fs_config;
 
+typedef struct {
+	int timestamp;
+	char *value;
+} t_timestamp_value;
+
 t_config *configuracion;
 t_fs_config fs_config;
 

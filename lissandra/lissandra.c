@@ -7,7 +7,7 @@ int main() {
 	logger = log_create("lissandra.log","LISSANDRA", true,
 			fs_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 	iniciar_fs(fs_config.punto_montaje);
-
+	maximo_caracteres_linea = 12 + 2 + 5 + fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), y el value
 	socket_servidor = levantar_servidor(fs_config.puerto_escucha);
 	log_info(logger, "Lissandra iniciado");
 	printear_configuraciones();
@@ -28,6 +28,7 @@ int main() {
 	int *ptr_socket_server = malloc(sizeof(int));
 	*ptr_socket_server = socket_servidor;
 	pthread_create(&hilo_conexion_memoria, NULL, (void*)aceptar_conexion_de_memoria, ptr_socket_server);
+	pthread_create(&hilo_dump, NULL, (void*)dump_automatico, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 	pthread_join(hilo_consola, NULL);
 	log_info(logger, "[Lissandra] Proceso finalizado.");

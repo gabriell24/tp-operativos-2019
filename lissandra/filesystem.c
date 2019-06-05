@@ -233,13 +233,11 @@ bool existe_tabla(char *tabla) {
 }
 
 
-char* obtener_datos(char *path, uint16_t key) {
-	//if(validar_archivo(path)) {
+t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
+		t_timestamp_value *retorno = NULL;
 		char *buscar_en = string_duplicate(path_tablas());
 		string_append(&buscar_en, path);
 		FILE *archivo;
-		//char *buffer;
-		//long filelen;
 
 		log_debug(logger, "Busco en: %s", buscar_en);
 		datos_archivo = config_create(buscar_en);
@@ -247,26 +245,16 @@ char* obtener_datos(char *path, uint16_t key) {
 		char** bloques_usados = config_get_array_value(datos_archivo, "BLOCKS");
 		config_destroy(datos_archivo);
 		free(buscar_en);
-		/*if((offset + size) > max_tamanio) {
-			printf("\nError al obtener datos: se pasa del tamanio del archivo\n");
-			exit(1);
-		}*/
 
 		int total_de_bloques_usados_por_archivo = 0;
 
 		while(bloques_usados[total_de_bloques_usados_por_archivo] != NULL) {
 			total_de_bloques_usados_por_archivo++;
 		}
-		/*
-		int *bloques = (int*)calloc(aux_bloques_usados, sizeof(int));
-		for(int i = 0; i < aux_bloques_usados;i++) {
-			bloques[i] = atoi(strdup(bloques_usados[i]));
-			//printf("\nlectura bloque: %d\n", bloques[i]);
-		}*/
-		int maximo_caracteres_linea = 12 + 2 + 5+ fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), y el value
+
 		char *linea;
 		char *parte_de_linea = NULL;
-		//log_error(logger, "Tam parte de linea: %d", strlen(parte_de_linea));
+
 		bool key_encontrada = false;
 		for(int indice_bloque = 0; indice_bloque < total_de_bloques_usados_por_archivo; indice_bloque++) {
 			char *nombre_del_bloque = string_new();
@@ -277,7 +265,6 @@ char* obtener_datos(char *path, uint16_t key) {
 			linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
 			while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
-				//log_error(logger, "Último caracter en decimal: %d", buffer[strlen(buffer)-1]);
 				char **separador = string_n_split(linea, 3, ";");
 				if(separador[0] == NULL || separador[1] == NULL || separador[2] == NULL) {
 					if(parte_de_linea != NULL) {
@@ -294,6 +281,7 @@ char* obtener_datos(char *path, uint16_t key) {
 						parte_de_linea = NULL;
 						if(matchea_key_en_linea(linea, key)) {
 							log_info(logger, "[Key encontrada] %s", linea);
+							retorno = cargar_datos_timestamp_value(linea);
 							key_encontrada = true;
 							break;
 						}
@@ -306,18 +294,13 @@ char* obtener_datos(char *path, uint16_t key) {
 				else {
 					if(matchea_key_en_linea(linea, key)) {
 						log_info(logger, "[Key encontrada] %s", linea);
+						retorno = cargar_datos_timestamp_value(linea);
 						key_encontrada = true;
 						break;
 					}
 				}
 				string_iterate_lines(separador, (void*)free);
 				free(separador);
-				/*uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
-				if(key == key_from_file) {
-					log_info(logger, "[Key encontrada] %s", buffer);
-					key_encontrada = true;
-					break;
-				}*/
 			}
 			if(key_encontrada) {
 				break;
@@ -328,18 +311,27 @@ char* obtener_datos(char *path, uint16_t key) {
 
 		}
 
-		//free(nombre_del_bloque);
-		//free(bloques);
 		string_iterate_lines(bloques_usados, (void*) free);
 		free(bloques_usados);
-		if(!key_encontrada) return ERROR_KEY_NO_ENCONTRADA;
-		return linea;
-	//}
+		//if(!key_encontrada) return ERROR_KEY_NO_ENCONTRADA;
+		return retorno;
+}
+
+t_timestamp_value *cargar_datos_timestamp_value(char *linea) {
+	char **separador = string_n_split(linea, 3, ";");
+	t_timestamp_value *retorno = malloc(sizeof(t_timestamp_value));
+	retorno->timestamp = atoi(separador[0]);
+	retorno->value = string_duplicate(separador[2]);
+	string_iterate_lines(separador, (void*)free);
+	free(separador);
+	return retorno;
 }
 
 bool matchea_key_en_linea(char *linea, uint16_t key) {
 	char **separador = string_n_split(linea, 3, ";");
 	uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
+	string_iterate_lines(separador, (void*)free);
+	free(separador);
 	return key == key_from_file;
 }
 
@@ -363,11 +355,25 @@ t_memtable *obtener_tabla_en_memtable(char *tabla) {
 	return (t_memtable*)list_find(t_list_memtable, _buscar_por_nombre);
 }
 
-t_registro *obtener_registros_por_key(uint16_t key) {
-	bool _buscar_por_key(void *elemento) {
-		return (*(t_registro*)elemento).key = key;
+t_registro *obtener_registros_por_key(char *tabla, uint16_t key) {
+	t_memtable *area_de_tabla = obtener_tabla_en_memtable(tabla);
+	/*
+	 * Preguntar si esto va, en caso de key duplicada en el memtable
+	 * orderno por las que tengan el timestamp mas grande primero
+	 * entonces va a devolver la mas actualizada
+	 * Definir si esta operacion va en el insert, o dejarla aca.
+	 * Si se hace en el insert, nos olvidamos de ordenar cuando
+	 * se realiza el dump
+	 */
+	if(!area_de_tabla) return NULL;
+	bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
+		return elemento->timestamp > otroElemento->timestamp;
 	}
-	return (t_registro*)list_find(t_list_memtable, _buscar_por_key);
+	list_sort(area_de_tabla->t_registro, (void*)_orderar_por_time_desc);
+	bool _buscar_por_key(t_registro *elemento) {
+		return elemento->key == key;
+	}
+	return (t_registro*)list_find(area_de_tabla->t_registro, (void*)_buscar_por_key);
 }
 
 void printear_memtable() {
@@ -394,4 +400,24 @@ void limpiar_tablas_memtable(t_memtable *unaTabla) {
 	free(unaTabla->tabla);
 	list_clean_and_destroy_elements(unaTabla->t_registro, (void*)limpiar_registros_memtable);
 	free(unaTabla);
+}
+
+t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_value *otro) {
+	t_timestamp_value *aux;
+	if(!uno && !otro) {
+		return NULL;
+	} if(!uno && otro) {
+		return otro;
+	} else if(uno && !otro) {
+		return uno;
+	} else {
+		uno->timestamp >= otro->timestamp ? (aux = uno) : (aux = otro);
+	}
+	return aux;
+}
+
+void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro) {
+	if(!registro) return;
+	free(registro->value);
+	free(registro);
 }

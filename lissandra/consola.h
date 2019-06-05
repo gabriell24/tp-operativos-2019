@@ -15,6 +15,7 @@
 #include <commons/log.h>
 #include "interfaz.h"
 #include "filesystem.h"
+#include "dump.h"
 
 //Defines
 #define SELECT "select"
@@ -23,6 +24,7 @@
 #define DESCRIBE "describe"
 #define DROP "drop"
 #define MEMTABLE "memtable"
+#define DUMP "dump"
 
 //Variables
 typedef struct{

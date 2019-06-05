@@ -51,7 +51,7 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
-				fs_select(tabla, (uint16_t)strtoul(key, NULL, 10));
+				log_info(logger, "[Select] Resultado: %s", fs_select(tabla, (uint16_t)strtoul(key, NULL, 10)));
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
@@ -110,6 +110,9 @@ t_consola parse(char* linea){
 	}
 	else if(string_equals_ignore_case(comando, MEMTABLE)) {
 		printear_memtable();
+	}
+	else if(string_equals_ignore_case(comando, DUMP)) {
+		dumpear();
 	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.\n");

@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include "consola.h"
 #include "configuracion.h"
+#include "lissandra.h"
 
 #define SIN_BLOQUES_LIBRES -1
 
@@ -70,12 +71,15 @@ void check(int posicion, bool esCorrecto);
 char bit_in_char(int bit, int mode);
 bool crear_sub_rutas(char*);
 bool existe_tabla(char*);
-char* obtener_datos(char *path, uint16_t key);
+t_timestamp_value *cargar_datos_timestamp_value(char *linea);
+t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key);
 bool matchea_key_en_linea(char *linea, uint16_t key);
 t_metadata obtener_metadata(char *tabla);
 t_memtable *obtener_tabla_en_memtable(char *tabla);
-t_registro *obtener_registros_por_key(uint16_t key);
+t_registro *obtener_registros_por_key(char *tabla, uint16_t key);
 void printear_memtable();
 void limpiar_registros_memtable(t_registro *unRegistro);
 void limpiar_tablas_memtable(t_memtable *unaTabla);
+t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_value *otro);
+void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro);
 #endif /* FILESYSTEM_H_ */

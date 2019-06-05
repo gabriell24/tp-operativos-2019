@@ -27,7 +27,8 @@
 pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
 pthread_t hilo_conexion_memoria;
-
+pthread_t hilo_dump;
+int maximo_caracteres_linea;
 t_list *t_list_memtable;
 int socket_servidor;
 
