@@ -34,7 +34,8 @@ typedef enum{
 
 	FUNCION_JOURNAL,
 
-	REGISTRO_TABLA //TIMESTAMP;KEY;VALUE
+	REGISTRO_TABLA, //TIMESTAMP;KEY;VALUE
+	RESPUESTA_DESCRIBE //Se utiliza para responder al describe de forma unitaria o del global de tablas
 
 } t_header;
 

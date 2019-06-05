@@ -117,20 +117,29 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 	}
 }
 
-void fs_describe(char *tabla) {
+t_list *fs_describe(char *tabla) {
 	bool mostrar_todo = tabla == NULL;
-	int cantidad_de_tablas;
+	//int cantidad_de_tablas;
+	t_list *metadatas = list_create();
+	char *path = string_new();
+	string_append_with_format(&path, "%s", path_tablas());
 	if(mostrar_todo) {
-		char *path = string_new();
-		string_append_with_format(&path, "%s", path_tablas());
+
 
 		DIR *dp;
 		struct dirent *ep;
 
 		dp = opendir(path);
 		if (dp != NULL) {
-			while (((ep = readdir (dp)) && !string_contains(ep->d_name, ".")))
-			cantidad_de_tablas++;
+			while (((ep = readdir (dp)) && !string_contains(ep->d_name, "."))) {
+				char *path_tabla = string_duplicate(path);
+				string_append(&path_tabla, ep->d_name);
+				log_warning(logger, "ruta :%s", path_tabla);
+				t_response_describe *describe = devolver_metadata(path_tabla, ep->d_name);
+				list_add(metadatas, describe);
+				free(path_tabla);
+
+			}
 
 			closedir(dp);
 		}
@@ -138,16 +147,17 @@ void fs_describe(char *tabla) {
 			perror ("No se pudo escanear los directorios");
 		}
 	} else {
-		cantidad_de_tablas = 1;
-		char *path = string_new();
-		string_append_with_format(&path, "%s%s/%s", path_tablas(), tabla, "Metadata");
-		t_config *metadata_config = config_create(path);
-		criterio consistencia = criterio_from_string(strdup(config_get_string_value(metadata_config, "CONSISTENCY")));
-		config_destroy(metadata_config);
-		free(path);
-		log_info(logger, "[Describe - %s] Tipo de consistencia: %s", tabla, criterio_to_string(consistencia));
+		if(!existe_tabla(tabla)) {
+			log_error(logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
+			return NULL;
+		}
+		string_append(&path, tabla);
+		t_response_describe *describe = devolver_metadata(path, tabla);
+		list_add(metadatas, describe);
+
 	}
-	//Dummy
+	free(path);
+	return metadatas;
 }
 
 void fs_drop(char *tabla) {

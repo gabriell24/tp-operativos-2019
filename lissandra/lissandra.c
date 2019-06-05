@@ -230,8 +230,10 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			case FUNCION_DESCRIBE: {
 				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
 				int tam = mensaje_de_memoria->tamanio_total-sizeof(mensaje_de_memoria->head);
+				t_list* respuesta_describe;
 				if(tam == 0){
 					log_info(logger, "Describe nulo");
+					respuesta_describe = fs_describe(NULL);
 				}
 				else{
 					char* tabla = malloc(tam+1);
@@ -239,8 +241,24 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 					memcpy(tabla, mensaje_de_memoria->payload,tam);
 					tabla[tam] = '\0';
 					log_info(logger, "Describe con tabla: %s", tabla);
+					respuesta_describe = fs_describe(tabla);
+					if(!respuesta_describe) {
+						log_error(logger, ERROR_NO_EXISTE_TABLA);
+						break;
+					}
 					free(tabla);
 				}
+				size_t tamanio_del_buffer = 0;
+				void _calcular_buffer(t_response_describe *describe) {
+					tamanio_del_buffer += sizeof(int) + strlen(describe->tabla) + sizeof(describe->consistencia);
+				}
+				list_iterate(respuesta_describe, (void*)_calcular_buffer);
+				log_debug(logger, "[Respuesta Describe] Tamanio del buffer: %d", tamanio_del_buffer);
+				void *buffer = serializar_response_describe(tamanio_del_buffer, respuesta_describe);
+				prot_enviar_mensaje(socket_memoria, RESPUESTA_DESCRIBE, tamanio_del_buffer, buffer);
+				free(buffer);
+				//Hacer el list destroy y limpiar elementos.
+
 
 			} break;
 

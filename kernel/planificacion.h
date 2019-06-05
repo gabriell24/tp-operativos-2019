@@ -10,4 +10,9 @@ t_list *lista_nuevos;
 t_list *lista_ready;
 t_list *lista_exec;
 
+typedef struct {
+	int prox_linea_ejecutar;
+	char **lineas;
+} t_pcb;
+
 #endif /* PLANIFICACION_H_ */

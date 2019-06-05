@@ -98,7 +98,9 @@ t_consola parse(char* linea){
 		}
 	}
 	else if(string_equals_ignore_case(comando, DESCRIBE)) {
-		fs_describe(argumentos);
+		t_list *tablas = fs_describe(argumentos);
+		if(tablas)
+		imprimir_datos_describe(tablas);
 	}
 	else if(string_equals_ignore_case(comando, DROP)) {
 		if(!argumentos) {

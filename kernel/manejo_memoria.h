@@ -17,8 +17,8 @@
 int socket_memoria;
 
 //Prototipos
-void manejar_memorias();
-
+void conectar_a_memoria();
+void recibir_mensajes_de_memoria();
 
 
 #endif /* MANEJO_MEMORIA_H_ */

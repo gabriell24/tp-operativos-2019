@@ -180,7 +180,7 @@ void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, i
 }
 
 t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
-	int epoch, desplazamiento, largo_nombre_de_tabla, largo_key, largo_value;
+	int epoch, desplazamiento, largo_nombre_de_tabla, largo_value;
 	//char *value, *key, *nombre_tabla;
 	desplazamiento = 0;
 	size_t tamanio_del_paquete = mensaje->tamanio_total - sizeof(t_header);
@@ -225,4 +225,62 @@ t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
 
 	return retorno;
 
+}
+
+void *serializar_response_describe(size_t tamanio_del_buffer, t_list *tablas) {
+	void *buffer = malloc(tamanio_del_buffer);
+	memset(buffer, 0, tamanio_del_buffer);
+	int desplazamiento = 0;
+	void _cargar_en_buffer(t_response_describe *tabla) {
+		int largo_nombre_tabla = strlen(tabla->tabla);
+		memcpy(buffer+desplazamiento, &largo_nombre_tabla, sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(buffer+desplazamiento, tabla->tabla, largo_nombre_tabla);
+		desplazamiento += largo_nombre_tabla;
+		memcpy(buffer+sizeof(int)+largo_nombre_tabla, &tabla->consistencia, sizeof(criterio));
+		desplazamiento += sizeof(criterio);
+	}
+	list_iterate(tablas, (void*)_cargar_en_buffer);
+	return buffer;
+}
+
+t_list *deserializar_response_describe(t_prot_mensaje *mensaje, t_log *logger) {
+	size_t tamanio_del_buffer = mensaje->tamanio_total - sizeof(t_header);
+	log_debug(logger, "Total de buffer: %d", tamanio_del_buffer);
+	int desplazamiento = 0;
+	t_list *retorno = list_create();
+	while(desplazamiento < tamanio_del_buffer) {
+		int largo_nombre_tabla = 0;
+		memcpy(&largo_nombre_tabla, mensaje->payload+desplazamiento, sizeof(int));
+		desplazamiento += sizeof(int);
+
+		char *nombre_tabla = malloc(largo_nombre_tabla+1);
+		memset(nombre_tabla, 0, largo_nombre_tabla+1);
+		memcpy(nombre_tabla, mensaje->payload+desplazamiento, largo_nombre_tabla);
+		nombre_tabla[largo_nombre_tabla] = '\0';
+		log_info(logger, "Iteracion, tabla %s", nombre_tabla);
+		desplazamiento += largo_nombre_tabla;
+
+		criterio consistencia = INVALIDO;
+		memcpy(&consistencia, mensaje->payload+desplazamiento, sizeof(criterio));
+		desplazamiento += sizeof(criterio);
+		t_response_describe *describe = malloc(sizeof(t_response_describe));
+		describe->tabla = nombre_tabla;
+		describe->consistencia = consistencia;
+		list_add(retorno, describe);
+
+		log_debug(logger, "Fin iteracion, desplazamiento = %d", desplazamiento);
+	}
+	return retorno;
+}
+
+void imprimir_datos_describe(t_list *tablas) {
+	void _mostrar_datos(t_response_describe *tabla) {
+		printf("|\t %s\t|\t %s\t\t |\n", tabla->tabla, criterio_to_string(tabla->consistencia));
+		printf("+------------------------------------------------+\n");
+	}
+	printf("+------------------------------------------------+\n");
+	printf("|\t Tabla\t\t|\tConsistencia\t |\n");
+	printf("+------------------------------------------------+\n");
+	list_iterate(tablas, (void*)_mostrar_datos);
 }

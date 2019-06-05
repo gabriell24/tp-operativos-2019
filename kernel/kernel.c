@@ -19,15 +19,14 @@ int main() {
 	int watch_descriptor = inotify_add_watch(fd_inotify, ".", IN_MODIFY);
 	int *ptr_fd_inotify = malloc(sizeof(int*));
 	*ptr_fd_inotify = fd_inotify;
-	//pthread_create(&hilo_manejo_memorias, NULL, (void*)manejar_memorias, NULL);
-	manejar_memorias();
+
+	pthread_create(&hilo_manejo_memorias, NULL, (void*)conectar_a_memoria, NULL);
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 	pthread_join(hilo_consola, NULL);
 	log_info(logger, "[Kernel] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
-	//pthread_join(hilo_manejo_memorias, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
 	close(fd_inotify);

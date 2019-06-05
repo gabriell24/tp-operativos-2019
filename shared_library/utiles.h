@@ -9,6 +9,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <commons/string.h>
+#include <commons/collections/list.h>
 
 typedef enum { SC, SHC, EC, INVALIDO } criterio;
 

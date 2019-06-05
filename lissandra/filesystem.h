@@ -17,6 +17,7 @@
 #include "consola.h"
 #include "configuracion.h"
 #include "lissandra.h"
+#include "../shared_library/estructuras_compartidas.h"
 
 #define SIN_BLOQUES_LIBRES -1
 
@@ -82,4 +83,5 @@ void limpiar_registros_memtable(t_registro *unRegistro);
 void limpiar_tablas_memtable(t_memtable *unaTabla);
 t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_value *otro);
 void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro);
+t_response_describe *devolver_metadata(char *path_tabla, char *tabla);
 #endif /* FILESYSTEM_H_ */

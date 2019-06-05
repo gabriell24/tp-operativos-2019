@@ -6,8 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "protocolo.h"
 #include <stdint.h>
+#include <commons/collections/list.h>
+#include <commons/log.h>
+#include "protocolo.h"
+#include "utiles.h"
 
 //Defines
 typedef struct {
@@ -31,6 +34,11 @@ typedef struct {
 	int compaction_time;
 } t_request_create;
 
+typedef struct {
+	char* tabla;
+	criterio consistencia;
+} t_response_describe;
+
 
 
 //Prototipos
@@ -43,6 +51,9 @@ t_request_insert *deserializar_request_insert(t_prot_mensaje *msje);
 void* serializar_request_create(char* nombre_tabla, char* tipo_consistencia, int numero_particiones, int compaction_time);
 t_request_create *deserializar_request_create(t_prot_mensaje *msje);
 
+void *serializar_response_describe(size_t tamanio_del_buffer, t_list *tablas);
+t_list *deserializar_response_describe(t_prot_mensaje *mensaje, t_log *logger);
+void imprimir_datos_describe(t_list *tablas);
 
 #endif
 

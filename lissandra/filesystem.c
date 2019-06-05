@@ -421,3 +421,18 @@ void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro) {
 	free(registro->value);
 	free(registro);
 }
+
+t_response_describe *devolver_metadata(char *path_tabla, char *tabla) {
+	char *path_a_metada = string_new();
+	string_append_with_format(&path_a_metada, "%s/%s", path_tabla, "Metadata");
+	t_config *metadata_config = config_create(path_a_metada);
+	char *consistenca_string = strdup(config_get_string_value(metadata_config, "CONSISTENCY"));
+	criterio consistencia = criterio_from_string(consistenca_string);
+	free(consistenca_string);
+	config_destroy(metadata_config);
+	free(path_a_metada);
+	t_response_describe *retorno = malloc(sizeof(t_response_describe));
+	retorno->tabla = string_duplicate(tabla);
+	retorno->consistencia = consistencia;
+	return retorno;
+}

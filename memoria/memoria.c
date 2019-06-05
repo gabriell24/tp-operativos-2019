@@ -255,6 +255,9 @@ void escuchar_kernel(int *socket_origen) {
 					free(tabla);
 				}
 				prot_enviar_mensaje(socket_lissandra, FUNCION_DESCRIBE, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
+				t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
+				prot_enviar_mensaje(socket_kernel, RESPUESTA_DESCRIBE, mensaje_de_lissandra->tamanio_total - sizeof(t_header), mensaje_de_lissandra->payload);
+				prot_destruir_mensaje(mensaje_de_lissandra);
 			} break;
 
 			case FUNCION_DROP: {

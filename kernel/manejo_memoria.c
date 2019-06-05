@@ -1,6 +1,6 @@
 #include "manejo_memoria.h"
 
-void manejar_memorias() {
+void conectar_a_memoria() {
 	log_info(logger, "[Conexión] Esperando conectar a memoria");
 	socket_memoria = conectar_a_servidor(kernel_config.ip_memoria, kernel_config.puerto_memoria, KERNEL);
 	log_info(logger, "[Conexión] Esperando conectar a memoria2");
@@ -20,5 +20,35 @@ void manejar_memorias() {
 	prot_enviar_mensaje(socket_memoria, ENVIO_DATOS, tamanio_buffer, buffer);
 
 	log_info(logger, "[Conexión] Memoria conectada, hago un describe");
-	kernel_describe("tablatest"); //########## OJO DEBE SER GLOBAL
+	kernel_describe(""); //########## OJO DEBE SER GLOBAL
+	recibir_mensajes_de_memoria();
+}
+
+void recibir_mensajes_de_memoria() {
+	t_prot_mensaje *mensaje_de_memoria;
+	bool cortar_while = false;
+	bool intentar_reconectar = true;
+	while(!consola_ejecuto_exit && !cortar_while) {
+		mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
+		switch(mensaje_de_memoria->head) {
+		case RESPUESTA_DESCRIBE: {
+			log_info(logger, "Llegó el describe");
+			t_list *describe = deserializar_response_describe(mensaje_de_memoria, logger);
+			if(!describe) log_error(logger, "[Describe] Llego vació");
+			imprimir_datos_describe(describe);
+		} break;
+
+		case DESCONEXION: {
+			log_error(logger, "Se desconectó memoria");
+			cortar_while = true;
+		} break;
+
+		default:
+			log_error(logger, "Mensaje no conocido. %d", mensaje_de_memoria->head);
+		}
+		prot_destruir_mensaje(mensaje_de_memoria);
+	}
+	if(cortar_while && intentar_reconectar) {
+		conectar_a_memoria();
+	}
 }
