@@ -145,9 +145,9 @@ void crear_carpeta_tabla(char *tabla) {
 	string_append(&crear_en, tabla);
 	mkdir(crear_en, S_IRWXU);
 	free(crear_en);
+}
 
-
-void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, int bloques[]){
+void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, int bloques[], int cantidad_bloques){
 		char *crear_en = path_tablas();
 		string_append(&crear_en, tabla);
 		char *raiz = string_new();
@@ -158,8 +158,8 @@ void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, in
 		string_append_with_format(&tamanio, "SIZE=%d\n", size);
 		escribir(fd, tamanio );
 		char *bloques_usados = string_from_format("BLOCKS=[%d", bloques[0]);
-		int index = 0;
-		while (bloques[index]){
+		int index = 1;
+		while (index < cantidad_bloques){
 			string_append(&bloques_usados, string_from_format(", %d", bloques[index]));
 			index ++;
 		}

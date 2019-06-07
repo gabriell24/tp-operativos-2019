@@ -9,6 +9,6 @@
 
 void dump_automatico();
 void dumpear();
-FILE *crear_y_devolver_archivo_temporal(char *tabla);
+void crear_archivo_temporal(char *tabla, int size, int bloques[], int cantidad);
 char *nombre_basado_en_temporales(char *tabla, char *ruta_tabla);
 #endif /* DUMP_H_ */
