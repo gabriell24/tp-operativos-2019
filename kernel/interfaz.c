@@ -78,17 +78,19 @@ void kernel_run(char *archivo) {
 
 	if(file != NULL) {
 		log_debug(logger, "archivo abierto");
-		char *linea = malloc(100*sizeof(char));
+		/*char *linea = malloc(100*sizeof(char));
 		memset(linea, 0, 100*sizeof(char));
 		while(fgets(linea, 100, file)!=NULL) {
 
 		}
-		free(linea);
+		free(linea);*/
+		crear_un_lql(false, ruta);
 		fclose(file);
 	}
 	else {
 		log_error(logger, "[RUN] Error: archivo no encontrado. Ruta: %s", ruta);
 	}
+	free(ruta);
 }
 
 

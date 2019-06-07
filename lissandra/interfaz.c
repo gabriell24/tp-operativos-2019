@@ -30,11 +30,13 @@ char *fs_select(char *tabla, uint16_t key) {
 	if(!mayor_timestamp) {
 		return ERROR_KEY_NO_ENCONTRADA;
 	} else {
-		size_t tamanio_del_string = strlen(mayor_timestamp->value);
-		retorno = malloc(strlen(mayor_timestamp->value)+1);
-		memset(retorno, 0, tamanio_del_string);
-		memcpy(retorno, mayor_timestamp->value, tamanio_del_string);
-		retorno[tamanio_del_string] = '\0';
+		char *timestamp_key = string_from_format("%d;%d;", mayor_timestamp->timestamp, key);
+		size_t tamanio_del_stream = strlen(timestamp_key)+strlen(mayor_timestamp->value);
+		retorno = malloc(tamanio_del_stream);
+		memset(retorno, 0, tamanio_del_stream);
+		memcpy(retorno, timestamp_key, strlen(timestamp_key));
+		memcpy(retorno+strlen(timestamp_key), mayor_timestamp->value, strlen(mayor_timestamp->value));
+		free(timestamp_key);
 	}
 	limpiar_timestampvalue_si_corresponde(desde_particion);
 	limpiar_timestampvalue_si_corresponde(desde_memtable);

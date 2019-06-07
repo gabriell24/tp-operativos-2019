@@ -17,7 +17,7 @@
 int socket_memoria;
 
 //Prototipos
-void conectar_a_memoria();
+void conectar_a_memoria(char *ip, int puerto);
 void recibir_mensajes_de_memoria();
 
 

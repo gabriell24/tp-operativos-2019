@@ -1,11 +1,9 @@
 #include "manejo_memoria.h"
 
-void conectar_a_memoria() {
+void conectar_a_memoria(char *ip, int puerto) {
 	log_info(logger, "[Conexión] Esperando conectar a memoria");
-	socket_memoria = conectar_a_servidor(kernel_config.ip_memoria, kernel_config.puerto_memoria, KERNEL);
-	log_info(logger, "[Conexión] Esperando conectar a memoria2");
+	socket_memoria = conectar_a_servidor(ip, puerto, KERNEL);
 	char* handshake = "hola soy kernel, mucho gusto!";
-	//Sumo uno por el barra cero.
 	int largo_palabra = strlen(handshake); //No sumar caracteres por barra cero
 	int numero_a_mandar = 991;
 	size_t tamanio_buffer = sizeof(int)*2 + largo_palabra;
@@ -20,8 +18,8 @@ void conectar_a_memoria() {
 	prot_enviar_mensaje(socket_memoria, ENVIO_DATOS, tamanio_buffer, buffer);
 
 	log_info(logger, "[Conexión] Memoria conectada, hago un describe");
-	kernel_describe(""); //########## OJO DEBE SER GLOBAL
-	recibir_mensajes_de_memoria();
+	kernel_describe("");
+	pthread_create(&hilo_observer_configs, NULL, (void*)recibir_mensajes_de_memoria, NULL);
 }
 
 void recibir_mensajes_de_memoria() {
@@ -38,6 +36,16 @@ void recibir_mensajes_de_memoria() {
 			imprimir_datos_describe(describe_tablas);
 		} break;
 
+		case FUNCION_SELECT: {
+			size_t tamanio_respuesta_select = mensaje_de_memoria->tamanio_total-sizeof(t_header);
+			char *respuesta_select = malloc(tamanio_respuesta_select+1);
+			memset(respuesta_select, 0, tamanio_respuesta_select+1);
+			memcpy(respuesta_select, mensaje_de_memoria->payload, tamanio_respuesta_select);
+			respuesta_select[tamanio_respuesta_select] = '\0';
+			log_info(logger, "[Respuesta Select] %s", respuesta_select);
+			free(respuesta_select);
+		} break;
+
 		case DESCONEXION: {
 			log_error(logger, "Se desconectó memoria");
 			cortar_while = true;
@@ -47,8 +55,5 @@ void recibir_mensajes_de_memoria() {
 			log_error(logger, "Mensaje no conocido. %d", mensaje_de_memoria->head);
 		}
 		prot_destruir_mensaje(mensaje_de_memoria);
-	}
-	if(cortar_while && intentar_reconectar) {
-		conectar_a_memoria();
 	}
 }

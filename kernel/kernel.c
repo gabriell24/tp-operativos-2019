@@ -20,7 +20,9 @@ int main() {
 	int *ptr_fd_inotify = malloc(sizeof(int*));
 	*ptr_fd_inotify = fd_inotify;
 
-	pthread_create(&hilo_manejo_memorias, NULL, (void*)conectar_a_memoria, NULL);
+	conectar_a_memoria(kernel_config.ip_memoria, kernel_config.puerto_memoria);
+	while(!socket_memoria);
+	pthread_create(&hilo_planificacion, NULL, (void*)iniciar_listas_planificacion, NULL);
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
@@ -33,6 +35,9 @@ int main() {
 	free(ptr_fd_inotify);
 	log_destroy(logger);
 	limpiar_listas();
+	sem_destroy(&lqls_en_ready);
+	sem_destroy(&instancias_exec);
+	return 0;
 }
 
 /* Funcióm creada para verificar que recargue las variables luego de que inotify

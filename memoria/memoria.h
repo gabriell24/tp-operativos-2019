@@ -28,6 +28,7 @@
 pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
 pthread_t hilo_aceptar_clientes;
+pthread_t recibir_mensajes_de_kernel;
 pthread_mutex_t mutex_journaling;
 int socket_servidor;
 int tamanio_value;

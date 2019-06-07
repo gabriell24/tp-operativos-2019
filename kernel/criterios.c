@@ -12,6 +12,10 @@ void agregar_memoria_a_criterio(criterio criterio, int socket) {
 	*aux = socket;
 	switch(criterio) {
 		case SC: {
+			if(list_size(lista_sc)) {
+				log_error(logger, "[Error] El criterio SC solo puede asociarse a UNA memoria");
+				return;
+			}
 			list_add(lista_sc, aux);
 		} break;
 		case SHC: {
@@ -45,10 +49,10 @@ void quitar_de_lista(t_list *lista, void *elemento) {
 void imprimir_elementos(t_list *list, char *lista) {
 	log_debug(logger, "COMIENZO - LISTA %s", lista);
 	void _print(void *elemento) {
-		printf("Elemento: %d\n", *((int*)elemento));
+		printf("\tElemento: %d\n", *((int*)elemento));
 	}
 	list_iterate(list, _print);
-	log_debug(logger, "FINAL    - LISTA %s", lista);
+	log_debug(logger, "---------------------------------------");
 }
 
 void limpiar_listas() {

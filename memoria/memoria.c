@@ -158,13 +158,16 @@ void escuchar_kernel(int *socket_origen) {
 			case ENVIO_DATOS: {
 				log_info(logger, "[Conexión] Kernel conectado");
 				int tamanio_buffer = mensaje_de_kernel->tamanio_total - sizeof(t_header);
-				int numero;
-				int largo_de_handshake;
+				int numero = 0;
+				int largo_de_handshake = 0;
 				memcpy(&numero, mensaje_de_kernel->payload, sizeof(int));
 				memcpy(&largo_de_handshake, mensaje_de_kernel->payload+sizeof(int), sizeof(int));
-				char handshake[largo_de_handshake+1];
+				char *handshake = malloc(largo_de_handshake+1);
+				memset(handshake, 0, largo_de_handshake);
 				memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
+				handshake[largo_de_handshake] = '\0';
 				log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+				free(handshake);
 			} break;
 
 			case FUNCION_SELECT: {
@@ -184,9 +187,12 @@ void escuchar_kernel(int *socket_origen) {
 					t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
 					if(mensaje_de_lissandra->head == REGISTRO_TABLA) {
 						log_info(logger, "LLego el dato de fs, tabla %s", buffer->tabla);
-						char *linea = malloc(sizeof(char)*(mensaje_de_lissandra->tamanio_total+1));
-						memcpy(linea, mensaje_de_lissandra->payload, mensaje_de_lissandra->tamanio_total);
-						linea[mensaje_de_lissandra->tamanio_total] = '\0';
+						size_t tamanio_de_linea = mensaje_de_lissandra->tamanio_total-sizeof(t_header);
+						char *linea = malloc(sizeof(char)*(tamanio_de_linea+1));
+						memset(linea, 0, tamanio_de_linea);
+						memcpy(linea, mensaje_de_lissandra->payload, tamanio_de_linea);
+						linea[tamanio_de_linea] = '\0';
+						log_debug(logger, "Linea: -%s-", linea);
 						char **separador = string_n_split(linea, 3, ";");
 
 						t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
@@ -371,8 +377,8 @@ void crear_asignar_segmento(t_est_tds *segmento, t_est_tdp* frame_libre, char *t
 	memset(frame_libre->ptr_posicion, 0, tamanio_de_pagina);
 	memcpy(frame_libre->ptr_posicion, &timestamp, sizeof(int));
 	memcpy(frame_libre->ptr_posicion+sizeof(int), &key, sizeof(uint16_t));
-	//memcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value, strlen(value));
-	strcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value);
+	memcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value, strlen(value));
+	//strcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value);
 	if(!segmento) {
 		t_est_tds *nuevo_segmento = malloc(sizeof(t_est_tds));
 		nuevo_segmento->nombre_segmento = string_duplicate(tabla);
