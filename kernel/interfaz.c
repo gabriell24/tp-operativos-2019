@@ -1,21 +1,10 @@
 #include "interfaz.h"
 
 void kernel_select(char *tabla, uint16_t key) {
-	printf("Holis soy Rodrigos");
-	//Dummy
 	size_t tamanio_del_buffer = sizeof(int) + strlen(tabla) + sizeof(uint16_t);
 	void *buffer = serializar_request_select(tabla, key);
 	prot_enviar_mensaje(socket_memoria, FUNCION_SELECT, tamanio_del_buffer, buffer);
 	log_info(logger, "Select enviado a memoria");
-	t_prot_mensaje *mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
-	if(mensaje_de_memoria->head == FUNCION_SELECT) {
-		size_t tamanio_value = mensaje_de_memoria->tamanio_total - sizeof(mensaje_de_memoria->head) + 1;
-		char *respuesta = malloc(tamanio_value);
-		memset(respuesta, 0, tamanio_value);
-		memcpy(respuesta, mensaje_de_memoria->payload, tamanio_value);
-		respuesta[tamanio_value-1] = '\0';
-		log_info(logger, "[SELECT RESULT] %s", respuesta);
-	}
 }
 
 void kernel_insert(char* nombre_tabla, uint16_t key, char* value, int epoch){

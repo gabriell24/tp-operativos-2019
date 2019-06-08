@@ -11,21 +11,6 @@ void destruir_parseo(t_parser operacion) {
 	}
 }
 
-char *comando_leido(tokens token) {
-	switch(token) {
-		case t_select: return "SELECT";
-		case insert: return "INSERT";
-		case create: return "CREATE";
-		case describe: return "DESCRIBE";
-		case drop: return "DROP";
-		case journal: return "JOURNAL";
-		case add: return "ADD";
-		case metrics: return "METRICS";
-		default: "te comiste un token";
-	}
-	return "";
-}
-
 t_parser leer(char* linea) {
 	if(linea == NULL){
 		fprintf(stderr, "No pude interpretar una linea nula\n");
@@ -47,26 +32,22 @@ t_parser leer(char* linea) {
 	if(string_igual_case_sensitive(token_leido, token_select)){
 		retorno.token = t_select;
 		retorno.parametros.select.tabla = separador[1];
-		retorno.parametros.select.key = (uint16_t)strtoul(separador[2], NULL, 10); //strtoul
+		retorno.parametros.select.key = string_to_int16(separador[2]); //strtoul
 	}
 	else if(string_igual_case_sensitive(token_leido, token_insert)){
 		retorno.token = insert;
 		retorno.parametros.insert.tabla = separador[1];
-		retorno.parametros.insert.key = (uint16_t)strtoul(separador[2], NULL, 10);
+		retorno.parametros.insert.key = string_to_int16(separador[2]);
 		retorno.parametros.insert.value = separador[3];
 		if(separador[4] != NULL) retorno.parametros.insert.timestamp = atoi(separador[4]);
 	}
 	else if(string_igual_case_sensitive(token_leido, token_create)){
 		retorno.token = create;
 		retorno.parametros.create.tabla = separador[1];
-		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 1");
 		retorno.parametros.create.tipo_consistencia = separador[2];
-		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 2");
 		//TODO validar la consistencia leida: SC, SHC, EC
 		retorno.parametros.create.particiones = atoi(separador[3]);
-		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 3");
 		retorno.parametros.create.compaction_time = atoi(separador[4]);
-		log_debug(logger, "PARSER.C TOKEN LEIDO, PASE SEPARADOR 4");
 	}
 	else if(string_igual_case_sensitive(token_leido, token_describe)){
 		retorno.token = describe;

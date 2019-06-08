@@ -23,6 +23,8 @@
 //Defines
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * (EVENT_SIZE + 18) )
+#define ERROR_NO_EXISTE_TABLA "NO_EXISTE_TABLA"
+#define ERROR_KEY_NO_ENCONTRADA "KEY_NO_ENCONTRADA"
 
 //Variables globales
 pthread_t hilo_observer_configs;
