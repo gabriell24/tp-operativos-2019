@@ -26,6 +26,7 @@ void dumpear() {
 		}
 		list_sort(unaTabla->t_registro, (void*)_orderar_por_time_desc);
 		list_iterate(unaTabla->t_registro, (void *)_writear_valores);
+		crear_archivo_temporal(unaTabla->tabla, strlen(linea), linea);
 		log_info(logger, linea);
 		//fclose(archivo);
 	}
@@ -35,11 +36,37 @@ void dumpear() {
 }
 
 //falta añadir el size (bytes) y los bloquess que ocupa
-void crear_archivo_temporal(char *tabla, int size, int bloques[], int cantidad) {
+void crear_archivo_temporal(char *tabla, int size, char *datos) {
 	char *ruta = string_new();
 	string_append_with_format(&ruta, "%s%s/", path_tablas(), tabla);
 	char *nombre_archivo = nombre_basado_en_temporales(tabla, ruta);
-	guardar_archivo_particion(tabla, nombre_archivo , size, bloques, cantidad);
+	//q = (x + y - 1) / y;
+	int cantidad_bloques = (size + datos_fs.tamanio_bloques - 1) / datos_fs.tamanio_bloques;
+	int bloques[cantidad_bloques];
+	for(int i = 0; i < cantidad_bloques; i++){
+		bloques[i] = tomar_bloque_libre();
+		if(bloques[i] == -1){
+			log_error(logger, "[CREATE] ERROR: No puedo crear temporal, FileSystem lleno!");
+			for(int base = 0; base < i; base++) {
+				bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
+			}
+			return;
+		}
+	}
+	int bytes_a_copiar = datos_fs.tamanio_bloques;
+	for (int j = 0; j < cantidad_bloques; j++){
+		char *path = path_bloques();
+		string_append_with_format(&path, "/%d.bin", bloques[j]);
+		int fdopen = open(path, O_RDWR | O_CREAT, S_IRWXU);
+		log_debug(logger, "bloque %d", bloques[j]);
+		if(strlen(datos) < (j*datos_fs.tamanio_bloques)){
+			bytes_a_copiar = strlen(datos) - (j*datos_fs.tamanio_bloques);
+		}
+		escribir(fdopen, string_substring(datos, j*datos_fs.tamanio_bloques, bytes_a_copiar));
+		close(fdopen);
+		free(path);
+	}
+	guardar_archivo_temporal(tabla, nombre_archivo , size, bloques, cantidad_bloques);
 	string_append_with_format(&ruta, "%s", nombre_archivo);
 	free(nombre_archivo);
 

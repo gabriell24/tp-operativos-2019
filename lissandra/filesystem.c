@@ -147,7 +147,7 @@ void crear_carpeta_tabla(char *tabla) {
 	free(crear_en);
 }
 
-void guardar_archivo_particion(char *tabla, char *archivo_temporal, int size, int bloques[], int cantidad_bloques){
+void guardar_archivo_temporal(char *tabla, char *archivo_temporal, int size, int bloques[], int cantidad_bloques){
 		char *crear_en = path_tablas();
 		string_append(&crear_en, tabla);
 		char *raiz = string_new();
