@@ -75,7 +75,8 @@ t_consola parse(char* linea) {
 				log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
 			} else {
 				int epoch = timestamp != NULL ? atoi(timestamp) : get_timestamp();
-				kernel_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
+				//kernel_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
+				crear_un_lql(true, linea);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
@@ -95,24 +96,28 @@ t_consola parse(char* linea) {
 			if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			} else {
-				kernel_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
+				//kernel_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
+				crear_un_lql(true, linea);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
 		}
 	}
 	else if (string_equals_ignore_case(comando, DESCRIBE)) {
-		kernel_describe(argumentos);
+		//kernel_describe(argumentos);
+		crear_un_lql(true, linea);
 	}
 	else if (string_equals_ignore_case(comando, DROP)) {
 		if (argumentos == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"DROP TABLA1\n");
 		} else {
-			kernel_drop(argumentos);
+			//kernel_drop(argumentos);
+			crear_un_lql(true, linea);
 		}
 	}
 	else if (string_equals_ignore_case(comando, JOURNAL)) {
-		kernel_journal(argumentos);
+		//kernel_journal(argumentos);
+		crear_un_lql(true, linea);
 	}
 	else if (string_equals_ignore_case(comando, ADD)) {
 		char** separador = string_n_split(argumentos, 3, " ");
@@ -122,7 +127,8 @@ t_consola parse(char* linea) {
 			log_error(logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
 		} else {
 			log_debug(logger, "Criterio: %s, Numero: %s", criterio, numero);
-			agregar_memoria_a_criterio(criterio_from_string(criterio), atoi(numero));
+			//agregar_memoria_a_criterio(criterio_from_string(criterio), atoi(numero));
+			crear_un_lql(true, linea);
 		}
 	}
 	else if (string_equals_ignore_case(comando, RUN)) {
@@ -133,7 +139,8 @@ t_consola parse(char* linea) {
 		}
 	}
 	else if (string_equals_ignore_case(comando, METRICS)) {
-		imprimir_metricas();
+		//imprimir_metricas();
+		crear_un_lql(true, linea);
 	}
 	else if(string_equals_ignore_case(comando, "listas")) {
 		imprimir_elementos(lista_sc, "SC");
