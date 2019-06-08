@@ -52,9 +52,9 @@ t_consola parse(char* linea) {
 				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
 				//kernel_select(tabla, (uint16_t)strtoul(key, NULL, 10));
-				char *select_string = string_from_format("SELECT %s %d", tabla, string_to_int16(key));
-				crear_un_lql(true, select_string);
-				free(select_string);
+				//char *select_string = string_from_format("SELECT %s %d", tabla, string_to_int16(key));
+				crear_un_lql(true, linea);
+				//free(select_string);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);
