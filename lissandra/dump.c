@@ -4,22 +4,16 @@ void dump_automatico() {
 	while(!consola_ejecuto_exit)
 	{
 		usleep(fs_config.tiempo_dump_ms * 1000);
-		//log_info(logger, "[Dump] Ejecutando dump");
-		//dumpear();
+		log_info(logger, "[Dump] Ejecutando dump");
+		dumpear();
 	}
 }
 void dumpear() {
 	char *linea = string_new();
 
 	void _obtener_tablas(t_memtable *unaTabla) {
-//		FILE *archivo = crear_y_devolver_archivo_temporal(unaTabla->tabla);
-//		if(archivo == NULL) {
-//			log_error(logger, "[Dump] Error, no se pudo crear archivo para dumpear");
-//		}
 		void _writear_valores(t_registro *unRegistro) {
-			//char *linea = string_new();
 			string_append_with_format(&linea, "%d;%d;%s\n", unRegistro->timestamp , unRegistro->key, unRegistro->value);
-			//fwrite(linea, strlen(linea), 1, archivo);
 		}
 		bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
 			return elemento->timestamp > otroElemento->timestamp;
@@ -27,8 +21,7 @@ void dumpear() {
 		list_sort(unaTabla->t_registro, (void*)_orderar_por_time_desc);
 		list_iterate(unaTabla->t_registro, (void *)_writear_valores);
 		crear_archivo_temporal(unaTabla->tabla, strlen(linea), linea);
-		log_info(logger, linea);
-		//fclose(archivo);
+		free(linea);
 	}
 	list_iterate(t_list_memtable, (void *)_obtener_tablas);
 	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);

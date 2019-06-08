@@ -7,7 +7,7 @@ archivosBibliotecaCompartida=$(cd ../shared_library; ls $PWD/*.c)
 referencias="-lcommons -lpthread -lreadline"
 
 echo "Compilando proyecto Lissandra";
-gcc *.c ${archivosBibliotecaCompartida} -o lissandra.out ${referencias};
+gcc *.c ${archivosBibliotecaCompartida} -ggdb3 -o lissandra.out ${referencias};
 
 if [ $? != 0 ]; then
   echo -e "${COLOR_ROJO}FALLO LA COMPILACIÓN${COLOR_NORMAL}"

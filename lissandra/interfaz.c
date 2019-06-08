@@ -26,6 +26,27 @@ char *fs_select(char *tabla, uint16_t key) {
 	 * BUSCAR EN ARCHIVOS TEMPORALES
 	 * Y ASGINAR A desde_temporal
 	 */
+	//char *path_a_temporal = string_new();
+	//bool reviso_temporales = false;
+	//char *nombre = string_new();
+	//string_append(&nombre, tabla);
+	char *ruta_tabla = path_tablas();
+	string_append(&ruta_tabla, tabla);
+	DIR *dp;
+	struct dirent *ep;
+	dp = opendir(ruta_tabla);
+	if (dp != NULL) {
+		while ((ep = readdir (dp)) && desde_temporal == NULL) {
+			if(string_contains(ep->d_name, ".tmp")) {
+				char *archivo_temporal = string_from_format("%s/%s", tabla, ep->d_name);
+				desde_temporal = obtener_datos_de_particion(archivo_temporal, key);
+				free(archivo_temporal);
+			}
+		}
+	}
+	closedir(dp);
+	free(ruta_tabla);
+
 	mayor_timestamp = devolver_timestamp_mayor(desde_memtable, devolver_timestamp_mayor(desde_particion, desde_temporal));
 	if(!mayor_timestamp) {
 		return ERROR_KEY_NO_ENCONTRADA;

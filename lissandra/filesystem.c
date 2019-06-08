@@ -260,7 +260,7 @@ bool existe_tabla(char *tabla) {
 
 t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 		t_timestamp_value *retorno = NULL;
-		char *buscar_en = string_duplicate(path_tablas());
+		char *buscar_en = path_tablas();
 		string_append(&buscar_en, path);
 		FILE *archivo;
 
