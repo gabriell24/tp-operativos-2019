@@ -193,32 +193,38 @@ void escuchar_kernel(int *socket_origen) {
 						memcpy(linea, mensaje_de_lissandra->payload, tamanio_de_linea);
 						linea[tamanio_de_linea] = '\0';
 						log_debug(logger, "Linea: -%s-", linea);
-						char **separador = string_n_split(linea, 3, ";");
+						if(!string_equals_ignore_case(linea, ERROR_NO_EXISTE_TABLA) && !string_equals_ignore_case(linea, ERROR_KEY_NO_ENCONTRADA)) {
+							char **separador = string_n_split(linea, 3, ";");
 
-						t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
-						if(!segmento) {
-							t_est_tdp *registro = obtener_frame_libre();
-							registro->modificado = 0;
-							crear_asignar_segmento(segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
-						}
-						else {
-							if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
-								//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
-								log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
-							} else {
+							t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
+							if(!segmento) {
 								t_est_tdp *registro = obtener_frame_libre();
 								registro->modificado = 0;
-								settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
-								settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
-								settear_value(registro->ptr_posicion, separador[2]);
-								list_add(segmento->paginas, registro);
+								crear_asignar_segmento(segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
 							}
+							else {
+								if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
+									//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
+									log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
+								} else {
+									t_est_tdp *registro = obtener_frame_libre();
+									registro->modificado = 0;
+									settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
+									settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
+									settear_value(registro->ptr_posicion, separador[2]);
+									list_add(segmento->paginas, registro);
+								}
+							}
+							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
+							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
+							free(linea);
+							string_iterate_lines(separador, (void*)free);
+							prot_destruir_mensaje(mensaje_de_lissandra);
 						}
-						log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
-						prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
-						free(linea);
-						string_iterate_lines(separador, (void*)free);
-						prot_destruir_mensaje(mensaje_de_lissandra);
+						else {
+							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
+							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(linea), linea);
+						}
 					}
 				}
 				free(buffer->tabla);

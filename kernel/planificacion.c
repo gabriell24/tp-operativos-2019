@@ -108,7 +108,6 @@ void round_robin() {
 
 		t_parser parser = leer(linea_a_ejecutar);
 		if(parser.valido) {
-			log_debug(logger, "Leego a leer, es un %s", comando_leido(parser.token));
 			switch(parser.token) {
 				case create: {
 					kernel_create(parser.parametros.create.tabla,
@@ -122,6 +121,9 @@ void round_robin() {
 				case insert: {
 					kernel_insert(parser.parametros.insert.tabla, parser.parametros.insert.key,
 							parser.parametros.insert.value, parser.parametros.insert.timestamp);
+				} break;
+				case t_select: {
+					kernel_select(parser.parametros.select.tabla, parser.parametros.select.key);
 				} break;
 
 				default: log_warning(logger, "codealo vos e.e");
