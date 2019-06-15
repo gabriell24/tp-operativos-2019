@@ -51,14 +51,17 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
-				char *resultado_stream = fs_select(tabla, (uint16_t)strtoul(key, NULL, 10));
-				char *resultado_string = malloc(strlen(resultado_stream)+1);
+				char *resultado_string = fs_select(tabla, (uint16_t)strtoul(key, NULL, 10));
+				/*char *resultado_string = malloc(strlen(resultado_stream)+1);
 				memset(resultado_string, 0, strlen(resultado_stream)+1);
 				memcpy(resultado_string, resultado_stream, strlen(resultado_stream));
-				resultado_string[strlen(resultado_stream)] = '\0';
+				resultado_string[strlen(resultado_string)] = '\0';*/
 				log_info(logger, "[Select] Resultado: %s", resultado_string);
-				free(resultado_string);
-				free(resultado_stream);
+				if(!string_equals_ignore_case(resultado_string, ERROR_KEY_NO_ENCONTRADA) &&
+						!string_equals_ignore_case(resultado_string, ERROR_NO_EXISTE_TABLA)) {
+					free(resultado_string);
+				}
+				//free(resultado_string);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);

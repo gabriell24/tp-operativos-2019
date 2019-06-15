@@ -52,8 +52,10 @@ void recibir_mensajes_de_memoria() {
 		} break;
 
 		default:
-			log_error(logger, "Mensaje no conocido. %d", mensaje_de_memoria->head);
+			cortar_while = true;
+			log_error(logger, "Mensaje no conocido. Header: %d, corto el recv", mensaje_de_memoria->head);
 		}
 		prot_destruir_mensaje(mensaje_de_memoria);
+		if(cortar_while) break;
 	}
 }

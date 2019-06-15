@@ -25,4 +25,5 @@ t_kernel_config kernel_config;
 
 //Prototipo
 void levantar_archivo_configuracion();
+void recargar_archivo_configuracion();
 #endif /* CONFIGURACION_H_ */

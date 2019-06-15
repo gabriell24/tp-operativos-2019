@@ -14,3 +14,14 @@ void levantar_archivo_configuracion()
 
 	config_destroy(configuracion);
 }
+
+void recargar_archivo_configuracion()
+{
+	configuracion = config_create("kernel.config");
+
+	kernel_config.quantum = config_get_int_value(configuracion, "QUANTUM");
+	kernel_config.refrescar_metadata = config_get_int_value(configuracion, "REFRESCAR_METADATA");
+	kernel_config.retardo_ciclo_ejecucion = config_get_int_value(configuracion, "RETARDO_CICLO_EJECUCION");
+
+	config_destroy(configuracion);
+}

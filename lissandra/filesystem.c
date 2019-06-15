@@ -290,33 +290,26 @@ t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 			linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
 			while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
-				char **separador = string_n_split(linea, 3, ";");
-				if(separador[0] == NULL || separador[1] == NULL || separador[2] == NULL) {
-					if(parte_de_linea != NULL) {
-						/*
-						 * Asumo que si la 3-upla no estaba completa en una linea, con leer la próxima si línea lo este.
-						 */
-						char *concatenados = string_new();
-						string_append_with_format(&concatenados, "%s%s", parte_de_linea, linea);
-						linea = realloc(linea, strlen(concatenados));
-						memset(linea, 0, strlen(concatenados));
-						memcpy(linea, concatenados, strlen(concatenados));
-						free(concatenados);
-						free(parte_de_linea);
-						parte_de_linea = NULL;
-						if(matchea_key_en_linea(linea, key)) {
-							log_info(logger, "[Key encontrada] %s", linea);
-							retorno = cargar_datos_timestamp_value(linea);
-							key_encontrada = true;
-							break;
-						}
-					}
+				if(linea[strlen(linea)-1] != '\n') {
 					size_t bytes_leidos = strlen(linea);
-					parte_de_linea = malloc(bytes_leidos);
-					memset(parte_de_linea, 0, bytes_leidos);
+					parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
+					memset(parte_de_linea, 0, bytes_leidos+1);
 					memcpy(parte_de_linea, linea, bytes_leidos);
 				}
 				else {
+					if(parte_de_linea != NULL) {
+						char *auxiliar = malloc(strlen(linea)+1);
+						memset(auxiliar, 0, strlen(linea)+1);
+						memcpy(auxiliar, linea, strlen(linea));
+						size_t tamanio_nuevo = strlen(linea)+strlen(parte_de_linea);
+						memset(linea, 0, tamanio_nuevo);
+						memcpy(linea, parte_de_linea, strlen(parte_de_linea));
+						memcpy(linea+strlen(parte_de_linea), auxiliar, strlen(auxiliar));
+						linea[tamanio_nuevo] = '\0';
+						free(parte_de_linea);
+						free(auxiliar);
+						parte_de_linea = NULL;
+					}
 					if(matchea_key_en_linea(linea, key)) {
 						log_info(logger, "[Key encontrada] %s", linea);
 						retorno = cargar_datos_timestamp_value(linea);
@@ -324,8 +317,6 @@ t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 						break;
 					}
 				}
-				string_iterate_lines(separador, (void*)free);
-				free(separador);
 			}
 			if(key_encontrada) {
 				break;
@@ -338,7 +329,6 @@ t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 
 		string_iterate_lines(bloques_usados, (void*) free);
 		free(bloques_usados);
-		//if(!key_encontrada) return ERROR_KEY_NO_ENCONTRADA;
 		return retorno;
 }
 
@@ -354,6 +344,7 @@ t_timestamp_value *cargar_datos_timestamp_value(char *linea) {
 
 bool matchea_key_en_linea(char *linea, uint16_t key) {
 	char **separador = string_n_split(linea, 3, ";");
+	if(separador[0] == NULL || separador[1] == NULL) return false;
 	uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
 	string_iterate_lines(separador, (void*)free);
 	free(separador);

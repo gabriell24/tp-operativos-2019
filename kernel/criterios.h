@@ -13,4 +13,7 @@ void quitar_memoria_de_criterio(int socket);
 void quitar_de_lista(t_list *lista, void *elemento);
 void imprimir_elementos(t_list *list, char *lista);
 void limpiar_listas();
+int elegir_memoria_shc(char *tabla);
+int elegir_memoria_ec();
+int pasar_char_minuscula(char letra);
 #endif /* CRITERIOS_H_ */

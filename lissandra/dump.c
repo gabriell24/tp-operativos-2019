@@ -9,9 +9,10 @@ void dump_automatico() {
 	}
 }
 void dumpear() {
-	char *linea = string_new();
+
 
 	void _obtener_tablas(t_memtable *unaTabla) {
+		char *linea = string_new();
 		void _writear_valores(t_registro *unRegistro) {
 			string_append_with_format(&linea, "%d;%d;%s\n", unRegistro->timestamp , unRegistro->key, unRegistro->value);
 		}
@@ -53,7 +54,7 @@ void crear_archivo_temporal(char *tabla, int size, char *datos) {
 		int fdopen = open(path, O_RDWR | O_CREAT, S_IRWXU);
 		log_debug(logger, "bloque %d", bloques[j]);
 		if(strlen(datos) < (j*datos_fs.tamanio_bloques)){
-			bytes_a_copiar = strlen(datos) - (j*datos_fs.tamanio_bloques);
+			bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(datos);
 		}
 		escribir(fdopen, string_substring(datos, j*datos_fs.tamanio_bloques, bytes_a_copiar));
 		close(fdopen);

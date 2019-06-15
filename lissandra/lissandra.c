@@ -7,7 +7,7 @@ int main() {
 	logger = log_create("lissandra.log","LISSANDRA", true,
 			fs_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 	iniciar_fs(fs_config.punto_montaje);
-	maximo_caracteres_linea = 12 + 2 + 5 + fs_config.tamanio_value; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), y el value
+	maximo_caracteres_linea = 12 + 2 + 5 + fs_config.tamanio_value + 1; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), el value y un barra n
 	socket_servidor = levantar_servidor(fs_config.puerto_escucha);
 	log_info(logger, "Lissandra iniciado");
 	printear_configuraciones();

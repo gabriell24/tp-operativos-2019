@@ -76,7 +76,7 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 
 						log_info(logger, "[Info] Se modificó kernel.config");
 						log_debug(logger, "[DEBUG] pre releer configs");
-						levantar_archivo_configuracion();
+						recargar_archivo_configuracion();
 						log_debug(logger, "[DEBUG] termino de leer configs");
 						printear_configuraciones();
 

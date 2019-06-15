@@ -208,6 +208,13 @@ void escuchar_kernel(int *socket_origen) {
 									log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
 								} else {
 									t_est_tdp *registro = obtener_frame_libre();
+									if(registro == NULL) {
+										log_error(logger, "[Error] No hay suficientes frames");
+										//TODO EJECUTAR ALGORITMO DE REEMPLAZO
+										char *mensaje_por_ahora = "Memoria llena, implementar lru\n";
+										prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(mensaje_por_ahora), mensaje_por_ahora);
+										return ;
+									}
 									registro->modificado = 0;
 									settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
 									settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
@@ -217,8 +224,9 @@ void escuchar_kernel(int *socket_origen) {
 							}
 							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
 							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
-							free(linea);
 							string_iterate_lines(separador, (void*)free);
+							free(separador);
+							free(linea);
 							prot_destruir_mensaje(mensaje_de_lissandra);
 						}
 						else {
@@ -298,7 +306,7 @@ void iniciar_memoria() {
 	memoria = malloc(memoria_config.tamanio_de_memoria);
 	log_debug(logger, "Inicio de memoria: [Hex]=%p", memoria);
 	size_t tamanio_key = sizeof(uint16_t);
-	size_t tamanio_timestamp = sizeof(int);
+	size_t tamanio_timestamp = sizeof(int); //TODO CAMBIAR A LONG
 	log_debug(logger, "SizeOf Key: %d, SizeOf Timestamp:%d", tamanio_key, tamanio_timestamp);
 	tamanio_de_pagina = tamanio_value + tamanio_key + tamanio_timestamp;
 	tdp = list_create();
@@ -311,6 +319,7 @@ void iniciar_memoria() {
 		pagina->modificado = -1;
 		pagina->nro_pag = i;
 		pagina->ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
+		pagina->ultima_referencia = 0;
 		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
 		list_add(tdp, pagina);
 	}
@@ -359,8 +368,8 @@ int obtener_timestamp_de_pagina(void *frame) {
 }
 
 char *obtener_value_de_pagina(void *frame) {
-	char *retorno = malloc(sizeof(char)*tamanio_value);
-	memset(retorno, 0, tamanio_value);
+	char *retorno = malloc(sizeof(char)*tamanio_value+1);
+	memset(retorno, 0, tamanio_value+1);
 	memcpy(retorno, frame+sizeof(int)+sizeof(uint16_t), tamanio_value);
 	return retorno;
 }

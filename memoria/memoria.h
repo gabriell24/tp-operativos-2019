@@ -49,6 +49,7 @@ typedef struct {
 	int nro_pag;
 	void* ptr_posicion;
 	int8_t modificado;
+	long ultima_referencia;
 } t_est_tdp;
 
 /*typedef struct {

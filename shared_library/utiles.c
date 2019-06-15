@@ -40,3 +40,7 @@ char *criterio_to_string(criterio t_criterio) {
 uint16_t string_to_int16(char *string) {
 	return (uint16_t)strtoul(string, NULL, 10);
 }
+
+int redondear_hacia_arriba(int numerador, int denominador) {
+	return (numerador/denominador) + ((numerador%denominador)!=0);
+}
