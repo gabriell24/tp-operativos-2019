@@ -4,10 +4,11 @@ void dump_automatico() {
 	while(!consola_ejecuto_exit)
 	{
 		usleep(fs_config.tiempo_dump_ms * 1000);
-		log_info(logger, "[Dump] Ejecutando dump");
-		dumpear();
+		//log_info(logger, "[Dump] Ejecutando dump");
+		//dumpear();
 	}
 }
+
 void dumpear() {
 
 
@@ -70,16 +71,20 @@ void crear_archivo_temporal(char *tabla, int size, char *datos) {
 char *nombre_basado_en_temporales(char *tabla, char *ruta_tabla) {
 	DIR *dp;
 	struct dirent *ep;
-	int cantidad_de_temporales = 1;
+	//int cantidad_de_temporales = 1;
+	int maximo_temporal = 0;
 	char *nombre = string_new();
 	string_append(&nombre, tabla);
 	dp = opendir(ruta_tabla);
 	if (dp != NULL) {
 		while ((ep = readdir (dp))) {
-			if(string_contains(ep->d_name, ".tmp"))	cantidad_de_temporales++;
+			if(string_ends_with(ep->d_name, ".tmp")){
+				int numero_temporal = number_string(ep->d_name);
+				if(numero_temporal > maximo_temporal) maximo_temporal = numero_temporal;
+			}
 		}
 	}
 	closedir(dp);
-	string_append_with_format(&nombre, "%d.tmp", cantidad_de_temporales);
+	string_append_with_format(&nombre, "%d.tmp", maximo_temporal +1);
 	return nombre;
 }

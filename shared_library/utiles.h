@@ -19,5 +19,6 @@ criterio criterio_from_string(char *string_criterio);
 char *criterio_to_string(criterio t_criterio);
 uint16_t string_to_int16(char *string);
 int redondear_hacia_arriba(int numerador, int denominador);
+int number_string(char *texto);
 
 #endif /* UTILES_H_ */

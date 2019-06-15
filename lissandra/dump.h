@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "lissandra.h"
 #include "filesystem.h"
+#include "../shared_library/utiles.h"
 
 
 void dump_automatico();

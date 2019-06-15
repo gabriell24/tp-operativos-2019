@@ -44,3 +44,17 @@ uint16_t string_to_int16(char *string) {
 int redondear_hacia_arriba(int numerador, int denominador) {
 	return (numerador/denominador) + ((numerador%denominador)!=0);
 }
+
+int number_string(char *texto){
+	char *aux = string_new();
+	int posiciones = 0;
+	while(*(texto + posiciones) != '\0'){
+		if(*(texto + posiciones) >= 48 && *(texto + posiciones) <= 57){
+			string_append_with_format(&aux, "%d", *(texto + posiciones) - 48);
+		}
+		posiciones++;
+	}
+	int numero = atoi(aux);
+	free(aux);
+	return numero;
+}
