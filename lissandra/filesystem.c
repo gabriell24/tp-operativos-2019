@@ -126,7 +126,7 @@ void crear_archivo_particion(char *tabla, int particion, int bloque) {
 
 void crear_archivo_bloque(int bloque, char *contenido) {
 	char *ruta = path_bloques();
-	string_append(&ruta, string_from_format("%d.bin", bloque));
+	string_append_with_format(&ruta, "%d.bin", bloque);
 	//string_append(&ruta, ("Bloques/%d.bin", bloque));
 	//printf("\nArchivo: %s\n", ruta);
 
@@ -282,8 +282,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 
 		bool key_encontrada = false;
 		for(int indice_bloque = 0; indice_bloque < total_de_bloques_usados_por_archivo; indice_bloque++) {
-			char *nombre_del_bloque = string_new();
-			nombre_del_bloque = string_duplicate(path_bloques());
+			char *nombre_del_bloque = path_bloques();
 			string_append_with_format(&nombre_del_bloque, "%s.bin", bloques_usados[indice_bloque]);
 			log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
 			archivo = fopen(nombre_del_bloque, "rb");
@@ -292,20 +291,18 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 			while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
 				if(linea[strlen(linea)-1] != '\n') {
 					if (parte_de_linea != NULL){
-						parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea));
+						parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea) +1);
+						memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
 						memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
+						//parte_de_linea[strlen(parte_de_linea)] = '\0';
 						log_warning(logger, "-%s-", parte_de_linea );
+					} else {
+						size_t bytes_leidos = strlen(linea);
+						parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
+						memset(parte_de_linea, 0, bytes_leidos+1);
+						memcpy(parte_de_linea, linea, bytes_leidos);
 					}
-
-					else {
-					size_t bytes_leidos = strlen(linea);
-					parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
-					memset(parte_de_linea, 0, bytes_leidos+1);
-					memcpy(parte_de_linea, linea, bytes_leidos);
-					}
-
-				}
-				else {
+				} else {
 					if(parte_de_linea != NULL) {
 						char *auxiliar = malloc(strlen(linea)+1);
 						memset(auxiliar, 0, strlen(linea)+1);
@@ -322,18 +319,15 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 					if(matchea_key_en_linea(linea, key)) {
 						log_info(logger, "[Key encontrada] %s", linea);
 						//retorno = cargar_datos_timestamp_value(linea);
-						key_encontrada = true;
-						break;
+						list_add(retorno, linea);
+						//key_encontrada = true;
+						//break;
 					}
 				}
 			}
-			if(key_encontrada) {
-				list_add(retorno, linea); // duplicar string
-
-			} else {
-				free(linea);
-			}
+			free(linea);
 			fclose(archivo);
+			free(nombre_del_bloque);
 
 		}
 
@@ -354,7 +348,11 @@ t_timestamp_value *cargar_datos_timestamp_value(char *linea) {
 
 bool matchea_key_en_linea(char *linea, uint16_t key) {
 	char **separador = string_n_split(linea, 3, ";");
-	if(separador[0] == NULL || separador[1] == NULL) return false;
+	if(separador[0] == NULL || separador[1] == NULL) {
+		string_iterate_lines(separador, (void*)free);
+		free(separador);
+		return false;
+	}
 	uint16_t key_from_file = (uint16_t)strtoul(separador[1], NULL, 10);
 	string_iterate_lines(separador, (void*)free);
 	free(separador);
@@ -430,7 +428,7 @@ void limpiar_registros_memtable(t_registro *unRegistro) {
 
 void limpiar_tablas_memtable(t_memtable *unaTabla) {
 	free(unaTabla->tabla);
-	list_clean_and_destroy_elements(unaTabla->t_registro, (void*)limpiar_registros_memtable);
+	list_destroy_and_destroy_elements(unaTabla->t_registro, (void*)limpiar_registros_memtable);
 	free(unaTabla);
 }
 
@@ -449,6 +447,7 @@ t_timestamp_value *devolver_timestamp_mayor(t_list *lista) {
 			aux->value = string_duplicate(separador[2]);
 		}
 		else if (aux->timestamp <= atoi(separador[0])) {
+			free(aux->value);
 			aux->timestamp = atoi(separador[0]);
 			aux->value = string_duplicate(separador[2]);
 

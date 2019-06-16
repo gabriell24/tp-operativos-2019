@@ -26,7 +26,7 @@ void dumpear() {
 		free(linea);
 	}
 	list_iterate(t_list_memtable, (void *)_obtener_tablas);
-	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
 	t_list_memtable = list_create();
 }
 

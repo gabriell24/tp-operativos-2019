@@ -39,7 +39,7 @@ int main() {
 	close(fd_inotify);
 	free(ptr_fd_inotify);
 
-	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
 	log_destroy(logger);
 	free(fs_config.punto_montaje);
 	return 0;
@@ -196,6 +196,8 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				t_request_select *buffer = deserializar_request_select(mensaje_de_memoria);
 				log_info(logger, "[Select] Tabla: %s", buffer->tabla);
 				char *buffer_send = fs_select(buffer->tabla, buffer->key);
+				free(buffer->tabla);
+				free(buffer);
 				prot_enviar_mensaje(socket_memoria, REGISTRO_TABLA, strlen(buffer_send), buffer_send);
 				if(string_equals_ignore_case(buffer_send, ERROR_NO_EXISTE_TABLA) ||
 				   string_equals_ignore_case(buffer_send, ERROR_KEY_NO_ENCONTRADA)) {
@@ -257,9 +259,11 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				void *buffer = serializar_response_describe(tamanio_del_buffer, respuesta_describe);
 				prot_enviar_mensaje(socket_memoria, RESPUESTA_DESCRIBE, tamanio_del_buffer, buffer);
 				free(buffer);
-				//Hacer el list destroy y limpiar elementos.
-
-
+				void limpiar_respuesta_describe(t_response_describe *describe) {
+					free(describe->tabla);
+					free(describe);
+				}
+				list_destroy_and_destroy_elements(respuesta_describe, (void *)limpiar_respuesta_describe);
 			} break;
 
 			default: {
