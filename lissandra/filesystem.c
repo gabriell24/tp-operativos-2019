@@ -258,8 +258,8 @@ bool existe_tabla(char *tabla) {
 }
 
 
-t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
-		t_timestamp_value *retorno = NULL;
+t_list *obtener_datos_de_particion(char *path, uint16_t key) {
+		t_list *retorno = list_create();
 		char *buscar_en = path_tablas();
 		string_append(&buscar_en, path);
 		FILE *archivo;
@@ -291,10 +291,19 @@ t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 
 			while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
 				if(linea[strlen(linea)-1] != '\n') {
+					if (parte_de_linea != NULL){
+						parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea));
+						memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
+						log_warning(logger, "-%s-", parte_de_linea );
+					}
+
+					else {
 					size_t bytes_leidos = strlen(linea);
 					parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
 					memset(parte_de_linea, 0, bytes_leidos+1);
 					memcpy(parte_de_linea, linea, bytes_leidos);
+					}
+
 				}
 				else {
 					if(parte_de_linea != NULL) {
@@ -312,14 +321,15 @@ t_timestamp_value *obtener_datos_de_particion(char *path, uint16_t key) {
 					}
 					if(matchea_key_en_linea(linea, key)) {
 						log_info(logger, "[Key encontrada] %s", linea);
-						retorno = cargar_datos_timestamp_value(linea);
+						//retorno = cargar_datos_timestamp_value(linea);
 						key_encontrada = true;
 						break;
 					}
 				}
 			}
 			if(key_encontrada) {
-				break;
+				list_add(retorno, linea); // duplicar string
+
 			} else {
 				free(linea);
 			}
@@ -371,7 +381,9 @@ t_memtable *obtener_tabla_en_memtable(char *tabla) {
 	return (t_memtable*)list_find(t_list_memtable, _buscar_por_nombre);
 }
 
-t_registro *obtener_registros_por_key(char *tabla, uint16_t key) {
+t_list *obtener_registros_por_key(char *tabla, uint16_t key) {
+	t_list *retorno = list_create();
+
 	t_memtable *area_de_tabla = obtener_tabla_en_memtable(tabla);
 	/*
 	 * Preguntar si esto va, en caso de key duplicada en el memtable
@@ -381,15 +393,19 @@ t_registro *obtener_registros_por_key(char *tabla, uint16_t key) {
 	 * Si se hace en el insert, nos olvidamos de ordenar cuando
 	 * se realiza el dump
 	 */
-	if(!area_de_tabla) return NULL;
-	bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
+	if(!area_de_tabla) return retorno;
+	/*bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
 		return elemento->timestamp > otroElemento->timestamp;
 	}
-	list_sort(area_de_tabla->t_registro, (void*)_orderar_por_time_desc);
-	bool _buscar_por_key(t_registro *elemento) {
-		return elemento->key == key;
+	list_sort(area_de_tabla->t_registro, (void*)_orderar_por_time_desc);*/
+	void _buscar_por_key(t_registro *elemento) {
+		if (elemento->key == key){
+			char *elemento_string = string_from_format("%d;%d;%s", elemento->timestamp, elemento->key, elemento->value);
+			list_add(retorno, elemento_string);
+		}
 	}
-	return (t_registro*)list_find(area_de_tabla->t_registro, (void*)_buscar_por_key);
+	list_iterate(area_de_tabla->t_registro, (void*)_buscar_por_key);
+	return retorno;
 }
 
 void printear_memtable() {
@@ -418,8 +434,32 @@ void limpiar_tablas_memtable(t_memtable *unaTabla) {
 	free(unaTabla);
 }
 
-t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_value *otro) {
-	t_timestamp_value *aux;
+
+
+
+t_timestamp_value *devolver_timestamp_mayor(t_list *lista) {
+
+	t_timestamp_value *aux = NULL;
+	void _buscar_mayor(char* unaLinea){
+		if (!unaLinea) return;
+		char **separador = string_n_split(unaLinea, 3, ";");
+		if (!aux) {
+			aux = malloc(sizeof(t_timestamp_value));
+			aux->timestamp = atoi(separador[0]);
+			aux->value = string_duplicate(separador[2]);
+		}
+		else if (aux->timestamp <= atoi(separador[0])) {
+			aux->timestamp = atoi(separador[0]);
+			aux->value = string_duplicate(separador[2]);
+
+		}
+		string_iterate_lines(separador, (void*)free);
+		free(separador);
+	}
+	list_iterate(lista,(void*)_buscar_mayor);
+
+	return aux;
+	/*t_timestamp_value *aux;
 	if(!uno && !otro) {
 		return NULL;
 	} if(!uno && otro) {
@@ -429,7 +469,7 @@ t_timestamp_value *devolver_timestamp_mayor(t_timestamp_value *uno, t_timestamp_
 	} else {
 		uno->timestamp >= otro->timestamp ? (aux = uno) : (aux = otro);
 	}
-	return aux;
+	return aux;*/
 }
 
 void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro) {

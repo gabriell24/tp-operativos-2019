@@ -7,21 +7,25 @@ char *fs_select(char *tabla, uint16_t key) {
 	}
 	t_metadata metadata = obtener_metadata(tabla);
 	char *retorno = NULL;
-	t_timestamp_value *desde_particion = NULL;
-	t_timestamp_value *desde_memtable = NULL;
-	t_timestamp_value *desde_temporal = NULL;
+	t_list *key_encontradas = list_create();
+	//t_timestamp_value *desde_particion = NULL;
+	//t_timestamp_value *desde_memtable = NULL;
+	//t_timestamp_value *desde_temporal = NULL;
+	//t_timestamp_value *desde_temporal_compactacion = NULL;
 	t_timestamp_value *mayor_timestamp = NULL;
 
 	int particion_a_leer = calcular_particion(metadata.partitions, key);
 	char *path_a_particion = string_new();
 	string_append_with_format(&path_a_particion,"%s/%d.bin",tabla, particion_a_leer);
-	desde_particion = obtener_datos_de_particion(path_a_particion, key);
-	t_registro *datos_memtable;
-	if((datos_memtable = obtener_registros_por_key(tabla, key))) {
+	list_add_all(key_encontradas, obtener_datos_de_particion(path_a_particion, key));
+	//t_registro *datos_memtable;
+	/*if((datos_memtable = obtener_registros_por_key(tabla, key))) {
 		desde_memtable = malloc(sizeof(t_timestamp_value));
 		desde_memtable->timestamp = datos_memtable->timestamp;
 		desde_memtable->value = string_duplicate(datos_memtable->value);
-	}
+	}*/
+
+	list_add_all(key_encontradas, obtener_registros_por_key(tabla, key));
 	/*
 	 * BUSCAR EN ARCHIVOS TEMPORALES
 	 * Y ASGINAR A desde_temporal
@@ -36,10 +40,17 @@ char *fs_select(char *tabla, uint16_t key) {
 	struct dirent *ep;
 	dp = opendir(ruta_tabla);
 	if (dp != NULL) {
-		while ((ep = readdir (dp)) && desde_temporal == NULL) {
-			if(string_contains(ep->d_name, ".tmp")) {
+		while ((ep = readdir (dp))) {
+			if(string_ends_with(ep->d_name, ".tmp")) {
 				char *archivo_temporal = string_from_format("%s/%s", tabla, ep->d_name);
-				desde_temporal = obtener_datos_de_particion(archivo_temporal, key);
+				list_add_all(key_encontradas, obtener_datos_de_particion(archivo_temporal, key));
+				free(archivo_temporal);
+
+			}
+
+			if(string_ends_with(ep->d_name, ".tmpc")) {
+				char *archivo_temporal = string_from_format("%s/%s", tabla, ep->d_name);
+				list_add_all(key_encontradas, obtener_datos_de_particion(archivo_temporal, key));
 				free(archivo_temporal);
 			}
 		}
@@ -47,7 +58,7 @@ char *fs_select(char *tabla, uint16_t key) {
 	closedir(dp);
 	free(ruta_tabla);
 
-	mayor_timestamp = devolver_timestamp_mayor(desde_memtable, devolver_timestamp_mayor(desde_particion, desde_temporal));
+	mayor_timestamp = devolver_timestamp_mayor(key_encontradas);
 	if(!mayor_timestamp) {
 		return ERROR_KEY_NO_ENCONTRADA;
 	} else {
@@ -59,10 +70,11 @@ char *fs_select(char *tabla, uint16_t key) {
 		memcpy(retorno+strlen(timestamp_key), mayor_timestamp->value, strlen(mayor_timestamp->value));
 		free(timestamp_key);
 	}
-	limpiar_timestampvalue_si_corresponde(desde_particion);
-	limpiar_timestampvalue_si_corresponde(desde_memtable);
-	limpiar_timestampvalue_si_corresponde(desde_temporal);
+	//limpiar_timestampvalue_si_corresponde(desde_particion);
+	//limpiar_timestampvalue_si_corresponde(desde_memtable);
+	//limpiar_timestampvalue_si_corresponde(desde_temporal);
 	//mayor_timestamp no se limpiaria, porque es uno de los 3 anteriores
+	list_destroy_and_destroy_elements(key_encontradas, (void*)free);
 	free(metadata.consistency);
 
 	return retorno;
