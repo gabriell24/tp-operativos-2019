@@ -16,10 +16,11 @@ void conectar_a_memoria(char *ip, int puerto) {
 
 	log_debug(logger, "[Conexión] El tamanio del buffer de handshake es: %d", tamanio_buffer);
 	prot_enviar_mensaje(socket_memoria, ENVIO_DATOS, tamanio_buffer, buffer);
+	free(buffer);
 
 	log_info(logger, "[Conexión] Memoria conectada, hago un describe");
 	kernel_describe("");
-	pthread_create(&hilo_observer_configs, NULL, (void*)recibir_mensajes_de_memoria, NULL);
+	pthread_create(&hilo_manejo_memorias, NULL, (void*)recibir_mensajes_de_memoria, NULL);
 }
 
 void recibir_mensajes_de_memoria() {
@@ -31,7 +32,10 @@ void recibir_mensajes_de_memoria() {
 		switch(mensaje_de_memoria->head) {
 		case RESPUESTA_DESCRIBE: {
 			log_info(logger, "Llegó el describe");
-			describe_tablas = deserializar_response_describe(mensaje_de_memoria, logger);
+			t_list *describe_recibido = deserializar_response_describe(mensaje_de_memoria, logger);
+			//list_add_all(describe_tablas, deserializar_response_describe(mensaje_de_memoria, logger));
+			actualizar_describe(describe_recibido);
+			list_destroy(describe_recibido);
 			if(!describe_tablas) log_error(logger, "[Describe] Llego vació");
 			imprimir_datos_describe(describe_tablas);
 		} break;

@@ -63,6 +63,7 @@ void admitir_lql(compartir_info_lql *datos){
 	sem_post(&lqls_en_ready);
 	free(datos->data);
 	free(datos);
+	pthread_detach(pthread_self());
 }
 
 void crear_un_lql(bool desde_consola, char *data) {
@@ -128,6 +129,7 @@ void round_robin() {
 
 				default: log_warning(logger, "codealo vos e.e");
 			}
+		destruir_parseo(parser);
 		}
 
 		log_debug(logger, "Ejecutando quantum %d", ut_consumidas);
@@ -149,6 +151,7 @@ void round_robin() {
 	}
 	sem_post(&instancias_exec);
 	pthread_mutex_unlock(&mutex_listas);
+	pthread_detach(pthread_self());
 }
 
 void corte_quantum(int nro_exec) {

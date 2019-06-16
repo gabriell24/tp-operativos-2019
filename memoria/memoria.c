@@ -178,6 +178,7 @@ void escuchar_kernel(int *socket_origen) {
 				char *value_desde_memoria = memoria_select(buffer->tabla, buffer->key);
 				if(value_desde_memoria) {
 					prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(value_desde_memoria), value_desde_memoria);
+					free(value_desde_memoria);
 				}
 				else {
 					size_t tamanio_del_buffer = sizeof(int) + strlen(buffer->tabla) + sizeof(uint16_t);
@@ -199,8 +200,13 @@ void escuchar_kernel(int *socket_origen) {
 							t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
 							if(!segmento) {
 								t_est_tdp *registro = obtener_frame_libre();
-								registro->modificado = 0;
-								crear_asignar_segmento(segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+								if(registro == NULL) {
+									log_error(logger, "[Error] No hay suficientes frames");
+									//TODO EJECUTAR ALGORITMO DE REEMPLAZO
+								} else {
+									registro->modificado = 0;
+									crear_asignar_segmento(segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+								}
 							}
 							else {
 								if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
@@ -211,15 +217,13 @@ void escuchar_kernel(int *socket_origen) {
 									if(registro == NULL) {
 										log_error(logger, "[Error] No hay suficientes frames");
 										//TODO EJECUTAR ALGORITMO DE REEMPLAZO
-										char *mensaje_por_ahora = "Memoria llena, implementar lru\n";
-										prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(mensaje_por_ahora), mensaje_por_ahora);
-										return ;
+									} else {
+										registro->modificado = 0;
+										settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
+										settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
+										settear_value(registro->ptr_posicion, separador[2]);
+										list_add(segmento->paginas, registro);
 									}
-									registro->modificado = 0;
-									settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
-									settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
-									settear_value(registro->ptr_posicion, separador[2]);
-									list_add(segmento->paginas, registro);
 								}
 							}
 							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
@@ -232,6 +236,8 @@ void escuchar_kernel(int *socket_origen) {
 						else {
 							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
 							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(linea), linea);
+							free(linea);
+							prot_destruir_mensaje(mensaje_de_lissandra);
 						}
 					}
 				}

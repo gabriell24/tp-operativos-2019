@@ -17,6 +17,7 @@
 #include "manejo_memoria.h"
 #include "criterios.h"
 #include "planificacion.h"
+#include "../shared_library/estructuras_compartidas.h"
 
 //Defines
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
@@ -35,5 +36,7 @@ t_list *describe_tablas;
 //Prototipos
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();
+void actualizar_describe(t_list *nuevos);
+void limpiar_tabla_describes(t_response_describe *registro);
 
 #endif /* KERNEL_H_ */

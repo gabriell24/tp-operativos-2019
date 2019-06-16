@@ -4,6 +4,7 @@ void kernel_select(char *tabla, uint16_t key) {
 	size_t tamanio_del_buffer = sizeof(int) + strlen(tabla) + sizeof(uint16_t);
 	void *buffer = serializar_request_select(tabla, key);
 	prot_enviar_mensaje(socket_memoria, FUNCION_SELECT, tamanio_del_buffer, buffer);
+	free(buffer);
 	log_info(logger, "Select enviado a memoria");
 }
 
@@ -11,6 +12,7 @@ void kernel_insert(char* nombre_tabla, uint16_t key, char* value, int epoch){
 	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*3 ;
 	void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
 	prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
+	free(buffer);
 	log_info(logger, "Insert enviado a memoria");
 
 }
@@ -20,6 +22,7 @@ void kernel_create (char* nombre_tabla, char* tipo_consistencia, int numero_part
 	size_t tamanio_buffer = sizeof(int)*4 + strlen(nombre_tabla) + strlen(tipo_consistencia);
 	void* buffer = serializar_request_create(nombre_tabla, tipo_consistencia, numero_particiones, compaction_time);
 	prot_enviar_mensaje(socket_memoria, FUNCION_CREATE, tamanio_buffer, buffer);
+	free(buffer);
 	log_info(logger, "===========ENVIADO KERNEL/=======CREAATEEEE==============================");
 
 	//printf("Holis :) hiciste un create desde kernel");

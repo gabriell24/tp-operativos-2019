@@ -50,7 +50,9 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL) {
 				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
-				memoria_select(tabla, (uint16_t)strtoul(key, NULL, 10));
+				char *respuesta = memoria_select(tabla, (uint16_t)strtoul(key, NULL, 10));
+				log_info(logger, "[Select] %s", respuesta);
+				free(respuesta);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);

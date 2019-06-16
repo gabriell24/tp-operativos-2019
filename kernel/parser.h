@@ -62,7 +62,9 @@ typedef struct {
 		struct{
 		}metrics;
 	} parametros;
-	char** _limp; //Para liberar cuando se usa el split
+	char **argumentos; //Para liberar cuando se usa el split
+	char **separador_espacios;
+	char **separador_comillas;
 } t_parser;
 
 char *comando_leido(tokens token);

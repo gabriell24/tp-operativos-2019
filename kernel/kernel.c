@@ -4,6 +4,7 @@ int main() {
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
+	describe_tablas = list_create();
 	logger = log_create("kernel.log","KERNEL", true,
 			kernel_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
@@ -37,6 +38,7 @@ int main() {
 	limpiar_listas();
 	sem_destroy(&lqls_en_ready);
 	sem_destroy(&instancias_exec);
+	list_destroy_and_destroy_elements(describe_tablas, (void *)limpiar_tabla_describes);
 	return 0;
 }
 
@@ -92,4 +94,26 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 
 	}
 
+}
+
+
+void actualizar_describe(t_list *nuevos) {
+	void _buscar_y_agregar(t_response_describe *nuevo) {
+		bool _ya_existe(t_response_describe *registro) {
+			return string_equals_ignore_case(registro->tabla, nuevo->tabla);
+		}
+		if(!list_find(describe_tablas, (void *)_ya_existe)) {
+			list_add(describe_tablas, nuevo);
+		}
+		else {
+			free(nuevo->tabla);
+			free(nuevo);
+		}
+	}
+	list_iterate(nuevos, (void *)_buscar_y_agregar);
+}
+
+void limpiar_tabla_describes(t_response_describe *registro) {
+	free(registro->tabla);
+	free(registro);
 }
