@@ -319,7 +319,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 					if(matchea_key_en_linea(linea, key)) {
 						log_info(logger, "[Key encontrada] %s", linea);
 						//retorno = cargar_datos_timestamp_value(linea);
-						list_add(retorno, linea);
+						list_add(retorno, string_duplicate(linea));
 						//key_encontrada = true;
 						//break;
 					}
