@@ -51,6 +51,11 @@ void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 }
 
 void memoria_create(char *tabla, char *consistencia, int particiones, int compaction_time) {
+	void* buffer = serializar_request_create(tabla, consistencia, particiones, compaction_time);
+
+	size_t tamanio_del_paquete = (sizeof(int)*4 + strlen(tabla) + strlen(consistencia));
+	prot_enviar_mensaje(socket_lissandra, FUNCION_CREATE, tamanio_del_paquete, buffer);
+	free(buffer);
 
 }
 
@@ -58,9 +63,11 @@ void memoria_describe(char *tabla) {
 	if(tabla) {
 		//Consulta por una tabla
 	} else {
-		//consulta por todas
+		prot_enviar_mensaje(socket_lissandra, FUNCION_DESCRIBE, 0, NULL);
 	}
-
+	t_prot_mensaje *mensaje = prot_recibir_mensaje(socket_lissandra);
+	t_list *respuesta = deserializar_response_describe(mensaje, logger);
+	imprimir_datos_describe(respuesta);
 }
 
 void memoria_drop(char *tabla) {
