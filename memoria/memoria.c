@@ -209,7 +209,7 @@ void escuchar_kernel(int *socket_origen) {
 
 							t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
 							if(!segmento) {
-								t_est_tdp *registro = obtener_frame_libre();
+								t_est_tdp *registro = obtener_frame();
 								if(registro == NULL) {
 									log_error(logger, "[Error] No hay suficientes frames");
 									//TODO EJECUTAR ALGORITMO DE REEMPLAZO
@@ -223,7 +223,7 @@ void escuchar_kernel(int *socket_origen) {
 									//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
 									log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
 								} else {
-									t_est_tdp *registro = obtener_frame_libre();
+									t_est_tdp *registro = obtener_frame();
 									if(registro == NULL) {
 										log_error(logger, "[Error] No hay suficientes frames");
 										//TODO EJECUTAR ALGORITMO DE REEMPLAZO

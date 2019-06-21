@@ -31,28 +31,18 @@ void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 			log_info(logger, "Página actualizada");
 		}
 		else {
-			t_est_tdp *frame_libre = obtener_frame_libre();
+			t_est_tdp *frame_libre = obtener_frame();
 			if(!frame_libre) {
-				frame_libre = frame_desde_lru();
-				if(!frame_libre) {
-					log_error(logger, "Memoria llena");
-					//hacer journal
-				} else {
-					/*pagina->ultima_referencia = get_timestamp();
-					settear_timestamp(pagina->ptr_posicion, timestamp);
-					settear_value(pagina->ptr_posicion, value);
-					log_info(logger, "Página actualizada");*/
-					crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
-				}
+				log_info(logger, "::::::::::::MEMORIA LLENA, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
 			} else {
 				crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
 			}
 		}
 	}
 	else {
-		t_est_tdp *frame_libre = obtener_frame_libre();
+		t_est_tdp *frame_libre = obtener_frame();
 		if(!frame_libre) {
-			log_info(logger, "no hay frame libre");
+			log_info(logger, "::::::::::::MEMORIA LLENA, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
 			//Acá es necesario hacer un journal
 		} else {
 			crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
@@ -89,8 +79,9 @@ void memoria_drop(char *tabla) {
 /* Las validaciones están porque es posible que no esté llena, y se llame desde la terminal */
 void journal() {
 	bool _liberar_segmentos(t_est_tds *segmento) {
-
-		bool _liberar_modificados(t_est_tdp *pagina) {
+		int indice = 0;
+		void _liberar_modificados(t_est_tdp *pagina) {
+			int posicion = 0;
 			if(pagina->modificado) {
 				char *value = obtener_value_de_pagina(pagina->ptr_posicion);
 				void *buffer = serializar_request_insert(segmento->nombre_segmento, obtener_key_de_pagina(pagina->ptr_posicion),
@@ -100,20 +91,24 @@ void journal() {
 				prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, tamanio_del_paquete, buffer);
 				free(buffer);
 				free(value);
+				list_remove(segmento->paginas, posicion );
+
 				reiniciar_frame(pagina);
-				return true;
+				//return true;
 			}
-			return false;
+			//return false;
+			posicion ++;
 		}
-		list_remove_by_condition(segmento->paginas, (void *)_liberar_modificados);
+		list_iterate(segmento->paginas, (void *)_liberar_modificados);
+		//list_remove_by_condition(segmento->paginas, (void *)_liberar_modificados);
 		log_warning(logger, "Tam lista: %d, list is empty: %d", list_size(segmento->paginas), list_is_empty(segmento->paginas));
 		if(list_is_empty(segmento->paginas)) {
 			list_destroy(segmento->paginas);
 			free(segmento->nombre_segmento);
 			free(segmento);
-			return true;
+			list_remove(tds, indice);
 		}
-		return false;
+		indice ++;
 	}
-	list_remove_by_condition(tds, (void *)_liberar_segmentos);
+	list_iterate(tds, (void *)_liberar_segmentos);
 }

@@ -132,11 +132,12 @@ void efectuar_compactacion(char *unaTabla) {
 						t_registro *registro = malloc(sizeof(t_registro));
 						registro->key = key_from_line;
 						registro->timestamp = atoi(separador[0]);
+						registro->value = NULL;
 						registro->value = malloc(strlen(separador[2])+1);
 						log_debug(logger, "Separador[2]: -%s-", separador[2]);
 						memset(registro->value, 0, strlen(separador[2]+1));
 						memcpy(registro->value, separador[2], strlen(separador[2]));
-						registro->value[strlen(registro->value)] = '\0';
+						//registro->value[strlen(registro->value)] = '\0';
 						list_add(lineas_leidas, registro);
 					}
 					string_iterate_lines(separador, (void*)free);
@@ -270,6 +271,7 @@ void efectuar_compactacion(char *unaTabla) {
 
 t_list *limpiar_lista_de_duplicados(t_list *lineas_a_compactar, t_list *lineas_leidas) {
 	void _agregar_nuevos(t_registro *registro) {
+		if (registro->value == NULL) log_error(logger, ":::::::::::EL SIGUIENTE ES NULO:::::::::::::::");
 		log_warning(logger, "Pasa por duplicados: %s", registro->value);
 		bool _desde(t_registro *registro_compactar) {
 			return registro_compactar->key == registro->key;

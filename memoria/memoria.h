@@ -74,6 +74,7 @@ void escuchar_kernel(int *socket_kernel);
 t_est_tds *obtener_segmento_por_tabla(char *tabla);
 t_est_tdp *obtener_pagina_por_key(t_list *lista, uint16_t key);
 t_est_tdp *obtener_frame_libre();
+t_est_tdp *obtener_frame();
 uint16_t obtener_key_de_pagina(void *frame);
 int obtener_timestamp_de_pagina(void *frame);
 char *obtener_value_de_pagina(void *frame);
