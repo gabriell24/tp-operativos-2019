@@ -2,7 +2,8 @@
 
 void conectar_a_memoria(char *ip, int puerto) {
 	log_info(logger, "[Conexión] Esperando conectar a memoria");
-	socket_memoria = conectar_a_servidor(ip, puerto, KERNEL);
+	int socket_memoria = conectar_a_servidor(ip, puerto, KERNEL);
+
 	char* handshake = "hola soy kernel, mucho gusto!";
 	int largo_palabra = strlen(handshake); //No sumar caracteres por barra cero
 	int numero_a_mandar = 991;
@@ -17,16 +18,30 @@ void conectar_a_memoria(char *ip, int puerto) {
 	log_debug(logger, "[Conexión] El tamanio del buffer de handshake es: %d", tamanio_buffer);
 	prot_enviar_mensaje(socket_memoria, ENVIO_DATOS, tamanio_buffer, buffer);
 	free(buffer);
+	t_prot_mensaje *respuesta_memoria = prot_recibir_mensaje(socket_memoria);
+
+	t_memoria_conectada *memoria_conectada = malloc(sizeof(t_memoria_conectada));
+	memset(&memoria_conectada->nombre, 0, sizeof(int));
+	memcpy(&memoria_conectada->nombre, respuesta_memoria->payload, respuesta_memoria->tamanio_total-sizeof(t_header));
+	memoria_conectada->ip = string_duplicate(ip);
+	memoria_conectada->puerto = puerto;
+	memcpy(&memoria_conectada->socket, &socket_memoria, sizeof(int));
+	list_add(tabla_gossip, memoria_conectada);
+	prot_destruir_mensaje(respuesta_memoria);
 
 	log_info(logger, "[Conexión] Memoria conectada, hago un describe");
-	kernel_describe("");
-	pthread_create(&hilo_manejo_memorias, NULL, (void*)recibir_mensajes_de_memoria, NULL);
+	kernel_describe(socket_memoria, "");
+	int *ptr_socket = malloc(sizeof(int));
+	*ptr_socket = socket_memoria;
+	pthread_create(&hilo_manejo_memorias, NULL, (void*)recibir_mensajes_de_memoria, ptr_socket);
 }
 
-void recibir_mensajes_de_memoria() {
+void recibir_mensajes_de_memoria(int *ptr_socket) {
 	t_prot_mensaje *mensaje_de_memoria;
 	bool cortar_while = false;
 	bool intentar_reconectar = true;
+	int socket_memoria = *ptr_socket;
+	free(ptr_socket);
 	while(!consola_ejecuto_exit && !cortar_while) {
 		mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
 		switch(mensaje_de_memoria->head) {

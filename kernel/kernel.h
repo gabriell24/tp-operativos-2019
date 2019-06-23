@@ -33,6 +33,7 @@ t_list *lista_sc;
 t_list *lista_shc;
 t_list *lista_ec;
 t_list *describe_tablas;
+t_list *tabla_gossip;
 //Prototipos
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();

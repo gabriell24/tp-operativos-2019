@@ -4,6 +4,7 @@ void levantar_archivo_configuracion()
 {
 	configuracion = config_create("memoria.config");
 
+	memoria_config.ip_servidor = strdup(config_get_string_value(configuracion, "IP_SERVIDOR"));
 	memoria_config.puerto_escucha = config_get_int_value(configuracion, "PUERTO_ESCUCHA" );
 	memoria_config.ip_lissandra = strdup(config_get_string_value(configuracion, "IP_LISSANDRA"));
 	memoria_config.puerto_lissandra = config_get_int_value(configuracion, "PUERTO_LISSANDRA");

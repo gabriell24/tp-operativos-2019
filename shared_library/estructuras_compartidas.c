@@ -280,3 +280,71 @@ void imprimir_datos_describe(t_list *tablas) {
 	printf("+------------------------------------------------+\n");
 	list_iterate(tablas, (void*)_mostrar_datos);
 }
+
+
+void intercambir_memorias_conectadas(t_list *mi_tabla, t_list *otra_tabla) {
+	void _agregar_nuevos(t_memoria_conectada *memoria_en_otra_lista) {
+		bool _desde(t_memoria_conectada *memoria_de_mi_Lista) {
+			//printf("Memoria otra lista: %d\n", memoria_en_otra_lista->nombre);
+			//printf("Memoria de mi lista: %d\n", memoria_de_mi_Lista->nombre);
+			return memoria_en_otra_lista->nombre == memoria_de_mi_Lista->nombre;
+
+		}
+		if(!list_find(mi_tabla, (void *)_desde)) {
+			//printf("Agrego memoria: %d", memoria_en_otra_lista->nombre);
+			list_add(mi_tabla, memoria_en_otra_lista);
+		} else {
+			if(memoria_en_otra_lista == NULL) printf("\n\nITERA EN NULOS\n\n");
+			free(memoria_en_otra_lista->ip);
+			free(memoria_en_otra_lista);
+		}
+	}
+	list_iterate(otra_tabla, (void *)_agregar_nuevos);
+	list_destroy(otra_tabla);
+}
+
+void *serializar_tabla_gossip(size_t tamanio_del_buffer, t_list *tabla) {
+	void *buffer = malloc(tamanio_del_buffer);
+		memset(buffer, 0, tamanio_del_buffer);
+		int desplazamiento = 0;
+		void _cargar_en_buffer(t_memoria_conectada *memoria) {
+			int largo_ip = strlen(memoria->ip);
+			memcpy(buffer+desplazamiento, &memoria->nombre, sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(buffer+desplazamiento, &largo_ip, sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(buffer+desplazamiento, memoria->ip, largo_ip);
+			desplazamiento += largo_ip;
+			memcpy(buffer+desplazamiento, &memoria->puerto, sizeof(int));
+			desplazamiento += sizeof(int);
+		}
+		list_iterate(tabla, (void*)_cargar_en_buffer);
+		return buffer;
+}
+
+t_list *deserializar_tabla_gossip(t_prot_mensaje *mensaje, t_log *logger) {
+	size_t tamanio_del_buffer = mensaje->tamanio_total - sizeof(t_header);
+	int desplazamiento = 0;
+	t_list *retorno = list_create();
+	while(desplazamiento < tamanio_del_buffer) {
+		t_memoria_conectada *memoria = malloc(sizeof(t_memoria_conectada));
+		memcpy(&memoria->nombre, mensaje->payload+desplazamiento, sizeof(int));
+		desplazamiento += sizeof(int);
+
+		int largo_ip = 0;
+		memcpy(&largo_ip, mensaje->payload+desplazamiento, sizeof(int));
+		desplazamiento += sizeof(int);
+
+		memoria->ip = malloc(largo_ip+1);
+		memset(memoria->ip, 0, largo_ip+1);
+		memcpy(memoria->ip, mensaje->payload+desplazamiento, largo_ip);
+		memoria->ip[largo_ip] = '\0';
+		desplazamiento += largo_ip;
+
+		memcpy(&memoria->puerto, mensaje->payload+desplazamiento, sizeof(int));
+		desplazamiento += sizeof(int);
+
+		list_add(retorno, memoria);
+	}
+	return retorno;
+}

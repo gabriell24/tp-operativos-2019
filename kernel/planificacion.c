@@ -68,12 +68,12 @@ void admitir_lql(compartir_info_lql *datos){
 
 void crear_un_lql(bool desde_consola, char *data) {
 	t_lql *nuevo_lql = malloc(sizeof(t_lql));
-	compartir_info_lql *compartir_info_lql = malloc(sizeof(compartir_info_lql));
-	compartir_info_lql->data = string_duplicate(data);
-	compartir_info_lql->desde_consola = desde_consola;
-	compartir_info_lql->lql = nuevo_lql;
+	compartir_info_lql *compartir_info = malloc(sizeof(compartir_info_lql));
+	compartir_info->data = string_duplicate(data);
+	compartir_info->desde_consola = desde_consola;
+	compartir_info->lql = nuevo_lql;
 	list_add(lista_nuevos, nuevo_lql);
-	pthread_create(&hilo_admision, NULL, (void *)admitir_lql, compartir_info_lql);
+	pthread_create(&hilo_admision, NULL, (void *)admitir_lql, compartir_info);
 }
 
 void planificar() {
@@ -101,6 +101,10 @@ void round_robin() {
 	pthread_mutex_unlock(&mutex_listas);
 	log_debug(logger, "exec asignado: %d", numero_exec_asignado);
 	bool finalizo = false;
+
+	//prot_enviar_mensaje(memoria_destino, ESTAS_FULL, 0, NULL);
+	//prot_recibir_mensaje(memoria_destino);
+	//No me interesa que responda algo, sino, bloquear con el receive para que que no siga ejecutando, si esta en journal.
 	while(!finalizo && ut_consumidas < kernel_config.quantum && lql_a_ejecutar->prox_linea_ejecutar < list_size(lql_a_ejecutar->lineas)) {
 
 		log_debug(logger, "Proxima linea antes de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
@@ -111,33 +115,68 @@ void round_robin() {
 		if(parser.valido) {
 			switch(parser.token) {
 				case create: {
-					kernel_create(parser.parametros.create.tabla,
-						parser.parametros.create.tipo_consistencia,
-						parser.parametros.create.particiones,
-						parser.parametros.create.compaction_time);
+					int memoria_destino = get_memoria(NULL);
+					if(memoria_destino == -1) {
+						finalizo = true;
+						break;
+					}
+					kernel_create(memoria_destino, parser.parametros.create.tabla, parser.parametros.create.tipo_consistencia,
+							parser.parametros.create.particiones, parser.parametros.create.compaction_time);
 				} break;
 				case describe: {
-					kernel_describe(parser.parametros.describe.tabla);
+					int memoria_destino = get_memoria(NULL);
+					if(memoria_destino == -1) {
+						finalizo = true;
+						break;
+					}
+					kernel_describe(memoria_destino, parser.parametros.describe.tabla);
 				} break;
 				case insert: {
-					kernel_insert(parser.parametros.insert.tabla, parser.parametros.insert.key,
+					int memoria_destino = get_memoria(parser.parametros.insert.tabla);
+					if(memoria_destino == -1) {
+						finalizo = true;
+						break;
+					}
+					kernel_insert(memoria_destino, parser.parametros.insert.tabla, parser.parametros.insert.key,
 							parser.parametros.insert.value, parser.parametros.insert.timestamp);
 				} break;
 				case t_select: {
-					kernel_select(parser.parametros.select.tabla, parser.parametros.select.key);
+					int memoria_destino = get_memoria(NULL);
+					if(memoria_destino == -1) {
+						finalizo = true;
+						break;
+					}
+					kernel_select(memoria_destino, parser.parametros.select.tabla, parser.parametros.select.key);
+				} break;
+				case add: {
+					kernel_add(parser.parametros.add.memoria, parser.parametros.add.tipo_consistencia);
+				} break;
+				case drop: {
+					int memoria_destino = get_memoria(parser.parametros.describe.tabla);
+					if(memoria_destino == -1) {
+						finalizo = true;
+						break;
+					}
+					kernel_drop(memoria_destino, parser.parametros.drop.tabla);
 				} break;
 
 				default: log_warning(logger, "codealo vos e.e");
 			}
-		destruir_parseo(parser);
-		}
 
-		log_debug(logger, "Ejecutando quantum %d", ut_consumidas);
-		lql_a_ejecutar->prox_linea_ejecutar++;
-		log_debug(logger, "Proxima linea despues de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
-		ut_consumidas++;
-		log_debug(logger, "Fin de cicloo, retardando: %d milisegundos", kernel_config.retardo_ciclo_ejecucion);
-		finalizo = lql_a_ejecutar->prox_linea_ejecutar == list_size(lql_a_ejecutar->lineas);
+			if(!finalizo) {
+				log_debug(logger, "Ejecutando quantum %d", ut_consumidas);
+				lql_a_ejecutar->prox_linea_ejecutar++;
+				log_debug(logger, "Proxima linea despues de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
+				ut_consumidas++;
+				log_debug(logger, "Fin de cicloo, retardando: %d milisegundos", kernel_config.retardo_ciclo_ejecucion);
+				finalizo = lql_a_ejecutar->prox_linea_ejecutar == list_size(lql_a_ejecutar->lineas);
+			}
+		} else {
+			log_warning(logger, "La línea parseada [%s] no es valida, paso el proceso a EXIT", linea_a_ejecutar);
+			finalizo = true;
+		}
+		destruir_parseo(parser);
+
 		usleep(kernel_config.retardo_ciclo_ejecucion * 1000);
 	}
 	//Se termino el quantum, lo devuelvo a la CR

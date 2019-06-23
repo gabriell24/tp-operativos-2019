@@ -111,6 +111,12 @@ t_consola parse(char* linea){
 	else if(string_equals_ignore_case(comando, JOURNAL)) {
 		journal();
 	}
+	else if(string_equals_ignore_case(comando, PRINT)) {
+		printear_memoria();
+	}
+	else if(string_equals_ignore_case(comando, GOSSIP)) {
+		mostrar_tabla_gossip();
+	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.\n");
 	}

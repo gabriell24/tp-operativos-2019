@@ -13,6 +13,7 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include "interfaz.h"
+#include "conexion_memoria.h"
 
 #define SELECT "select"
 #define INSERT "insert"
@@ -20,6 +21,8 @@
 #define DESCRIBE "describe"
 #define DROP "drop"
 #define JOURNAL "journal"
+#define PRINT "print"
+#define GOSSIP "gossip"
 
 typedef struct{
 	char* keyword;

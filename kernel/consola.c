@@ -120,16 +120,15 @@ t_consola parse(char* linea) {
 		crear_un_lql(true, linea);
 	}
 	else if (string_equals_ignore_case(comando, ADD)) {
-		char** separador = string_n_split(argumentos, 3, " ");
+		/*char** separador = string_n_split(argumentos, 3, " ");
 		char *numero = separador[0];
 		char *criterio = separador[2];
 		if(numero == NULL || criterio == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
 		} else {
-			log_debug(logger, "Criterio: %s, Numero: %s", criterio, numero);
-			//agregar_memoria_a_criterio(criterio_from_string(criterio), atoi(numero));
+			log_debug(logger, "Criterio: %s, Numero: %s", criterio, numero);*/
 			crear_un_lql(true, linea);
-		}
+		//}
 	}
 	else if (string_equals_ignore_case(comando, RUN)) {
 		if (argumentos == NULL) {

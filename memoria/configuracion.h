@@ -10,6 +10,7 @@
 #include <commons/collections/list.h>
 
 typedef struct {
+	char *ip_servidor;
 	int puerto_escucha;
 	char *ip_lissandra;
 	int puerto_lissandra;

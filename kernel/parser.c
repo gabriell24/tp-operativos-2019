@@ -26,7 +26,7 @@ t_parser leer(char* linea) {
 	}
 
 	t_parser retorno = {
-		.valido = true
+		.valido = false
 	};
 
 	char* aux_linea = string_duplicate(linea);
@@ -40,12 +40,19 @@ t_parser leer(char* linea) {
 
 	if(string_igual_case_sensitive(token_leido, token_select)){
 		char **sub_separador = string_n_split(argumentos, 2, " ");
-		retorno.token = t_select;
-		retorno.parametros.select.tabla = sub_separador[0];
-		retorno.parametros.select.key = string_to_int16(sub_separador[1]);
-		//string_iterate_lines(sub_separador, (void*)free);
-		//free(sub_separador);
-		retorno.separador_espacios = sub_separador;
+		if(sub_separador[0] == NULL || sub_separador[1] == NULL) {
+			log_error(logger, "Error: ejemplo de uso \'SELECT TABLA1 3\'");
+		} else if(atoi(sub_separador[1]) < 1) {
+			log_error(logger, "Error: key debe ser numérica y mayor a 1");
+		} else {
+			retorno.valido = true;
+			retorno.token = t_select;
+			retorno.parametros.select.tabla = sub_separador[0];
+			retorno.parametros.select.key = string_to_int16(sub_separador[1]);
+			//string_iterate_lines(sub_separador, (void*)free);
+			//free(sub_separador);
+			retorno.separador_espacios = sub_separador;
+		}
 	}
 	else if(string_igual_case_sensitive(token_leido, token_insert)){
 		char** comillas = string_n_split(argumentos, 3, "\"");
@@ -57,7 +64,11 @@ t_parser leer(char* linea) {
 		char *string_timestamp = comillas[2];
 		if (tabla == NULL || key == NULL || value == NULL) {
 			log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
+		}
+		if (atoi(key) < 1) {
+			log_error(logger, "Error: la key debe ser numérica y mayor a 1.");
 		} else {
+			retorno.valido = true;
 			retorno.token = insert;
 			retorno.parametros.insert.tabla = tabla;
 			retorno.parametros.insert.key = string_to_int16(key);
@@ -80,7 +91,9 @@ t_parser leer(char* linea) {
 		char *compactacion = separador[3];
 		if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+			retorno.valido = false;
 		} else {
+			retorno.valido = true;
 			retorno.token = create;
 			retorno.parametros.create.tabla = tabla;
 			retorno.parametros.create.tipo_consistencia = consistencia;
@@ -94,18 +107,23 @@ t_parser leer(char* linea) {
 	}
 	else if(string_igual_case_sensitive(token_leido, token_describe)){
 		retorno.token = describe;
-		if(argumentos != NULL) retorno.parametros.describe.tabla = argumentos;
+		retorno.valido = true;
+		if(argumentos != NULL) {
+			retorno.parametros.describe.tabla = argumentos;
+		}
 	}
 	else if(string_igual_case_sensitive(token_leido, token_drop)){
 		if (argumentos == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"DROP TABLA1\n");
 		} else {
+			retorno.valido = true;
 			retorno.token = drop;
 			retorno.parametros.drop.tabla = argumentos;
 		}
 
 	}
 	else if(string_igual_case_sensitive(token_leido, token_journal)){
+		retorno.valido = true;
 		retorno.token = journal;
 	}
 	else if(string_igual_case_sensitive(token_leido, token_add)){
@@ -114,7 +132,9 @@ t_parser leer(char* linea) {
 		char *criterio = separador[2];
 		if(numero == NULL || criterio == NULL) {
 			log_error(logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
+			retorno.valido = false;
 		} else {
+			retorno.valido = true;
 			retorno.token = add;
 			retorno.parametros.add.memoria = atoi(numero);
 			retorno.parametros.add.tipo_consistencia = criterio;
@@ -124,10 +144,10 @@ t_parser leer(char* linea) {
 		retorno.separador_espacios = separador;
 	}
 	else if(string_igual_case_sensitive(token_leido, token_metrics)){
-			retorno.token = metrics;
+		retorno.valido = true;
+		retorno.token = metrics;
 	}
 	else {
-		retorno.valido = false;
 		fprintf(stderr, "No se encontro la palabra reservada <%s>\n", token_leido);
 		RETURN_ERROR;
 	}

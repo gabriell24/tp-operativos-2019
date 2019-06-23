@@ -14,7 +14,7 @@
 //Defines
 
 //Variables
-int socket_memoria;
+//int socket_memoria;
 
 //Prototipos
 void conectar_a_memoria(char *ip, int puerto);
