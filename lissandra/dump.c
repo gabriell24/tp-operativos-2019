@@ -11,7 +11,6 @@ void dump_automatico() {
 
 void dumpear() {
 
-
 	void _obtener_tablas(t_memtable *unaTabla) {
 		char *linea = string_new();
 		void _writear_valores(t_registro *unRegistro) {

@@ -77,7 +77,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	}
 	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
 
-	//TODO NO entedí el item 3 del enunciado
+	//TODO NO entedí el item 2 del enunciado
 
 	t_registro *unRegistro = malloc(sizeof(t_registro));
 	unRegistro->key = key;
@@ -135,6 +135,17 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 		crear_archivo_bloque(bloques_necesarios[b], "");
 
 	}
+	/*TODO: Evaluar si el enunciado lo pide aca!!
+	 * Evaluar hacer una funcion generica donde creo un hilo para compactar. Motivo: una tabla existente.
+	t_list *registros = list_create();
+
+	t_memtable *unaTabla = malloc(sizeof(t_memtable));
+	unaTabla->tabla = strdup(tabla);
+	unaTabla->t_registro = registros;
+
+	list_add(t_list_memtable, unaTabla);
+	*/
+
 }
 
 t_list *fs_describe(char *tabla) {
