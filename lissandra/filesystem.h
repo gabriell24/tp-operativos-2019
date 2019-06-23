@@ -57,6 +57,7 @@ t_config *datos_archivo;
 t_config *datos_archivo_propio;
 
 void iniciar_fs(char *path);
+void crear_archivos_de_bloques(int cantidad);
 void escribir(int fd, char *texto);
 void cargar_metadata(char *path, char *archivo);
 void finalizar_estructuras_fs();

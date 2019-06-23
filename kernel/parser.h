@@ -35,9 +35,7 @@ typedef struct {
 			char *tabla;
 			uint16_t key;
 			char *value;
-			union {
-				int timestamp;
-			};
+			int timestamp;
 		} insert;
 		struct {
 			char *tabla;
@@ -46,21 +44,15 @@ typedef struct {
 			int compaction_time;
 		} create;
 		struct {
-			union {
-				char *tabla;
-			};
+			char *tabla;
 		} describe;
 		struct {
 			char *tabla;
 		} drop;
 		struct {
-		} journal;
-		struct {
 			int memoria;
 			char *tipo_consistencia;
 		} add;
-		struct{
-		}metrics;
 	} parametros;
 	char **argumentos; //Para liberar cuando se usa el split
 	char **separador_espacios;

@@ -1,5 +1,13 @@
 #include "utiles.h"
 
+/* Usar esta
+ * ulong get_timestamp() {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
+}*/
+
+/* Esta no se usa más */
 int get_timestamp() {
 	time_t result = time(NULL);
 	if(result == ((time_t) -1)) {
@@ -57,4 +65,10 @@ int number_string(char *texto){
 	int numero = atoi(aux);
 	free(aux);
 	return numero;
+}
+
+int contar_items(char **lista) {
+	int total = 0;
+	while(lista[total] != NULL) total++;
+	return total;
 }

@@ -13,4 +13,10 @@ if [ $? != 0 ]; then
   echo -e "${COLOR_ROJO}FALLO LA COMPILACIÓN${COLOR_NORMAL}"
 else
   echo -e "${COLOR_VERDE}COMPILOOOOOOO LPM${COLOR_NORMAL}"
+  echo -e "Lo copio a ../otros/memoria2"
+  yes | cp -rf memoria.out ../otros/memoria2/
+  echo -e "Lo copio a ../otros/memoria3"
+  yes | cp -rf memoria.out ../otros/memoria3/
+  echo -e "Lo copio a ../otros/memoria4"
+  yes | cp -rf memoria.out ../otros/memoria4/
 fi

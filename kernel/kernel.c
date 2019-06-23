@@ -4,6 +4,7 @@ int main() {
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
+	tabla_gossip = list_create();
 	describe_tablas = list_create();
 	logger = log_create("kernel.log","KERNEL", true,
 			kernel_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
@@ -22,7 +23,7 @@ int main() {
 	*ptr_fd_inotify = fd_inotify;
 
 	conectar_a_memoria(kernel_config.ip_memoria, kernel_config.puerto_memoria);
-	while(!socket_memoria);
+	//while(!socket_memoria);
 	pthread_create(&hilo_planificacion, NULL, (void*)iniciar_listas_planificacion, NULL);
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>

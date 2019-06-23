@@ -4,12 +4,18 @@ void iniciar_fs(char *path) {
 	datos_fs.path_raiz = string_duplicate(path);
 	cargar_metadata(path, "Metadata/Metadata.bin");
 	cargar_metadata(path, "Metadata/Bitmap.bin");
-	/*printf("\nTOTAL BLOQUES EN BYTES DESDE BITMAP: %d\n", datos_fs.bitarray->size);
-	bitarray_set_bit(datos_fs.bitarray, 16);
-	//bitarray_set_bit(datos_fs.bitarray, 5191*8);
-	printf("\nBITMAP: %s\n", datos_fs.bitarray->bitarray);*/
-	//bitarray_set_bit(datos_fs.bitarray, 0);
+	crear_archivos_de_bloques(datos_fs.cantidad_bloques);
+}
 
+void crear_archivos_de_bloques(int cantidad) {
+	char *path_de_bloques = path_bloques();
+	for(int bloque = 0; bloque < cantidad; bloque++) {
+		char *un_bloque = string_from_format("%s%d.bin", path_de_bloques, bloque);
+		int fd = open(un_bloque, O_RDWR | O_CREAT, S_IRWXU );
+		if(fd != -1) close(fd);
+		free(un_bloque);
+	}
+	free(path_de_bloques);
 }
 
 void cargar_metadata(char *path, char *archivo) {

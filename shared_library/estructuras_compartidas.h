@@ -39,7 +39,12 @@ typedef struct {
 	criterio consistencia;
 } t_response_describe;
 
-
+typedef struct {
+	int nombre; //Los nombres, son numéricos
+	char *ip;
+	int puerto;
+	int socket; //Solo para kernel
+} t_memoria_conectada;
 
 //Prototipos
 void* serializar_request_select(char*tabla, uint16_t key);
@@ -54,6 +59,10 @@ t_request_create *deserializar_request_create(t_prot_mensaje *msje);
 void *serializar_response_describe(size_t tamanio_del_buffer, t_list *tablas);
 t_list *deserializar_response_describe(t_prot_mensaje *mensaje, t_log *logger);
 void imprimir_datos_describe(t_list *tablas);
+
+void intercambir_memorias_conectadas(t_list *una_lista, t_list *otra_lista);
+void *serializar_tabla_gossip(size_t tamanio_del_buffer, t_list *tabla);
+t_list *deserializar_tabla_gossip(t_prot_mensaje *mensaje, t_log *logger);
 
 #endif
 
