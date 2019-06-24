@@ -8,7 +8,7 @@ void consola(){
 	    	add_history(linea);
 	    if(!strncmp(linea, "exit", 4)) {
 	    	free(linea);
-	    	finalizar_estructuras_fs();
+	    	//finalizar_estructuras_fs();
 	    	consola_ejecuto_exit = true;
 	    	break;
 	    }

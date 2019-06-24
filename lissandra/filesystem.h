@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include "consola.h"
 #include "configuracion.h"
 #include "lissandra.h"
@@ -29,6 +30,8 @@ typedef struct {
 	int ultimo_bloque_retornado;
 	char *path_raiz;
 	char *_bitmap;
+	int _fd;
+	int _bytes_bitmap;
 	//char *ruta_metadata_file;
 	//char *ruta_bitmap_file;
 } t_datos_fs;

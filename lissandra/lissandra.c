@@ -40,6 +40,7 @@ int main() {
 	free(ptr_fd_inotify);
 
 	list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	finalizar_estructuras_fs();
 	log_destroy(logger);
 	free(fs_config.punto_montaje);
 	return 0;

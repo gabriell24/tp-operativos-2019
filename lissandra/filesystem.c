@@ -50,18 +50,28 @@ void cargar_metadata(char *path, char *archivo) {
 			//free(metadata);
 		}
 		else if(string_contains(archivo, "Bitmap.bin")) {
-			char *bitmap = (char*)calloc(datos_fs.cantidad_bloques, sizeof(char));
-			read(fd, bitmap, datos_fs.cantidad_bloques);
+			//char *bitmap = (char*)calloc(datos_fs.cantidad_bloques, sizeof(char));
+			//read(fd, bitmap, datos_fs.cantidad_bloques);
 			int bytesBitmap=datos_fs.cantidad_bloques/8;
 			if(datos_fs.cantidad_bloques % 8 != 0){
 				bytesBitmap++;
 			}
-			datos_fs.bitarray = bitarray_create_with_mode(bitmap,bytesBitmap,MSB_FIRST);
-			datos_fs._bitmap = bitmap;
+			struct stat bitmap_file_info;
+
+			if(fstat(fd, &bitmap_file_info) == -1) perror("No pude obtener metainformacion del archivo bitmap");
+			if(bitmap_file_info.st_size != bytesBitmap) {
+					if(ftruncate(fd, bytesBitmap) != 0) perror("No se pudo truncar el archivo");
+			}
+
+			char *bit_mmap = mmap(NULL, bytesBitmap, PROT_READ | PROT_WRITE , MAP_SHARED, fd, 0); //write implicitamente tiene a read?
+			datos_fs.bitarray = bitarray_create_with_mode(bit_mmap, bytesBitmap, MSB_FIRST);
+			datos_fs._bitmap = bit_mmap;
+			datos_fs._fd = fd;
+			datos_fs._bytes_bitmap = bytesBitmap;
 			datos_fs.ultimo_bloque_retornado = 0;
 		}
 	}
-	close(fd);
+	if(!string_equals_ignore_case(archivo, "Bitmap.bin")) close(fd);
 	free(aux_path);
 }
 
@@ -222,16 +232,17 @@ char *path_bloques() {
 	return ruta_archivo;
 }
 
-/* NUNCA LA LLAMO, PERO LA DEJO PREPARADA */
 void finalizar_estructuras_fs() {
 	log_info(logger, "Saliendo...");
-	char *ruta_bitmap = datos_fs.path_raiz;
+	/*char *ruta_bitmap = datos_fs.path_raiz;
 	string_append(&ruta_bitmap, "Metadata/Bitmap.bin");
 	guardar_bitmap(ruta_bitmap);
-	free(ruta_bitmap);
+	free(ruta_bitmap);*/
 
 	bitarray_destroy(datos_fs.bitarray);
-	free(datos_fs._bitmap);
+	if(munmap(datos_fs._bitmap, datos_fs._bytes_bitmap) == 1) log_error(logger, "Error en munmap()");
+	close(datos_fs._fd);
+	free(datos_fs.path_raiz);
 }
 
 bool existe_tabla(char *tabla) {

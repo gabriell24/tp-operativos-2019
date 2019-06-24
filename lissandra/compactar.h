@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "lissandra.h"
 #include "filesystem.h"
+#include <commons/collections/list.h>
 
 //Prototipos
 void crear_archivo_tmpc(char *tabla, int size, char *datos);

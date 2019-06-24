@@ -59,7 +59,7 @@ void compactar(char *unaTabla) {
 		}
 		config_destroy(particion_config);
 	}
-	char *lineas_leidas = list_create();
+	t_list *lineas_leidas = list_create();
 	int bytes_leidos = 0;
 	char *parte_de_linea = NULL;
 	void cargar_lineas(char *bloque){
@@ -105,14 +105,14 @@ void compactar(char *unaTabla) {
 					free(nombre_del_bloque);
 	}
 	list_iterate(bloques_que_uso, (void *)cargar_lineas);
-	t_list lineas_a_compactar = list_create();
+	t_list *lineas_a_compactar = list_create();
 	limpiar_lista_de_duplicados(lineas_a_compactar, lineas_leidas);
 
 	//TODO: semaforo para bloquear operaciones de API.
 	int tiempo_inicio = get_timestamp();
 
 	void liberar_bloques_usados(char *bloque){
-		bitarray_clean_bit(datos_fs.bitarray, bloque);
+		bitarray_clean_bit(datos_fs.bitarray, atoi(bloque));
 	}
 	list_iterate(bloques_que_uso, (void *)liberar_bloques_usados);
 	int bloques_necesarios = redondear_hacia_arriba(bytes_leidos, datos_fs.tamanio_bloques);
