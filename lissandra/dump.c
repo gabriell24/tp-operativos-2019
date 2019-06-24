@@ -51,7 +51,7 @@ void crear_archivo_temporal(char *tabla, int size, char *datos) {
 	for (int j = 0; j < cantidad_bloques; j++){
 		char *path = path_bloques();
 		string_append_with_format(&path, "/%d.bin", bloques[j]);
-		int fdopen = open(path, O_RDWR | O_CREAT, S_IRWXU);
+		int fdopen = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
 		log_debug(logger, "bloque %d", bloques[j]);
 		if(strlen(datos) < (j*datos_fs.tamanio_bloques)){
 			bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(datos);

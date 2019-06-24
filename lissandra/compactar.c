@@ -1,10 +1,21 @@
 #include "compactar.h"
 
-void compactar(char *unaTabla) {
-
+void compactar(char *tabla) {
+	//TODO ver de que manera se pede cancelar el hilo, si le hacen drop a la tabla
+	while(!consola_ejecuto_exit) {
+		log_info(logger, "Reviso si %s necesita compactar", (char *)tabla);
+		efectuar_compactacion((char *)tabla);
+		log_info(logger, "Fin revisión para compactar en %s, duermo", (char *)tabla);
+		usleep(fs_config.tiempo_dump_ms * 1000);
+	}
+	//free(tabla);
+	//pthread_join(pthread_self());
+}
+void efectuar_compactacion(char *unaTabla) {
 	char *path = string_new();
 
-	string_append_with_format(&path, "%s%s/", path_tablas(), unaTabla);
+	char *path_tabla = path_tablas();
+	string_append_with_format(&path, "%s%s/", path_tabla, unaTabla);
 
 	DIR *dp;
 	struct dirent *ep;
@@ -49,60 +60,86 @@ void compactar(char *unaTabla) {
 	config_destroy(metadata_config);
 
 	for(int i=0; i < total_particiones; i++){
-		char *path_a_particion = string_from_format("%s%s.bin", path, i);
+		char *path_a_particion = string_from_format("%s%d.bin", path, i);
+		log_debug(logger, "ruta particion: %s", path_a_particion);
 		t_config *particion_config = config_create(path_a_particion);
-		char **bloques_usados = config_get_array_value(metadata_config, "BLOCKS");
+		char **bloques_usados = config_get_array_value(particion_config, "BLOCKS");
 		int posicion = 0;
 		while (bloques_usados[posicion] != NULL){
-			list_add(bloques_que_uso, bloques_usados[posicion]);
+			list_add(bloques_que_uso, string_duplicate(bloques_usados[posicion]));
 			posicion++;
 		}
+		string_iterate_lines(bloques_usados, (void *)free);
+		free(bloques_usados);
 		config_destroy(particion_config);
+		free(path_a_particion);
 	}
 	t_list *lineas_leidas = list_create();
 	int bytes_leidos = 0;
 	char *parte_de_linea = NULL;
 	void cargar_lineas(char *bloque){
 		char *nombre_del_bloque = path_bloques();
-					string_append_with_format(&nombre_del_bloque, "%s.bin", bloque);
-					log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
-					FILE *archivo = fopen(nombre_del_bloque, "rb");
-					char *linea = malloc(sizeof(char) * maximo_caracteres_linea);
+		string_append_with_format(&nombre_del_bloque, "%s.bin", bloque);
+		log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
+		FILE *archivo = fopen(nombre_del_bloque, "rb");
+		char *linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
-					while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
-						if(linea[strlen(linea)-1] != '\n') {
-							if (parte_de_linea != NULL){
-								parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea) +1);
-								memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
-								memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
-								log_warning(logger, "-%s-", parte_de_linea );
-							} else {
-								size_t bytes_leidos = strlen(linea);
-								parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
-								memset(parte_de_linea, 0, bytes_leidos+1);
-								memcpy(parte_de_linea, linea, bytes_leidos);
-							}
-						} else {
-							if(parte_de_linea != NULL) {
-								char *auxiliar = malloc(strlen(linea)+1);
-								memset(auxiliar, 0, strlen(linea)+1);
-								memcpy(auxiliar, linea, strlen(linea));
-								size_t tamanio_nuevo = strlen(linea)+strlen(parte_de_linea);
-								memset(linea, 0, tamanio_nuevo);
-								memcpy(linea, parte_de_linea, strlen(parte_de_linea));
-								memcpy(linea+strlen(parte_de_linea), auxiliar, strlen(auxiliar));
-								linea[tamanio_nuevo] = '\0';
-								free(parte_de_linea);
-								free(auxiliar);
-								parte_de_linea = NULL;
-							}
-							list_add(lineas_leidas, linea);
-							bytes_leidos += strlen(linea);
-						}
+		while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
+			if(linea[strlen(linea)-1] != '\n') {
+				if (parte_de_linea != NULL){
+					parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea) +1);
+					memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
+					memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
+					log_warning(logger, "-%s-", parte_de_linea );
+				} else {
+					size_t bytes_leidos = strlen(linea);
+					parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
+					memset(parte_de_linea, 0, bytes_leidos+1);
+					memcpy(parte_de_linea, linea, bytes_leidos);
+				}
+			} else {
+				if(parte_de_linea != NULL) {
+					char *auxiliar = malloc(strlen(linea)+1);
+					memset(auxiliar, 0, strlen(linea)+1);
+					memcpy(auxiliar, linea, strlen(linea));
+					size_t tamanio_nuevo = strlen(linea)+strlen(parte_de_linea);
+					memset(linea, 0, tamanio_nuevo);
+					memcpy(linea, parte_de_linea, strlen(parte_de_linea));
+					memcpy(linea+strlen(parte_de_linea), auxiliar, strlen(auxiliar));
+					linea[tamanio_nuevo] = '\0';
+					free(parte_de_linea);
+					free(auxiliar);
+					parte_de_linea = NULL;
+				}
+				if(linea[strlen(linea)-2] == '\0') {
+					log_error(logger, "Lei barra cero");
+					log_error(logger, "Lei barra cero");
+					log_error(logger, "Lei barra cero");
+					log_error(logger, "Lei barra cero");
+				}
+				//Para que no lea el barra cero
+				if(strlen(linea) > 0) {
+					log_debug(logger, "Agrego a leido: -%s- caracteres: %d", linea, strlen(linea));
+					char **separador = string_n_split(linea, 3, ";");
+					if(separador[0] != NULL || separador[1] != NULL || separador[2] != NULL) {
+						uint16_t key_from_line = (uint16_t)strtoul(separador[1], NULL, 10);
+						t_registro *registro = malloc(sizeof(t_registro));
+						registro->key = key_from_line;
+						registro->timestamp = atoi(separador[0]);
+						registro->value = malloc(strlen(separador[2])+1);
+						memset(registro->value, 0, strlen(separador[2]+1));
+						memcpy(registro->value, separador[2], strlen(separador[2]));
+						list_add(lineas_leidas, registro);
 					}
-					free(linea);
-					fclose(archivo);
-					free(nombre_del_bloque);
+					string_iterate_lines(separador, (void*)free);
+					free(separador);
+					bytes_leidos += strlen(linea);
+				}
+			}
+		}
+		free(linea);
+		fclose(archivo);
+		free(nombre_del_bloque);
 	}
 	list_iterate(bloques_que_uso, (void *)cargar_lineas);
 	t_list *lineas_a_compactar = list_create();
@@ -115,7 +152,8 @@ void compactar(char *unaTabla) {
 		bitarray_clean_bit(datos_fs.bitarray, atoi(bloque));
 	}
 	list_iterate(bloques_que_uso, (void *)liberar_bloques_usados);
-	int bloques_necesarios = redondear_hacia_arriba(bytes_leidos, datos_fs.tamanio_bloques);
+	//TODO ¿aca? list_destroy_and_destroy_elements(bloques_que_uso, (void *)liberar_bloques_usados);
+	/*int bloques_necesarios = redondear_hacia_arriba(bytes_leidos, datos_fs.tamanio_bloques);
 	int bloques_recibidos[bloques_necesarios];
 
 	for(int i = 0; i < bloques_necesarios; i++){
@@ -127,6 +165,55 @@ void compactar(char *unaTabla) {
 			}
 			return;
 		}
+	}*/
+	for(int particion = 0; particion < total_particiones; particion++) {
+		int cantidad_de_caracteres = 0;
+		bool _filtrar_key(t_registro *linea) {
+			return linea->key % total_particiones == particion;
+		}
+		t_list *lineas_para_particion = list_filter(lineas_leidas, (void *)_filtrar_key);
+		char *lineas_compactar = string_new();
+
+		int caracteres_para_escribir = 0;
+		void _generar_lineas(t_registro *linea) {
+			char *timestamp = string_itoa(linea->timestamp);
+			char *key = string_itoa(linea->key);
+			//char *linea_para_escribir = string_from_format("%s;%s;%s\n", timestamp, key, linea->value);
+			string_append_with_format(&lineas_compactar, "%s;%s;%s\n", timestamp, key, linea->value);
+			caracteres_para_escribir += strlen(timestamp) + strlen(key) + strlen(linea->value);
+			free(timestamp);
+			free(key);
+		}
+		list_iterate(lineas_para_particion, (void *)_generar_lineas);
+
+		int cantidad_bloques = redondear_hacia_arriba(caracteres_para_escribir, datos_fs.tamanio_bloques);
+		int bloques[cantidad_bloques];
+		for(int i = 0; i < cantidad_bloques; i++){
+			bloques[i] = tomar_bloque_libre();
+			if(bloques[i] == -1){
+				log_error(logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
+				for(int base = 0; base < i; base++) {
+					bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
+				}
+				return;
+			}
+		}
+		int bytes_a_copiar = datos_fs.tamanio_bloques;
+		for (int j = 0; j < cantidad_bloques; j++){
+			char *path = path_bloques();
+			string_append_with_format(&path, "/%d.bin", bloques[j]);
+			int fdopen = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+			//log_debug(logger, "bloque %d", bloques[j]);
+			if(strlen(lineas_compactar) < (j*datos_fs.tamanio_bloques)){
+				bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(lineas_compactar);
+			}
+			escribir(fdopen, string_substring(lineas_compactar, j*datos_fs.tamanio_bloques, bytes_a_copiar));
+			close(fdopen);
+			free(path);
+		}
+
+		//config open.
+		//settear esos bloques.
 	}
 
 	int tiempo_utilizado = get_timestamp() - tiempo_inicio;
