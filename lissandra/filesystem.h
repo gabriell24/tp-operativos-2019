@@ -65,7 +65,7 @@ void escribir(int fd, char *texto);
 void cargar_metadata(char *path, char *archivo);
 void finalizar_estructuras_fs();
 int tomar_bloque_libre();
-void guardar_bitmap(char *path_bitmap);
+//void guardar_bitmap(char *path_bitmap);
 void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int compaction_time);
 void crear_carpeta_tabla(char *tabla);
 void crear_archivo_bloque(int bloque, char *contenido);
@@ -89,6 +89,6 @@ t_timestamp_value *devolver_timestamp_mayor(t_list *lista);
 void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro);
 t_response_describe *devolver_metadata(char *path_tabla, char *tabla);
 void guardar_archivo_temporal(char *tabla, char *archivo_temporal, int size, int bloques[], int cantidad_bloques);
-
+void liberar_bloques_de_particion(char **lista_de_bloques);
 
 #endif /* FILESYSTEM_H_ */

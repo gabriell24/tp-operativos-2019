@@ -24,6 +24,7 @@ void efectuar_compactacion(char *unaTabla) {
 
 	bool necesita_compactar = false;
 
+	t_list *archivos_a_borrar = list_create();
 	dp = opendir(path);
 	if (dp != NULL) {
 		while ((ep = readdir (dp))) { /*Renombro tmp por tmpc*/
@@ -34,13 +35,16 @@ void efectuar_compactacion(char *unaTabla) {
 				char *path_fuente = string_from_format("%s%s", path, ep->d_name);
 				char *path_destino = string_from_format("%s%s", path, nuevo_nombre_con_extension);
 				rename(path_fuente, path_destino);
+				list_add(archivos_a_borrar, string_duplicate(path_destino));
 				t_config *temporal_config = config_create(path_destino);
 					char **bloques_usados = config_get_array_value(temporal_config, "BLOCKS");
 					int posicion = 0;
 					while (bloques_usados[posicion] != NULL){
-						list_add(bloques_que_uso, bloques_usados[posicion]);
+						list_add(bloques_que_uso, string_duplicate(bloques_usados[posicion]));
 						posicion++;
 					}
+					string_iterate_lines(bloques_usados, (void *)free);
+					free(bloques_usados);
 				config_destroy(temporal_config);
 				string_iterate_lines(separo_extension, (void *)free);
 				free(separo_extension);
@@ -51,6 +55,7 @@ void efectuar_compactacion(char *unaTabla) {
 		}
 	}
 	closedir(dp);
+	t_list *bloques_temporales = list_duplicate(bloques_que_uso);
 	if(!necesita_compactar)
 		return;
 
@@ -119,16 +124,19 @@ void efectuar_compactacion(char *unaTabla) {
 				}
 				//Para que no lea el barra cero
 				if(strlen(linea) > 0) {
-					log_debug(logger, "Agrego a leido: -%s- caracteres: %d", linea, strlen(linea));
+					log_debug(logger, "Leido: -%s- caracteres: %d", linea, strlen(linea));
 					char **separador = string_n_split(linea, 3, ";");
 					if(separador[0] != NULL || separador[1] != NULL || separador[2] != NULL) {
+						log_debug(logger, "Lo agrego a leidos");
 						uint16_t key_from_line = (uint16_t)strtoul(separador[1], NULL, 10);
 						t_registro *registro = malloc(sizeof(t_registro));
 						registro->key = key_from_line;
 						registro->timestamp = atoi(separador[0]);
 						registro->value = malloc(strlen(separador[2])+1);
+						log_debug(logger, "Separador[2]: -%s-", separador[2]);
 						memset(registro->value, 0, strlen(separador[2]+1));
 						memcpy(registro->value, separador[2], strlen(separador[2]));
+						registro->value[strlen(registro->value)] = '\0';
 						list_add(lineas_leidas, registro);
 					}
 					string_iterate_lines(separador, (void*)free);
@@ -143,15 +151,26 @@ void efectuar_compactacion(char *unaTabla) {
 	}
 	list_iterate(bloques_que_uso, (void *)cargar_lineas);
 	t_list *lineas_a_compactar = list_create();
+	bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
+		return elemento->timestamp > otroElemento->timestamp;
+	}
+	list_sort(lineas_leidas, (void*)_orderar_por_time_desc);
 	limpiar_lista_de_duplicados(lineas_a_compactar, lineas_leidas);
 
-	//TODO: semaforo para bloquear operaciones de API.
+	pthread_mutex_lock(&mutex_compactacion);
 	int tiempo_inicio = get_timestamp();
 
-	void liberar_bloques_usados(char *bloque){
+	void limpiar_bitarray(char *bloque) {
 		bitarray_clean_bit(datos_fs.bitarray, atoi(bloque));
 	}
-	list_iterate(bloques_que_uso, (void *)liberar_bloques_usados);
+
+	void liberar_bloques_usados(char *bloque){
+		free(bloque);
+	}
+	//list_iterate(bloques_temporales, (void *)liberar_bloques_usados);
+	list_destroy_and_destroy_elements(bloques_temporales, (void *)limpiar_bitarray);
+	list_destroy_and_destroy_elements(bloques_que_uso, (void *)liberar_bloques_usados);
+	//list_iterate(bloques_que_uso, (void *)liberar_bloques_usados); estaría mal, si no se toca las key en la particion 1, no deberia limpiar lo que tiene
 	//TODO ¿aca? list_destroy_and_destroy_elements(bloques_que_uso, (void *)liberar_bloques_usados);
 	/*int bloques_necesarios = redondear_hacia_arriba(bytes_leidos, datos_fs.tamanio_bloques);
 	int bloques_recibidos[bloques_necesarios];
@@ -171,54 +190,77 @@ void efectuar_compactacion(char *unaTabla) {
 		bool _filtrar_key(t_registro *linea) {
 			return linea->key % total_particiones == particion;
 		}
-		t_list *lineas_para_particion = list_filter(lineas_leidas, (void *)_filtrar_key);
-		char *lineas_compactar = string_new();
+		t_list *lineas_para_particion = list_filter(lineas_a_compactar, (void *)_filtrar_key);
+		if(list_size(lineas_para_particion)) {
+			char *lineas_compactar = string_new();
 
-		int caracteres_para_escribir = 0;
-		void _generar_lineas(t_registro *linea) {
-			char *timestamp = string_itoa(linea->timestamp);
-			char *key = string_itoa(linea->key);
-			//char *linea_para_escribir = string_from_format("%s;%s;%s\n", timestamp, key, linea->value);
-			string_append_with_format(&lineas_compactar, "%s;%s;%s\n", timestamp, key, linea->value);
-			caracteres_para_escribir += strlen(timestamp) + strlen(key) + strlen(linea->value);
-			free(timestamp);
-			free(key);
-		}
-		list_iterate(lineas_para_particion, (void *)_generar_lineas);
+			int caracteres_para_escribir = 0;
+			void _generar_lineas(t_registro *linea) {
+				//char *timestamp = string_itoa(linea->timestamp);
+				//char *key = string_itoa(linea->key);
+				char *linea_formada = string_from_format("%d;%d;%s", linea->timestamp, linea->key, linea->value);
+				//char *linea_para_escribir = string_from_format("%s;%s;%s\n", timestamp, key, linea->value);
+				string_append(&lineas_compactar, linea_formada);
+				caracteres_para_escribir += strlen(linea_formada);
+				free(linea_formada);
+				//free(timestamp);
+				//free(key);
+			}
+			list_iterate(lineas_para_particion, (void *)_generar_lineas);
 
-		int cantidad_bloques = redondear_hacia_arriba(caracteres_para_escribir, datos_fs.tamanio_bloques);
-		int bloques[cantidad_bloques];
-		for(int i = 0; i < cantidad_bloques; i++){
-			bloques[i] = tomar_bloque_libre();
-			if(bloques[i] == -1){
-				log_error(logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
-				for(int base = 0; base < i; base++) {
-					bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
+			int cantidad_bloques = redondear_hacia_arriba(caracteres_para_escribir, datos_fs.tamanio_bloques);
+			int bloques[cantidad_bloques];
+			for(int i = 0; i < cantidad_bloques; i++){
+				bloques[i] = tomar_bloque_libre();
+				if(bloques[i] == -1){
+					log_error(logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
+					for(int base = 0; base < i; base++) {
+						bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
+					}
+					return;
 				}
-				return;
 			}
-		}
-		int bytes_a_copiar = datos_fs.tamanio_bloques;
-		for (int j = 0; j < cantidad_bloques; j++){
-			char *path = path_bloques();
-			string_append_with_format(&path, "/%d.bin", bloques[j]);
-			int fdopen = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
-			//log_debug(logger, "bloque %d", bloques[j]);
-			if(strlen(lineas_compactar) < (j*datos_fs.tamanio_bloques)){
-				bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(lineas_compactar);
+			int bytes_a_copiar = datos_fs.tamanio_bloques;
+			char *array_bloques = string_from_format("[");
+			for (int j = 0; j < cantidad_bloques; j++){
+				char *path = path_bloques();
+				string_append_with_format(&path, "/%d.bin", bloques[j]);
+				int fdopen = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+				//log_debug(logger, "bloque %d", bloques[j]);
+				if(strlen(lineas_compactar) < (j*datos_fs.tamanio_bloques)){
+					bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(lineas_compactar);
+				}
+				escribir(fdopen, string_substring(lineas_compactar, j*datos_fs.tamanio_bloques, bytes_a_copiar));
+				close(fdopen);
+				free(path);
+				string_append_with_format(&array_bloques, "%d,", bloques[j]);
 			}
-			escribir(fdopen, string_substring(lineas_compactar, j*datos_fs.tamanio_bloques, bytes_a_copiar));
-			close(fdopen);
-			free(path);
+			array_bloques[strlen(array_bloques)-1] = ']';
+
+			char *path_a_particion = string_from_format("%s%d.bin", path, particion);
+			log_debug(logger, "ruta particion: %s", path_a_particion);
+			t_config *particion_config = config_create(path_a_particion);
+			char **bloques_para_liberar = config_get_array_value(particion_config, "BLOCKS");
+			liberar_bloques_de_particion(bloques_para_liberar);
+			//string_iterate_lines(bloques_para_liberar, (void *)bloques_para_liberar);
+			free(bloques_para_liberar);
+
+			config_set_value(particion_config, "BLOCKS", array_bloques);
+			config_set_value(particion_config, "SIZE", string_itoa(caracteres_para_escribir));
+			config_save(particion_config);
+			config_destroy(particion_config);
 		}
 
-		//config open.
-		//settear esos bloques.
 	}
+	void _borrar_temporalesc(char *ruta) {
+		if(remove(ruta) == -1) perror("Error al borrar temporal de compactacion: ");
+		free(ruta);
+	}
+	list_destroy_and_destroy_elements(archivos_a_borrar, (void *)_borrar_temporalesc);
 
 	int tiempo_utilizado = get_timestamp() - tiempo_inicio;
 
-	//TODO: Desbloquear semaforo
+	pthread_mutex_unlock(&mutex_compactacion);
 	log_info(logger, "En total, la tabla %s se bloqueo %d segundos", unaTabla, tiempo_utilizado);
 
 
@@ -228,6 +270,7 @@ void efectuar_compactacion(char *unaTabla) {
 
 t_list *limpiar_lista_de_duplicados(t_list *lineas_a_compactar, t_list *lineas_leidas) {
 	void _agregar_nuevos(t_registro *registro) {
+		log_warning(logger, "Pasa por duplicados: %s", registro->value);
 		bool _desde(t_registro *registro_compactar) {
 			return registro_compactar->key == registro->key;
 
@@ -239,10 +282,6 @@ t_list *limpiar_lista_de_duplicados(t_list *lineas_a_compactar, t_list *lineas_l
 			free(registro);
 		}
 	}
-	bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
-		return elemento->timestamp > otroElemento->timestamp;
-	}
-	list_sort(lineas_leidas, (void*)_orderar_por_time_desc);
 	list_iterate(lineas_leidas, (void *)_agregar_nuevos);
 	list_destroy(lineas_leidas);
 	return lineas_a_compactar;

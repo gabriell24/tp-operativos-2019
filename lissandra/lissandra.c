@@ -12,6 +12,7 @@ int main() {
 	log_info(logger, "Lissandra iniciado");
 	printear_configuraciones();
 
+	pthread_mutex_init(&mutex_compactacion, NULL);
 	t_list_memtable = list_create();
 	//cargar_datos_fake();
 

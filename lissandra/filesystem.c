@@ -1,6 +1,10 @@
 #include "filesystem.h"
 
 void iniciar_fs(char *path) {
+	if(path[strlen(path)-1] != '/') {
+		log_error(logger, "La ruta del FileSystem debe terminar con /");
+		exit(1);
+	}
 	datos_fs.path_raiz = string_duplicate(path);
 	cargar_metadata(path, "Metadata/Metadata.bin");
 	cargar_metadata(path, "Metadata/Bitmap.bin");
@@ -209,7 +213,7 @@ void guardar_archivo_metadata(char *tabla, char *criterio, int particiones, int 
 	free(crear_en);
 }
 
-void guardar_bitmap(char *path_bitmap) {
+/*void guardar_bitmap(char *path_bitmap) {
 	int fd = open(path_bitmap, O_RDWR | O_CREAT, S_IRWXU );
 	//char *bitmap = (char*)calloc(datos_fs.cantidad_bloques, sizeof(char));
 	char *bitmap = string_duplicate(datos_fs.bitarray->bitarray);
@@ -218,7 +222,7 @@ void guardar_bitmap(char *path_bitmap) {
 	close(fd);
 	free(bitmap);
 	//printf("\nguardado en %s\n", path_bitmap);
-}
+}*/
 
 char *path_tablas() {
 	char *ruta_archivo = string_duplicate(datos_fs.path_raiz);
@@ -507,4 +511,11 @@ t_response_describe *devolver_metadata(char *path_tabla, char *tabla) {
 	retorno->tabla = string_duplicate(tabla);
 	retorno->consistencia = consistencia;
 	return retorno;
+}
+
+void liberar_bloques_de_particion(char **lista_bloques) {
+	int posicion = 0;
+	while(lista_bloques[posicion] != NULL) {
+		bitarray_clean_bit(datos_fs.bitarray, atoi(lista_bloques[posicion++]));
+	}
 }
