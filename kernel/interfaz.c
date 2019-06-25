@@ -48,8 +48,8 @@ void kernel_drop(int socket_memoria, char* nombre_tabla){
 	log_info(logger, "Drop enviado a memoria");
 }
 
-void kernel_journal(char* nombre_tabla){
-	printf("Hola mundo :) Estás haciendo journaling (?");
+void kernel_journal(int socket_memoria){
+	prot_enviar_mensaje(socket_memoria, FUNCION_JOURNAL, 0, NULL);
 }
 void imprimir_metricas() {
 	printf("Implementando métricas version: %d\n", 1);

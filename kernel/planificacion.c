@@ -160,6 +160,15 @@ void round_robin() {
 					kernel_drop(memoria_destino, parser.parametros.drop.tabla);
 				} break;
 
+				case journal: {
+					void _enviar_journal(t_memoria_conectada *memoria_conectada) {
+						kernel_journal(memoria_conectada->socket);
+					}
+					t_list *memorias = memorias_conectadas();
+					list_iterate(memorias, (void *)_enviar_journal);
+					list_destroy(memorias);
+				} break;
+
 				default: log_warning(logger, "codealo vos e.e");
 			}
 

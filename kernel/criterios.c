@@ -121,6 +121,18 @@ int elegir_memoria_ec() {
 	return *socket;
 }
 
+t_list *memorias_conectadas() {
+	bool _buscar_conectadas(t_memoria_conectada *memoria_conectada) {
+		return memoria_conectada->socket > 0;
+	}
+	t_list *memorias_conectadas = list_filter(tabla_gossip, (void *)_buscar_conectadas);
+	if(!list_size(memorias_conectadas)) {
+		log_error(logger, "ERROR: get_memoria() no hay memoria conectada, esto no debería pasar.");
+		return NULL;
+	}
+	return memorias_conectadas;
+}
+
 /* Devuelve -1 cuando una tabla no está en el describe.
  * si no se le pasa una tabla, asume cualquiera de las memorias conectadas.
  * Por éxito devuelve el socket a donde se debería enviar un request.
@@ -128,16 +140,12 @@ int elegir_memoria_ec() {
 int get_memoria(char *tabla) {
 	int socket_retorno = -1;
 	if(!tabla) {
-		bool _buscar_conectadas(t_memoria_conectada *memoria_conectada) {
-			return memoria_conectada->socket > 0;
-		}
-		t_list *memorias_conectadas = list_filter(tabla_gossip, (void *)_buscar_conectadas);
-		if(!list_size(memorias_conectadas)) {
-			log_error(logger, "ERROR: get_memoria() no hay memoria conectada, esto no debería pasar.");
+		t_list *memorias = memorias_conectadas();
+		if(!list_size(memorias)) {
 			return -1;
 		}
-		t_memoria_conectada *memoria_conectada = list_get(memorias_conectadas, rand() % list_size(memorias_conectadas));
-		list_destroy(memorias_conectadas);
+		t_memoria_conectada *memoria_conectada = list_get(memorias, rand() % list_size(memorias));
+		list_destroy(memorias);
 		socket_retorno = memoria_conectada->socket;
 	} else {
 		bool _buscar_metadata(t_response_describe *describe) {

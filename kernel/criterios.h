@@ -16,5 +16,6 @@ void limpiar_listas();
 int elegir_memoria_shc(char *tabla);
 int elegir_memoria_ec();
 int pasar_char_minuscula(char letra);
+t_list *memorias_conectadas();
 int get_memoria(char *tabla);
 #endif /* CRITERIOS_H_ */

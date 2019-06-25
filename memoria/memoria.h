@@ -75,6 +75,7 @@ t_est_tds *obtener_segmento_por_tabla(char *tabla);
 t_est_tdp *obtener_pagina_por_key(t_list *lista, uint16_t key);
 t_est_tdp *obtener_frame_libre();
 uint16_t obtener_key_de_pagina(void *frame);
+int obtener_timestamp_de_pagina(void *frame);
 char *obtener_value_de_pagina(void *frame);
 void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value);
 void limpiar_segmento(t_est_tds *segmento);
@@ -86,5 +87,6 @@ void printear_memoria();
 t_est_tdp *frame_desde_lru();
 bool ya_se_conecto_a(char *ip, int puerto);
 void iniciar_gossip();
+void reiniciar_frame(t_est_tdp *frame);
 //void agregar_nuevos_a_seeds(int nuevos_seeds);
 #endif /* MEMORIA_H_ */

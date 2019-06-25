@@ -260,8 +260,8 @@ void escuchar_kernel(int *socket_origen) {
 				log_debug(logger, "[Conexión] pre deserializar request insert");
 				t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
 				log_info(logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
-				prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
-				//memoria_insert(biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
+				//prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
+				memoria_insert(biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 				free(biffer->nombre_tabla);
 				free(biffer->value);
 				free(biffer);
@@ -308,6 +308,10 @@ void escuchar_kernel(int *socket_origen) {
 				log_info(logger, "Drop con tabla: %s", tabla);
 				free(tabla);
 
+			} break;
+
+			case FUNCION_JOURNAL: {
+				journal();
 			} break;
 
 			default: {
@@ -430,22 +434,19 @@ void limpiar_segmento(t_est_tds *segmento) {
 		free(pagina);
 	}*/
 	free(segmento->nombre_segmento);
-	list_clean(segmento->paginas);
 	list_destroy(segmento->paginas);
 	free(segmento);
 }
 
 void limpiar_tds() {
-	list_clean_and_destroy_elements(tds, (void*)limpiar_segmento);
-	list_destroy(tds);
+	list_destroy_and_destroy_elements(tds, (void*)limpiar_segmento);
 }
 
 void limpiar_frames() {
 	void _limpiar_paginas(t_est_tdp *pagina) {
 		free(pagina);
 	}
-	list_clean_and_destroy_elements(frames, (void*)_limpiar_paginas);
-	list_destroy(frames);
+	list_destroy_and_destroy_elements(frames, (void*)_limpiar_paginas);
 }
 
 void limpiar_memoria() {
@@ -454,8 +455,18 @@ void limpiar_memoria() {
 	free(memoria);
 }
 
-void obtener_frame() {
-	//llamar a frame libre
+t_est_tdp *obtener_frame() {
+	t_est_tdp *un_frame = NULL;
+	un_frame = obtener_frame_libre();
+	if(un_frame == NULL) {
+		un_frame = frame_desde_lru();
+	}
+	if(un_frame == NULL) {
+		log_warning(logger, "Memoria llena, efectuando journaling");
+		journal();
+		obtener_frame();
+	}
+	return un_frame;
 }
 
 void printear_memoria() {
@@ -550,6 +561,11 @@ void iniciar_gossip() {
 		log_info(logger, "[Gossiping] proceso finalizado, durmiendo...");
 		usleep(memoria_config.tiempo_gossiping*1000);
 	}
+}
+
+void reiniciar_frame(t_est_tdp *frame) {
+	frame->modificado = 0;
+	frame->ultima_referencia = 0;
 }
 
 /*void agregar_nuevos_a_seeds(int nuevos_seeds) {
