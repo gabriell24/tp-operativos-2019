@@ -5,6 +5,7 @@ char *memoria_select(char *tabla, uint16_t key) {
 	if(segmento) {
 		t_est_tdp *pagina = obtener_pagina_por_key(segmento->paginas, key);
 		if(pagina) {
+			pagina->ultima_referencia = get_timestamp();
 			log_info(logger, "[SELECT] Exitoso desde memoria");
 			return obtener_value_de_pagina(pagina->ptr_posicion);
 		}
