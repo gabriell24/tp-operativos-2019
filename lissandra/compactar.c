@@ -132,12 +132,13 @@ void efectuar_compactacion(char *unaTabla) {
 						t_registro *registro = malloc(sizeof(t_registro));
 						registro->key = key_from_line;
 						registro->timestamp = atoi(separador[0]);
-						registro->value = NULL;
+						/*registro->value = NULL;
 						registro->value = malloc(strlen(separador[2])+1);
 						log_debug(logger, "Separador[2]: -%s-", separador[2]);
 						memset(registro->value, 0, strlen(separador[2]+1));
 						memcpy(registro->value, separador[2], strlen(separador[2]));
-						//registro->value[strlen(registro->value)] = '\0';
+						registro->value[strlen(registro->value)+1] = '\0';*/
+						registro->value = string_duplicate(separador[2]);
 						list_add(lineas_leidas, registro);
 					}
 					string_iterate_lines(separador, (void*)free);

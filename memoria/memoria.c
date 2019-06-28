@@ -564,7 +564,7 @@ void iniciar_gossip() {
 }
 
 void reiniciar_frame(t_est_tdp *frame) {
-	frame->modificado = 0;
+	frame->modificado = -1;
 	frame->ultima_referencia = 0;
 }
 

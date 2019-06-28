@@ -25,6 +25,7 @@
 #define DROP "drop"
 #define MEMTABLE "memtable"
 #define DUMP "dump"
+#define COMPACTAR "compactar"
 
 //Variables
 typedef struct{

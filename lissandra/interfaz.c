@@ -91,9 +91,9 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	}
 	else {
 		log_info(logger, "Creo hilo para compactación");
-		pthread_t hilo_dump_por_tabla;
+		/*pthread_t hilo_dump_por_tabla;
 		char *nombre_tabla = string_duplicate(tabla);
-		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);
+		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);*/
 		t_list *registros = list_create();
 		list_add(registros, unRegistro);
 

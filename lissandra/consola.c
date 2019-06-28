@@ -126,6 +126,9 @@ t_consola parse(char* linea){
 	else if(string_equals_ignore_case(comando, DUMP)) {
 		dumpear();
 	}
+	else if(string_equals_ignore_case(comando, COMPACTAR)) {
+		efectuar_compactacion(argumentos);
+	}
 	else {
 		log_error(logger, "Error: No se encontro operacion tipeada.\n");
 		operaciones_disponibles();
