@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "consola.h"
+#include "../shared_library/utiles.h"
 
 #define token_select "SELECT"
 #define token_insert "INSERT"
@@ -19,7 +20,7 @@
 #define token_add "ADD"
 #define token_metrics "METRICS"
 
-#define RETURN_ERROR t_parser ERROR={ .valido = false }; return ERROR
+//#define RETURN_ERROR t_parser ERROR={ .valido = false }; return ERROR
 
 typedef enum { t_select, insert, create, describe, drop, journal, add, metrics } tokens;
 

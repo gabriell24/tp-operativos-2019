@@ -43,13 +43,14 @@ t_consola parse(char* linea) {
 
 	if (string_equals_ignore_case(comando, SELECT)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
+			//log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
+			loguear(error, logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 		} else {
 			char** separador = string_n_split(argumentos, 2, " ");
 			char *tabla = separador[0];
 			char *key = separador[1];
 			if (tabla == NULL || key == NULL) {
-				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
+				loguear(error, logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
 				//kernel_select(tabla, (uint16_t)strtoul(key, NULL, 10));
 				//char *select_string = string_from_format("SELECT %s %d", tabla, string_to_int16(key));
@@ -62,7 +63,7 @@ t_consola parse(char* linea) {
 	}
 	else if (string_equals_ignore_case(comando, INSERT)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
+			loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
 		} else {
 			char** comillas = string_n_split(argumentos, 3, "\"");
 			char** separador = string_n_split(comillas[0], 2, " ");
@@ -72,7 +73,7 @@ t_consola parse(char* linea) {
 			char *value = comillas[1];
 			char *timestamp = comillas[2];
 			if (tabla == NULL || key == NULL || value == NULL) {
-				log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
+				loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
 			} else {
 				int epoch = timestamp != NULL ? atoi(timestamp) : get_timestamp();
 				//kernel_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
@@ -86,7 +87,7 @@ t_consola parse(char* linea) {
 	}
 	else if (string_equals_ignore_case(comando, CREATE)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+			loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 		} else {
 			char** separador = string_n_split(argumentos, 4, " ");
 			char *tabla = separador[0];
@@ -94,7 +95,7 @@ t_consola parse(char* linea) {
 			char *particiones = separador[2];
 			char *compactacion = separador[3];
 			if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
-				log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+				loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			} else {
 				//kernel_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
 				crear_un_lql(true, linea);
@@ -109,7 +110,7 @@ t_consola parse(char* linea) {
 	}
 	else if (string_equals_ignore_case(comando, DROP)) {
 		if (argumentos == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"DROP TABLA1\n");
+			loguear(error, logger, "Error: ejemplo de uso \"DROP TABLA1\n");
 		} else {
 			//kernel_drop(argumentos);
 			crear_un_lql(true, linea);
@@ -132,7 +133,7 @@ t_consola parse(char* linea) {
 	}
 	else if (string_equals_ignore_case(comando, RUN)) {
 		if (argumentos == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"RUN UNLQL.txt\"");
+			loguear(error, logger, "Error: ejemplo de uso \"RUN UNLQL.txt\"");
 		} else {
 			kernel_run(argumentos);
 		}
@@ -150,7 +151,7 @@ t_consola parse(char* linea) {
 		quitar_memoria_de_criterio(atoi(argumentos));
 	}
 	else {
-		log_error(logger, "Error: No se encontro operacion tipeada.");
+		loguear(error, logger, "Error: No se encontro operacion tipeada.");
 	}
 
 	free(auxLine);

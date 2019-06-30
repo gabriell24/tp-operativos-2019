@@ -9,7 +9,8 @@ int main() {
 	logger = log_create("kernel.log","KERNEL", true,
 			kernel_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
-	log_info(logger, "Kernel iniciado");
+	//log_info(logger, "Kernel iniciado");
+	loguear(info, logger, "Kernel iniciado");
 	printear_configuraciones();
 	iniciar_listas_de_criterios();
 
@@ -29,7 +30,8 @@ int main() {
 	//1>>
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 	pthread_join(hilo_consola, NULL);
-	log_info(logger, "[Kernel] Proceso finalizado.");
+	//log_info(logger, "[Kernel] Proceso finalizado.");
+	loguear(info, logger, "[Kernel] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
@@ -53,10 +55,14 @@ void printear_configuraciones() {
 	 = config_get_int_value(configuracion, "REFRESCAR_METADATA");
 
 	 */
-	log_debug(logger, "[Configuración] Quantum en %d", kernel_config.quantum);
+	/*log_debug(logger, "[Configuración] Quantum en %d", kernel_config.quantum);
 	log_debug(logger, "[Configuración] Nivel de multiprocesamiento: %d", kernel_config.multiprocesamiento);
 	log_debug(logger, "[Configuración] Refrescar metadata cada: %d milisegundos", kernel_config.refrescar_metadata);
-	log_debug(logger, "[Configuración] Retardo ciclo de ejecución: %d", kernel_config.retardo_ciclo_ejecucion);
+	log_debug(logger, "[Configuración] Retardo ciclo de ejecución: %d", kernel_config.retardo_ciclo_ejecucion);*/
+	loguear(debug, logger, "[Configuración] Quantum en %d", kernel_config.quantum);
+	loguear(debug, logger, "[Configuración] Nivel de multiprocesamiento: %d", kernel_config.multiprocesamiento);
+	loguear(debug, logger, "[Configuración] Refrescar metadata cada: %d milisegundos", kernel_config.refrescar_metadata);
+	loguear(debug, logger, "[Configuración] Retardo ciclo de ejecución: %d", kernel_config.retardo_ciclo_ejecucion);
 }
 
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
@@ -77,10 +83,13 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 				if((event->mask & IN_MODIFY) &&
 					string_equals_ignore_case("kernel.config", event->name)) {
 
-						log_info(logger, "[Info] Se modificó kernel.config");
-						log_debug(logger, "[DEBUG] pre releer configs");
+						//log_info(logger, "[Info] Se modificó kernel.config");
+						loguear(info, logger, "[Info] Se modificó kernel.config");
+						//log_debug(logger, "[DEBUG] pre releer configs");
+						loguear(debug, logger, "[DEBUG] pre releer configs");
 						recargar_archivo_configuracion();
-						log_debug(logger, "[DEBUG] termino de leer configs");
+						//log_debug(logger, "[DEBUG] termino de leer configs");
+						loguear(debug, logger, "[DEBUG] termino de leer configs");
 						printear_configuraciones();
 
 				}

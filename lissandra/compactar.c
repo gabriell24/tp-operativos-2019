@@ -3,9 +3,9 @@
 void compactar(char *tabla) {
 	//TODO ver de que manera se pede cancelar el hilo, si le hacen drop a la tabla
 	while(!consola_ejecuto_exit) {
-		log_info(logger, "Reviso si %s necesita compactar", (char *)tabla);
+		loguear(info, logger, "Reviso si %s necesita compactar", (char *)tabla);
 		efectuar_compactacion((char *)tabla);
-		log_info(logger, "Fin revisión para compactar en %s, duermo", (char *)tabla);
+		loguear(info, logger, "Fin revisión para compactar en %s, duermo", (char *)tabla);
 		usleep(fs_config.tiempo_dump_ms * 1000);
 	}
 	//free(tabla);
@@ -16,7 +16,7 @@ void efectuar_compactacion(char *unaTabla) {
 
 	char *path_tabla = path_tablas();
 	string_append_with_format(&path, "%s%s/", path_tabla, unaTabla);
-
+	free(path_tabla);
 	DIR *dp;
 	struct dirent *ep;
 
@@ -56,17 +56,23 @@ void efectuar_compactacion(char *unaTabla) {
 	}
 	closedir(dp);
 	t_list *bloques_temporales = list_duplicate(bloques_que_uso);
-	if(!necesita_compactar)
+	if(!necesita_compactar) {
+		list_destroy(bloques_que_uso);
+		list_destroy(archivos_a_borrar);
+		list_destroy(bloques_temporales);
+		free(path);
 		return;
+	}
 
 	char *path_a_metadata = string_from_format("%sMetadata", path);
 	t_config *metadata_config = config_create(path_a_metadata);
 	int total_particiones = config_get_int_value(metadata_config, "PARTITIONS");
 	config_destroy(metadata_config);
+	free(path_a_metadata);
 
 	for(int i=0; i < total_particiones; i++){
 		char *path_a_particion = string_from_format("%s%d.bin", path, i);
-		log_debug(logger, "ruta particion: %s", path_a_particion);
+		loguear(debug, logger, "ruta particion: %s", path_a_particion);
 		t_config *particion_config = config_create(path_a_particion);
 		char **bloques_usados = config_get_array_value(particion_config, "BLOCKS");
 		int posicion = 0;
@@ -85,7 +91,7 @@ void efectuar_compactacion(char *unaTabla) {
 	void cargar_lineas(char *bloque){
 		char *nombre_del_bloque = path_bloques();
 		string_append_with_format(&nombre_del_bloque, "%s.bin", bloque);
-		log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
+		loguear(debug, logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
 		FILE *archivo = fopen(nombre_del_bloque, "rb");
 		char *linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
@@ -95,7 +101,7 @@ void efectuar_compactacion(char *unaTabla) {
 					parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea) +1);
 					memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
 					memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
-					log_warning(logger, "-%s-", parte_de_linea );
+					loguear(warning, logger, "-%s-", parte_de_linea );
 				} else {
 					size_t bytes_leidos = strlen(linea);
 					parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
@@ -117,24 +123,24 @@ void efectuar_compactacion(char *unaTabla) {
 					parte_de_linea = NULL;
 				}
 				if(linea[strlen(linea)-2] == '\0') {
-					log_error(logger, "Lei barra cero");
-					log_error(logger, "Lei barra cero");
-					log_error(logger, "Lei barra cero");
-					log_error(logger, "Lei barra cero");
+					loguear(error, logger, "Lei barra cero");
+					loguear(error, logger, "Lei barra cero");
+					loguear(error, logger, "Lei barra cero");
+					loguear(error, logger, "Lei barra cero");
 				}
 				//Para que no lea el barra cero
 				if(strlen(linea) > 0) {
-					log_debug(logger, "Leido: -%s- caracteres: %d", linea, strlen(linea));
+					loguear(debug, logger, "Leido: -%s- caracteres: %d", linea, strlen(linea));
 					char **separador = string_n_split(linea, 3, ";");
 					if(separador[0] != NULL || separador[1] != NULL || separador[2] != NULL) {
-						log_debug(logger, "Lo agrego a leidos");
+						loguear(debug, logger, "Lo agrego a leidos");
 						uint16_t key_from_line = (uint16_t)strtoul(separador[1], NULL, 10);
 						t_registro *registro = malloc(sizeof(t_registro));
 						registro->key = key_from_line;
 						registro->timestamp = atoi(separador[0]);
 						/*registro->value = NULL;
 						registro->value = malloc(strlen(separador[2])+1);
-						log_debug(logger, "Separador[2]: -%s-", separador[2]);
+						loguear(debug, logger, "Separador[2]: -%s-", separador[2]);
 						memset(registro->value, 0, strlen(separador[2]+1));
 						memcpy(registro->value, separador[2], strlen(separador[2]));
 						registro->value[strlen(registro->value)+1] = '\0';*/
@@ -180,7 +186,7 @@ void efectuar_compactacion(char *unaTabla) {
 	for(int i = 0; i < bloques_necesarios; i++){
 		bloques_recibidos[i] = tomar_bloque_libre();
 		if(bloques_recibidos[i] == -1){
-		log_error(logger, "[COMPACTAR] ERROR: FileSystem lleno!");
+		loguear(error(logger, "[COMPACTAR] ERROR: FileSystem lleno!");
 			for(int base = 0; base < i; base++) {
 				bitarray_clean_bit(datos_fs.bitarray, bloques_recibidos[base]);
 			}
@@ -188,7 +194,7 @@ void efectuar_compactacion(char *unaTabla) {
 		}
 	}*/
 	for(int particion = 0; particion < total_particiones; particion++) {
-		int cantidad_de_caracteres = 0;
+		//int cantidad_de_caracteres = 0;
 		bool _filtrar_key(t_registro *linea) {
 			return linea->key % total_particiones == particion;
 		}
@@ -215,7 +221,7 @@ void efectuar_compactacion(char *unaTabla) {
 			for(int i = 0; i < cantidad_bloques; i++){
 				bloques[i] = tomar_bloque_libre();
 				if(bloques[i] == -1){
-					log_error(logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
+					loguear(error, logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
 					for(int base = 0; base < i; base++) {
 						bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
 					}
@@ -225,35 +231,46 @@ void efectuar_compactacion(char *unaTabla) {
 			int bytes_a_copiar = datos_fs.tamanio_bloques;
 			char *array_bloques = string_from_format("[");
 			for (int j = 0; j < cantidad_bloques; j++){
-				char *path = path_bloques();
-				string_append_with_format(&path, "/%d.bin", bloques[j]);
-				int fdopen = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
-				//log_debug(logger, "bloque %d", bloques[j]);
+				char *path_de_bloques = path_bloques();
+				string_append_with_format(&path_de_bloques, "/%d.bin", bloques[j]);
+				int fdopen = open(path_de_bloques, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+				//loguear(debug, logger, "bloque %d", bloques[j]);
 				if(strlen(lineas_compactar) < (j*datos_fs.tamanio_bloques)){
 					bytes_a_copiar = (j*datos_fs.tamanio_bloques) - strlen(lineas_compactar);
 				}
-				escribir(fdopen, string_substring(lineas_compactar, j*datos_fs.tamanio_bloques, bytes_a_copiar));
+				char *a_escribir = string_substring(lineas_compactar, j*datos_fs.tamanio_bloques, bytes_a_copiar);
+				escribir(fdopen, a_escribir);
+				free(a_escribir);
 				close(fdopen);
-				free(path);
+				free(path_de_bloques);
 				string_append_with_format(&array_bloques, "%d,", bloques[j]);
 			}
+			free(lineas_compactar);
 			array_bloques[strlen(array_bloques)-1] = ']';
 
 			char *path_a_particion = string_from_format("%s%d.bin", path, particion);
-			log_debug(logger, "ruta particion: %s", path_a_particion);
+			loguear(debug, logger, "ruta particion: %s", path_a_particion);
 			t_config *particion_config = config_create(path_a_particion);
 			char **bloques_para_liberar = config_get_array_value(particion_config, "BLOCKS");
 			liberar_bloques_de_particion(bloques_para_liberar);
-			//string_iterate_lines(bloques_para_liberar, (void *)bloques_para_liberar);
+			string_iterate_lines(bloques_para_liberar, (void *)free);
 			free(bloques_para_liberar);
 
 			config_set_value(particion_config, "BLOCKS", array_bloques);
-			config_set_value(particion_config, "SIZE", string_itoa(caracteres_para_escribir));
+			char *size_from_int = string_itoa(caracteres_para_escribir);
+			config_set_value(particion_config, "SIZE", size_from_int);
 			config_save(particion_config);
 			config_destroy(particion_config);
+			free(size_from_int);
+			free(array_bloques);
+			free(path_a_particion);
 		}
-
+		//Solo destruyo, los elementos a limpiar siguen en lineas_a_compactar
+		list_destroy(lineas_para_particion);
 	}
+
+	list_destroy_and_destroy_elements(lineas_a_compactar, (void *)limpiar_registros_memtable);
+	free(path);
 	void _borrar_temporalesc(char *ruta) {
 		if(remove(ruta) == -1) perror("Error al borrar temporal de compactacion: ");
 		free(ruta);
@@ -263,7 +280,7 @@ void efectuar_compactacion(char *unaTabla) {
 	int tiempo_utilizado = get_timestamp() - tiempo_inicio;
 
 	pthread_mutex_unlock(&mutex_compactacion);
-	log_info(logger, "En total, la tabla %s se bloqueo %d segundos", unaTabla, tiempo_utilizado);
+	loguear(info, logger, "En total, la tabla %s se bloqueo %d segundos", unaTabla, tiempo_utilizado);
 
 
 
@@ -272,8 +289,8 @@ void efectuar_compactacion(char *unaTabla) {
 
 t_list *limpiar_lista_de_duplicados(t_list *lineas_a_compactar, t_list *lineas_leidas) {
 	void _agregar_nuevos(t_registro *registro) {
-		if (registro->value == NULL) log_error(logger, ":::::::::::EL SIGUIENTE ES NULO:::::::::::::::");
-		log_warning(logger, "Pasa por duplicados: %s", registro->value);
+		if (registro->value == NULL) loguear(error, logger, ":::::::::::EL SIGUIENTE ES NULO:::::::::::::::");
+		loguear(warning, logger, "Pasa por duplicados: %s", registro->value);
 		bool _desde(t_registro *registro_compactar) {
 			return registro_compactar->key == registro->key;
 
@@ -290,13 +307,11 @@ t_list *limpiar_lista_de_duplicados(t_list *lineas_a_compactar, t_list *lineas_l
 	return lineas_a_compactar;
 }
 
-
-
-
-
 void crear_archivo_tmpc(char *tabla, int size, char *datos) {
 	char *ruta = string_new();
-	string_append_with_format(&ruta, "%s%s/", path_tablas(), tabla);
+	char *path_tabla = path_tablas();
+	string_append_with_format(&ruta, "%s%s/", path_tabla, tabla);
+	free(path_tabla);
 	char *nombre_archivo = nombre_basado_en_tmpc(tabla, ruta);
 	//q = (x + y - 1) / y;
 	int cantidad_bloques = (size + datos_fs.tamanio_bloques - 1) / datos_fs.tamanio_bloques;
@@ -304,7 +319,7 @@ void crear_archivo_tmpc(char *tabla, int size, char *datos) {
 	for(int i = 0; i < cantidad_bloques; i++){
 		bloques[i] = tomar_bloque_libre();
 		if(bloques[i] == -1){
-			log_error(logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
+			loguear(error, logger, "[CREATE] ERROR: No puedo crear el archivo tmpc, FileSystem lleno!");
 			for(int base = 0; base < i; base++) {
 				bitarray_clean_bit(datos_fs.bitarray, bloques[base]);
 			}
@@ -316,7 +331,7 @@ void crear_archivo_tmpc(char *tabla, int size, char *datos) {
 		char *path = path_bloques();
 		string_append_with_format(&path, "/%d.bin", bloques[j]);
 		int fdopen = open(path, O_RDWR | O_CREAT, S_IRWXU);
-		log_debug(logger, "bloque %d", bloques[j]);
+		loguear(debug, logger, "bloque %d", bloques[j]);
 		if(strlen(datos) < (j*datos_fs.tamanio_bloques)){
 			bytes_a_copiar = strlen(datos) - (j*datos_fs.tamanio_bloques);
 		}

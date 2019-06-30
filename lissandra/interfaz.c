@@ -2,7 +2,7 @@
 
 char *fs_select(char *tabla, uint16_t key) {
 	if(!existe_tabla(tabla)) {
-		log_error(logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
+		loguear(error, logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
 		return ERROR_NO_EXISTE_TABLA;
 	}
 	t_metadata metadata = obtener_metadata(tabla);
@@ -68,14 +68,14 @@ char *fs_select(char *tabla, uint16_t key) {
 
 void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	if(!existe_tabla(tabla)) {
-		log_error(logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
+		loguear(error, logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
 		return;
 	}
 	if(strlen(value) > fs_config.tamanio_value) {
-		log_error(logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
+		loguear(error, logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
 		return;
 	}
-	log_info(logger, "[EPOCH] timestamp: %d", timestamp);
+	loguear(info, logger, "[EPOCH] timestamp: %d", timestamp);
 
 	//TODO NO entedí el item 2 del enunciado
 
@@ -86,11 +86,11 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	t_memtable *tabla_existente_en_memtable = obtener_tabla_en_memtable(tabla);
 
 	if(tabla_existente_en_memtable) {
-		log_debug(logger, "[MEMTABLE] Existia el area %s", tabla);
+		loguear(debug, logger, "[MEMTABLE] Existia el area %s", tabla);
 		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
 	}
 	else {
-		log_info(logger, "Creo hilo para compactación");
+		loguear(info, logger, "Creo hilo para compactación");
 		/*pthread_t hilo_dump_por_tabla;
 		char *nombre_tabla = string_duplicate(tabla);
 		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);*/
@@ -101,30 +101,30 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 		unaTabla->tabla = strdup(tabla);
 		unaTabla->t_registro = registros;
 
-		log_debug(logger, "[MEMTABLE] Agrego el area %s", tabla);
+		loguear(debug, logger, "[MEMTABLE] Agrego el area %s", tabla);
 		list_add(t_list_memtable, unaTabla);
 	}
 }
 
 void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion) {
 	if(existe_tabla(tabla)) {
-		log_error(logger, "[CREATE] ERROR: Ya existe tabla con ese nombre.");
+		loguear(error, logger, "[CREATE] ERROR: Ya existe tabla con ese nombre.");
 		return;
 	}
 	string_to_upper(tipo_consistencia);
 	if(!string_equals_ignore_case(tipo_consistencia, "SC") && !string_equals_ignore_case(tipo_consistencia, "SHC") && !string_equals_ignore_case(tipo_consistencia, "EC")) {
-		log_error(logger, "[Error] Consistencia no reconocida");
+		loguear(error, logger, "[Error] Consistencia no reconocida");
 		return;
 	}
 	if(particiones < 1 || tiempo_compactacion < 1) {
-		log_error(logger, "[Error] Los tiempos y/o cantidades deben ser mayores a cero");
+		loguear(error, logger, "[Error] Los tiempos y/o cantidades deben ser mayores a cero");
 		return;
 	}
 	int bloques_necesarios[particiones];
 	for(int indice_bloque = 0; indice_bloque < particiones; indice_bloque++){
 		bloques_necesarios[indice_bloque] = tomar_bloque_libre();
 		if(bloques_necesarios[indice_bloque] == -1){
-			log_error(logger, "[CREATE] ERROR: No hay más bloques libres. No voy a crear tu tabla, limpio los solicitados");
+			loguear(error, logger, "[CREATE] ERROR: No hay más bloques libres. No voy a crear tu tabla, limpio los solicitados");
 			for(int base = 0; base < indice_bloque; base++) {
 				bitarray_clean_bit(datos_fs.bitarray, bloques_necesarios[base]);
 			}
@@ -169,13 +169,13 @@ t_list *fs_describe(char *tabla) {
 				if(!string_contains(ep->d_name, ".")) {
 					char *path_tabla = string_duplicate(path);
 					string_append(&path_tabla, ep->d_name);
-					log_info(logger, "[Describe] INCLUIDO: %s", ep->d_name);
+					loguear(info, logger, "[Describe] INCLUIDO: %s", ep->d_name);
 					t_response_describe *describe = devolver_metadata(path_tabla, ep->d_name);
 					list_add(metadatas, describe);
 					free(path_tabla);
 				}
 				else {
-					log_debug(logger, "[Describe] IGNORADO: %s", ep->d_name);
+					loguear(debug, logger, "[Describe] IGNORADO: %s", ep->d_name);
 				}
 			}
 
@@ -186,7 +186,7 @@ t_list *fs_describe(char *tabla) {
 		}
 	} else {
 		if(!existe_tabla(tabla)) {
-			log_error(logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
+			loguear(error, logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
 			return NULL;
 		}
 		string_append(&path, tabla);

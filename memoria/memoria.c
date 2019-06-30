@@ -8,6 +8,7 @@ int main() {
 	logger = log_create("memoria.log","MEMORIA", true,
 			memoria_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 
+	pthread_mutex_init(&mutex_journaling, NULL);
 	/*
 	 * Invierto el orden, para que si no puede iniciar la memoria
 	 * segun start up del tp, tampoco pueda recibir conexiones
@@ -18,7 +19,7 @@ int main() {
 
 	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
 	//pthread_create(&hilo_gossip, NULL, (void *)iniciar_gossip, NULL);
-	log_info(logger, "Memoria %d iniciado", memoria_config.numero_memoria);
+	loguear(info, logger, "Memoria %d iniciado", memoria_config.numero_memoria);
 	printear_configuraciones();
 
 	//<<1- inotify
@@ -38,7 +39,8 @@ int main() {
 	pthread_create(&hilo_aceptar_clientes,NULL, (void*)aceptar_clientes, ptr_socket_servidor);
 
 	pthread_join(hilo_consola, NULL);
-	log_info(logger, "[Memoria] Proceso finalizado.");
+	pthread_mutex_destroy(&mutex_journaling);
+	loguear(info, logger, "[Memoria] Proceso finalizado.");
 	pthread_join(hilo_observer_configs, NULL);
 
 	inotify_rm_watch(fd_inotify, watch_descriptor);
@@ -55,7 +57,7 @@ int recibir_datos_de_fs(int socket) {
 	t_prot_mensaje *mensaje = prot_recibir_mensaje(socket);
 	int value;
 	memcpy(&value, mensaje->payload, sizeof(int));
-	log_info(logger, "[Tamanio] Value = %d", value);
+	loguear(info, logger, "[Tamanio] Value = %d", value);
 	prot_destruir_mensaje(mensaje);
 	return value;
 }
@@ -64,11 +66,11 @@ int recibir_datos_de_fs(int socket) {
  * dispare el evento onChange
  */
 void printear_configuraciones() {
-	log_debug(logger, "[Configuración] Puerto: %d", memoria_config.puerto_escucha);
-	log_debug(logger, "[Configuración] Retardo acceso a memoria principal: %d", memoria_config.retardo_accesso_a_mp);
-	log_debug(logger, "[Configuración] Retardo acceso a lissandra: %d", memoria_config.retardo_accesso_a_fs);
-	log_debug(logger, "[Configuración] Timpo entre journaling: %d", memoria_config.tiempo_journaling);
-	log_debug(logger, "[Configuración] Tiempo entre gossiping: %d", memoria_config.tiempo_gossiping);
+	loguear(debug, logger, "[Configuración] Puerto: %d", memoria_config.puerto_escucha);
+	loguear(debug, logger, "[Configuración] Retardo acceso a memoria principal: %d", memoria_config.retardo_accesso_a_mp);
+	loguear(debug, logger, "[Configuración] Retardo acceso a lissandra: %d", memoria_config.retardo_accesso_a_fs);
+	loguear(debug, logger, "[Configuración] Timpo entre journaling: %d", memoria_config.tiempo_journaling);
+	loguear(debug, logger, "[Configuración] Tiempo entre gossiping: %d", memoria_config.tiempo_gossiping);
 }
 
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
@@ -89,11 +91,11 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 				if((event->mask & IN_MODIFY) &&
 					string_equals_ignore_case("memoria.config", event->name)) {
 
-						log_info(logger, "[Info] Se modificó memoria.config");
+						loguear(info, logger, "[Info] Se modificó memoria.config");
 						//Esto no necesariamente debe ser así, sería mejor solo que setee lo que necesite.
-						log_debug(logger, "[DEBUG] pre releer configs");
+						loguear(debug, logger, "[DEBUG] pre releer configs");
 						levantar_archivo_configuracion();
-						log_debug(logger, "[DEBUG] termino de leer configs");
+						loguear(debug, logger, "[DEBUG] termino de leer configs");
 						printear_configuraciones();
 
 				}
@@ -122,21 +124,21 @@ void aceptar_clientes(int *ptr_socket_servidor) {
 		t_cliente cliente_recibido = *((t_cliente*) mensaje_del_cliente->payload);
 		switch(cliente_recibido) {
 		case KERNEL: {
-			log_debug(logger, "[Conexión] Viene del kernel");
+			loguear(debug, logger, "[Conexión] Viene del kernel");
 			pthread_t recibir_mensajes_de_kernel;
 			int* socket_kernel = (int*) malloc (sizeof(int));
 			*socket_kernel = socket_cliente;
 			pthread_create(&recibir_mensajes_de_kernel,NULL, (void*)escuchar_kernel, socket_kernel);
 		} break;
 		case MEMORIA: {
-			log_info(logger, "[Conexión] Memoria conectada");
+			loguear(info, logger, "[Conexión] Memoria conectada");
 			pthread_t recibir_mensajes_de_memoria;
 			int* socket_memoria = (int*) malloc (sizeof(int));
 			*socket_memoria = socket_cliente;
 			pthread_create(&recibir_mensajes_de_memoria, NULL, (void*)escuchar_memoria, socket_memoria);
 		} break;
 		default:
-			log_error(logger, "[Conexión] Cliente desconocido");
+			loguear(error, logger, "[Conexión] Cliente desconocido");
 		}
 		prot_destruir_mensaje(mensaje_del_cliente);
 	}
@@ -157,12 +159,12 @@ void escuchar_kernel(int *socket_origen) {
 		t_prot_mensaje *mensaje_de_kernel = prot_recibir_mensaje(socket_kernel);
 		switch(mensaje_de_kernel->head) {
 			case DESCONEXION: {
-				log_warning(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
+				loguear(warning, logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
 				cortar_while = true;
 			} break;
 
 			case ENVIO_DATOS: {
-				log_info(logger, "[Conexión] Kernel conectado");
+				loguear(info, logger, "[Conexión] Kernel conectado");
 				int *mi_nombre = malloc(sizeof(int));
 				*mi_nombre = memoria_config.numero_memoria;
 				prot_enviar_mensaje(socket_kernel, ENVIO_DATOS, sizeof(int), mi_nombre);
@@ -176,14 +178,14 @@ void escuchar_kernel(int *socket_origen) {
 				memset(handshake, 0, largo_de_handshake);
 				memcpy(handshake, mensaje_de_kernel->payload + sizeof(int)*2, largo_de_handshake);
 				handshake[largo_de_handshake] = '\0';
-				log_info(logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
+				loguear(info, logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
 				free(handshake);
 			} break;
 
 			case FUNCION_SELECT: {
-				log_debug(logger, "[Conexión] pre deserializar request select");
+				loguear(debug, logger, "[Conexión] pre deserializar request select");
 				t_request_select *buffer = deserializar_request_select(mensaje_de_kernel);
-				log_info(logger, "Hacer select con [TABLA = %s, KEY = %d]", buffer->tabla, buffer->key);
+				loguear(info, logger, "Hacer select con [TABLA = %s, KEY = %d]", buffer->tabla, buffer->key);
 
 				char *value_desde_memoria = memoria_select(buffer->tabla, buffer->key);
 				if(value_desde_memoria) {
@@ -197,13 +199,13 @@ void escuchar_kernel(int *socket_origen) {
 					free(buffer_serializado);
 					t_prot_mensaje *mensaje_de_lissandra = prot_recibir_mensaje(socket_lissandra);
 					if(mensaje_de_lissandra->head == REGISTRO_TABLA) {
-						log_info(logger, "LLego el dato de fs, tabla %s", buffer->tabla);
+						loguear(info, logger, "LLego el dato de fs, tabla %s", buffer->tabla);
 						size_t tamanio_de_linea = mensaje_de_lissandra->tamanio_total-sizeof(t_header);
 						char *linea = malloc(sizeof(char)*(tamanio_de_linea+1));
 						memset(linea, 0, tamanio_de_linea);
 						memcpy(linea, mensaje_de_lissandra->payload, tamanio_de_linea);
 						linea[tamanio_de_linea] = '\0';
-						log_debug(logger, "Linea: -%s-", linea);
+						loguear(debug, logger, "Linea: -%s-", linea);
 						if(!string_equals_ignore_case(linea, ERROR_NO_EXISTE_TABLA) && !string_equals_ignore_case(linea, ERROR_KEY_NO_ENCONTRADA)) {
 							char **separador = string_n_split(linea, 3, ";");
 
@@ -211,22 +213,24 @@ void escuchar_kernel(int *socket_origen) {
 							if(!segmento) {
 								t_est_tdp *registro = obtener_frame();
 								if(registro == NULL) {
-									log_error(logger, "[Error] No hay suficientes frames");
+									loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
 									//TODO EJECUTAR ALGORITMO DE REEMPLAZO
 								} else {
-									registro->modificado = 0;
 									crear_asignar_segmento(false, segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
 								}
 							}
 							else {
 								if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
 									//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
-									log_error(logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
+									loguear(error, logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
 								} else {
 									t_est_tdp *registro = obtener_frame();
-									if(registro == NULL) {
-										log_error(logger, "[Error] No hay suficientes frames");
-										//TODO EJECUTAR ALGORITMO DE REEMPLAZO
+									t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
+									if(!segmento) {
+											crear_asignar_segmento(false, segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+									}
+									else if(registro == NULL) {
+										loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
 									} else {
 										registro->modificado = 0;
 										settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
@@ -236,7 +240,7 @@ void escuchar_kernel(int *socket_origen) {
 									}
 								}
 							}
-							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
+							loguear(debug, logger, "[SELECT-RECIBIDO] llego: %s", linea);
 							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
 							string_iterate_lines(separador, (void*)free);
 							free(separador);
@@ -244,7 +248,7 @@ void escuchar_kernel(int *socket_origen) {
 							prot_destruir_mensaje(mensaje_de_lissandra);
 						}
 						else {
-							log_debug(logger, "[SELECT-RECIBIDO] llego: %s", linea);
+							loguear(debug, logger, "[SELECT-RECIBIDO] llego: %s", linea);
 							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(linea), linea);
 							free(linea);
 							prot_destruir_mensaje(mensaje_de_lissandra);
@@ -257,9 +261,9 @@ void escuchar_kernel(int *socket_origen) {
 			} break;
 
 			case FUNCION_INSERT: {
-				log_debug(logger, "[Conexión] pre deserializar request insert");
+				loguear(debug, logger, "[Conexión] pre deserializar request insert");
 				t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
-				log_info(logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
+				loguear(info, logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 				//prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
 				memoria_insert(biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 				free(biffer->nombre_tabla);
@@ -268,9 +272,9 @@ void escuchar_kernel(int *socket_origen) {
 			} break;
 
 			case FUNCION_CREATE: {
-				log_debug(logger, "[Conexión] pre deserializar resquest CREATE");
+				loguear(debug, logger, "[Conexión] pre deserializar resquest CREATE");
 				t_request_create *buffer = deserializar_request_create(mensaje_de_kernel);
-				log_info(logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
+				loguear(info, logger, "Hacer create con [NombreTabla = %s, tipoConsistencia = %s, numeroPart = %d, compatTime = %d]", buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
 				prot_enviar_mensaje(socket_lissandra, FUNCION_CREATE, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
 				free(buffer->nombre_tabla);
 				free(buffer->tipo_consistencia);
@@ -278,17 +282,17 @@ void escuchar_kernel(int *socket_origen) {
 
 			} break;
 			case FUNCION_DESCRIBE: {
-				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
+				loguear(debug, logger, "[Conexión] pre deserializar resquest DESCRIBE");
 				size_t tam = mensaje_de_kernel->tamanio_total-sizeof(t_header);
 				if(tam == 0){
-					log_info(logger, "Describe nulo");
+					loguear(info, logger, "Describe nulo");
 				}
 				else{
 					char* tabla = malloc(tam+1);
 					memset(tabla, 0, tam+1);
 					memcpy(tabla, mensaje_de_kernel->payload, tam);
 					tabla[tam] = '\0';
-					log_info(logger, "Describe con tabla: %s", tabla);
+					loguear(info, logger, "Describe con tabla: %s", tabla);
 					free(tabla);
 				}
 				prot_enviar_mensaje(socket_lissandra, FUNCION_DESCRIBE, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
@@ -305,7 +309,7 @@ void escuchar_kernel(int *socket_origen) {
 				tabla[tab] = '\0';
 				memoria_drop(tabla);
 				prot_enviar_mensaje(socket_lissandra, FUNCION_DROP, tab, mensaje_de_kernel->payload);
-				log_info(logger, "Drop con tabla: %s", tabla);
+				loguear(info, logger, "Drop con tabla: %s", tabla);
 				free(tabla);
 
 			} break;
@@ -316,7 +320,7 @@ void escuchar_kernel(int *socket_origen) {
 
 			default: {
 				cortar_while = true;
-				log_warning(logger, "Me llegó un mensaje desconocido");
+				loguear(warning, logger, "Me llegó un mensaje desconocido");
 				break;
 			}
 		}
@@ -327,21 +331,21 @@ void escuchar_kernel(int *socket_origen) {
 
 void iniciar_memoria() {
 	memoria = malloc(memoria_config.tamanio_de_memoria);
-	log_debug(logger, "Inicio de memoria: [Hex]=%p", memoria);
+	loguear(debug, logger, "Inicio de memoria: [Hex]=%p", memoria);
 	size_t tamanio_key = sizeof(uint16_t);
 	size_t tamanio_timestamp = sizeof(int); //TODO CAMBIAR A LONG
-	log_debug(logger, "SizeOf Key: %d, SizeOf Timestamp:%d", tamanio_key, tamanio_timestamp);
+	loguear(debug, logger, "SizeOf Key: %d, SizeOf Timestamp:%d", tamanio_key, tamanio_timestamp);
 	tamanio_de_pagina = tamanio_value + tamanio_key + tamanio_timestamp;
 	/*
 	 * Descartado porque es probable que por el padding, el total de frames no sea múltipo de 2ALaN, por ende el test_bit te da al menos un frame que no existe.
 	int bytes_desde_frames = redondear_hacia_arriba(total_de_frames, 8);
-	log_debug(logger, "Cantidad Frames / 8 (redondea arriba) = %d", bytes_desde_frames);
+	loguear(debug, logger, "Cantidad Frames / 8 (redondea arriba) = %d", bytes_desde_frames);
 	bitmap = calloc(bytes_desde_frames, sizeof(char));
 	estado_frames = bitarray_create_with_mode(bitmap, bytes_desde_frames, MSB_FIRST);*/
 	frames = list_create();
 	tds = list_create();
 	int total_de_frames = memoria_config.tamanio_de_memoria / tamanio_de_pagina;
-	log_debug(logger, "Tamanio de memoria: %d, Tamanio de página: %d, Total de frames: %d", memoria_config.tamanio_de_memoria, tamanio_de_pagina, total_de_frames);
+	loguear(debug, logger, "Tamanio de memoria: %d, Tamanio de página: %d, Total de frames: %d", memoria_config.tamanio_de_memoria, tamanio_de_pagina, total_de_frames);
 	int i = 1;
 	for(;i <= total_de_frames; i++) {
 		t_est_tdp *pagina = malloc(sizeof(t_est_tdp));
@@ -349,7 +353,7 @@ void iniciar_memoria() {
 		pagina->nro_pag = i;
 		pagina->ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
 		pagina->ultima_referencia = 0;
-		log_debug(logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
+		loguear(debug, logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
 		list_add(frames, pagina);
 	}
 }
@@ -412,7 +416,7 @@ void settear_value(void *frame, char* value) {
 void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value) {
 	frame_libre->modificado = es_insert;
 	frame_libre->ultima_referencia = get_timestamp();
-	log_warning(logger, "Frame recibido: %d", frame_libre->nro_pag);
+	loguear(warning, logger, "Frame recibido: %d", frame_libre->nro_pag);
 	memset(frame_libre->ptr_posicion, 0, tamanio_de_pagina);
 	settear_timestamp(frame_libre->ptr_posicion, timestamp);
 	settear_key(frame_libre->ptr_posicion, key);
@@ -460,29 +464,31 @@ t_est_tdp *obtener_frame() {
 	un_frame = obtener_frame_libre();
 	if(un_frame == NULL) {
 		un_frame = frame_desde_lru();
-	}
-	if(un_frame == NULL) {
-		log_warning(logger, "Memoria llena, efectuando journaling");
-		journal();
-		obtener_frame();
+		if(un_frame == NULL) {
+				loguear(warning, logger, "Memoria llena, efectuando journaling");
+				journal();
+				pthread_mutex_lock(&mutex_journaling);
+				un_frame = obtener_frame();
+				pthread_mutex_unlock(&mutex_journaling);
+		}
 	}
 	return un_frame;
 }
 
 void printear_memoria() {
-	log_debug(logger, "-------------------- ESTADO DE LA MEMORIA -------------------------");
+	loguear(debug, logger, "-------------------- ESTADO DE LA MEMORIA -------------------------");
 	void _imprimir_segmentos(t_est_tds *segmento) {
-		log_debug(logger, "Segmento: %s", segmento->nombre_segmento);
+		loguear(debug, logger, "Segmento: %s", segmento->nombre_segmento);
 		void _imprimir_paginas(t_est_tdp *pagina) {
-			log_debug(logger, "Ut. Ref: %d | Modificado: %d | Time: %d | Key: %d | Value: %s",
+			loguear(debug, logger, "Ut. Ref: %d | Modificado: %d | Time: %d | Key: %d | Value: %s",
 					pagina->ultima_referencia, pagina->modificado, obtener_timestamp_de_pagina(pagina->ptr_posicion),
 					obtener_key_de_pagina(pagina->ptr_posicion), obtener_value_de_pagina(pagina->ptr_posicion));
 		}
-		log_debug(logger, "-------------------------------------------------------------------");
+		loguear(debug, logger, "-------------------------------------------------------------------");
 		list_iterate(segmento->paginas, (void *)_imprimir_paginas);
 	}
 	list_iterate(tds, (void *)_imprimir_segmentos);
-	log_debug(logger, "-------------------------------------------------------------------");
+	loguear(debug, logger, "-------------------------------------------------------------------");
 }
 
 t_est_tdp *frame_desde_lru() {
@@ -518,10 +524,10 @@ void iniciar_gossip() {
 	list_add(tabla_gossip, self);
 	while(!consola_ejecuto_exit) {
 		if(contar_items(memoria_config.ip_seeds) != contar_items(memoria_config.puerto_seeds)) {
-			log_error(logger, "[ERROR] No coincide la cantidad de ip y puerto seeds.");
+			loguear(error, logger, "[ERROR] No coincide la cantidad de ip y puerto seeds.");
 			exit(1);
 		}
-		log_info(logger, "[Gossiping] proceso iniciado");
+		loguear(info, logger, "[Gossiping] proceso iniciado");
 		int posicion = 0;
 		while(memoria_config.ip_seeds[posicion] != NULL) {
 			if(ya_se_conecto_a(memoria_config.ip_seeds[posicion], atoi(memoria_config.puerto_seeds[posicion]))) {
@@ -530,16 +536,16 @@ void iniciar_gossip() {
 			}
 			int socket_memoria_seed = conectar_a_servidor_sin_exit(memoria_config.ip_seeds[posicion], atoi(memoria_config.puerto_seeds[posicion]), MEMORIA);
 			if(socket_memoria_seed == -1) {
-				log_error(logger, "[Gossiping] Falló al conectar con: %s:%d.",memoria_config.ip_seeds[posicion], atoi(memoria_config.puerto_seeds[posicion]));
+				loguear(error, logger, "[Gossiping] Falló al conectar con: %s:%d.",memoria_config.ip_seeds[posicion], atoi(memoria_config.puerto_seeds[posicion]));
 			}
 			else {
-				log_info(logger, "[Gossiping] Par detectado, comenzando el proceso de intercambio.");
+				loguear(info, logger, "[Gossiping] Par detectado, comenzando el proceso de intercambio.");
 				size_t tamanio_del_buffer = 0;
 				void _calcular_buffer(t_memoria_conectada *memoria) {
 					tamanio_del_buffer += sizeof(int)*3 + strlen(memoria->ip);
 				}
 				list_iterate(tabla_gossip, (void*)_calcular_buffer);
-				log_debug(logger, "[Gossiping] Tamanio del buffer: %d", tamanio_del_buffer);
+				loguear(debug, logger, "[Gossiping] Tamanio del buffer: %d", tamanio_del_buffer);
 				void *buffer = serializar_tabla_gossip(tamanio_del_buffer, tabla_gossip);
 				//Envio mi tabla, para que otra memoria la reciba.
 				prot_enviar_mensaje(socket_memoria_seed, INTERCAMBIAR_TABLA_GOSSIP, tamanio_del_buffer, buffer);
@@ -558,7 +564,7 @@ void iniciar_gossip() {
 			}
 			posicion++;
 		}
-		log_info(logger, "[Gossiping] proceso finalizado, durmiendo...");
+		loguear(info, logger, "[Gossiping] proceso finalizado, durmiendo...");
 		usleep(memoria_config.tiempo_gossiping*1000);
 	}
 }
@@ -569,9 +575,9 @@ void reiniciar_frame(t_est_tdp *frame) {
 }
 
 /*void agregar_nuevos_a_seeds(int nuevos_seeds) {
-	log_debug(logger, "nuevos seeds: %d", nuevos_seeds);
-	log_debug(logger, "Items antes: %d", contar_items(memoria_config.ip_seeds));
-	log_debug(logger, "Items antes: %d", contar_items(memoria_config.puerto_seeds));
+	loguear(debug, logger, "nuevos seeds: %d", nuevos_seeds);
+	loguear(debug, logger, "Items antes: %d", contar_items(memoria_config.ip_seeds));
+	loguear(debug, logger, "Items antes: %d", contar_items(memoria_config.puerto_seeds));
 	int seeds = contar_items(memoria_config.ip_seeds);
 	memoria_config.ip_seeds = realloc(memoria_config.ip_seeds, sizeof(char*) * (seeds+nuevos_seeds-1));
 	memoria_config.puerto_seeds = realloc(memoria_config.puerto_seeds, sizeof(char*) * (seeds+nuevos_seeds-1));
@@ -585,6 +591,6 @@ void reiniciar_frame(t_est_tdp *frame) {
 		}
 	}
 	list_iterate(tabla_gossip, (void *)_agregar_otros);
-	log_debug(logger, "Items despues: %d", contar_items(memoria_config.ip_seeds));
-	log_debug(logger, "Items despues: %d", contar_items(memoria_config.puerto_seeds));
+	loguear(debug, logger, "Items despues: %d", contar_items(memoria_config.ip_seeds));
+	loguear(debug, logger, "Items despues: %d", contar_items(memoria_config.puerto_seeds));
 }*/

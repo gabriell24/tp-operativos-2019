@@ -9,7 +9,7 @@ void escuchar_memoria(int *socket_origen) {
 		switch(mensaje_de_memoria->head) {
 			case DESCONEXION: {
 				//TODO QUITAR DE LA TABLA_GOSSIP
-				log_warning(logger, "[Desconexión de memoria] Mato el hilo, ya no podrá recibir mensajes");
+				loguear(warning, logger, "[Desconexión de memoria] Mato el hilo, ya no podrá recibir mensajes");
 				cortar_while = true;
 			} break;
 
@@ -37,16 +37,16 @@ void escuchar_memoria(int *socket_origen) {
 
 			/*Soy memoria A, recibo la tabla procesada de B, y la fusiono con la mía
 			case INTERCAMBIAR_TABLA_GOSSIP_FIN: {
-				log_info(logger, "Fusión final de tabla gossip iniciado");
+				loguear(info, logger, "Fusión final de tabla gossip iniciado");
 				t_list *tabla_gossip_recibida = deserializar_tabla_gossip(mensaje_de_memoria, logger);
 				intercambir_memorias_conectadas(tabla_gossip, tabla_gossip_recibida);
 				liberar_tabla_gossip(tabla_gossip_recibida);
-				log_info(logger, "Fusión final de tabla gossip finalizado");
+				loguear(info, logger, "Fusión final de tabla gossip finalizado");
 			} break;*/
 
 			default: {
 				cortar_while = true;
-				log_warning(logger, "Me llegó un mensaje desconocido");
+				loguear(warning, logger, "Me llegó un mensaje desconocido");
 				break;
 			}
 		}
@@ -63,10 +63,10 @@ void liberar_tabla_gossip(t_list *tabla) {
 }
 
 void mostrar_tabla_gossip() {
-	log_debug(logger, "+--------------- TABLA GOSSIP -------------+");
+	loguear(debug, logger, "+--------------- TABLA GOSSIP -------------+");
 	void _imprimir(t_memoria_conectada *memoria) {
-		log_debug(logger, "| Nombre: %d | Ip: %s | Puerto: %d |", memoria->nombre, memoria->ip, memoria->puerto);
+		loguear(debug, logger, "| Nombre: %d | Ip: %s | Puerto: %d |", memoria->nombre, memoria->ip, memoria->puerto);
 	}
 	list_iterate(tabla_gossip, (void *)_imprimir);
-	log_debug(logger, "+------------------------------------------+");
+	loguear(debug, logger, "+------------------------------------------+");
 }

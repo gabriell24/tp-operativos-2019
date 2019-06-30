@@ -5,7 +5,7 @@ void kernel_select(int socket_memoria, char *tabla, uint16_t key) {
 	void *buffer = serializar_request_select(tabla, key);
 	prot_enviar_mensaje(socket_memoria, FUNCION_SELECT, tamanio_del_buffer, buffer);
 	free(buffer);
-	log_info(logger, "Select enviado a memoria");
+	loguear(info, logger, "Select enviado a memoria");
 }
 
 void kernel_insert(int socket_memoria, char* nombre_tabla, uint16_t key, char* value, int epoch){
@@ -13,7 +13,7 @@ void kernel_insert(int socket_memoria, char* nombre_tabla, uint16_t key, char* v
 	void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
 	prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
 	free(buffer);
-	log_info(logger, "Insert enviado a memoria");
+	loguear(info, logger, "Insert enviado a memoria");
 
 }
 
@@ -23,7 +23,7 @@ void kernel_create(int socket_memoria, char* nombre_tabla, char* tipo_consistenc
 	void* buffer = serializar_request_create(nombre_tabla, tipo_consistencia, numero_particiones, compaction_time);
 	prot_enviar_mensaje(socket_memoria, FUNCION_CREATE, tamanio_buffer, buffer);
 	free(buffer);
-	log_info(logger, "===========ENVIADO KERNEL/=======CREAATEEEE==============================");
+	loguear(info, logger, "===========ENVIADO KERNEL/=======CREAATEEEE==============================");
 
 	//printf("Holis :) hiciste un create desde kernel");
 }
@@ -36,7 +36,7 @@ void kernel_describe(int socket_memoria, char* nombre_tabla){
 	else{
 		prot_enviar_mensaje(socket_memoria, FUNCION_DESCRIBE, strlen(nombre_tabla), nombre_tabla);
 	}
-	log_info(logger, "Describe enviado a memoria");
+	loguear(info, logger, "Describe enviado a memoria");
 	// me trae todas la metadata de las tablas del FS
 	// diferenciar si llega null o no en el argumento, C no permite argumentos opcionales
 }
@@ -45,7 +45,7 @@ void kernel_describe(int socket_memoria, char* nombre_tabla){
 void kernel_drop(int socket_memoria, char* nombre_tabla){
 	printf("Hola mundo :) Dropeaste una tabla (?");
 	prot_enviar_mensaje(socket_memoria, FUNCION_DROP,strlen(nombre_tabla), nombre_tabla);
-	log_info(logger, "Drop enviado a memoria");
+	loguear(info, logger, "Drop enviado a memoria");
 }
 
 void kernel_journal(int socket_memoria){
@@ -69,7 +69,7 @@ void kernel_run(char *archivo) {
 	int total_de_lineas = 0;
 
 	if(file != NULL) {
-		log_debug(logger, "archivo abierto");
+		loguear(debug,logger, "archivo abierto");
 		/*char *linea = malloc(100*sizeof(char));
 		memset(linea, 0, 100*sizeof(char));
 		while(fgets(linea, 100, file)!=NULL) {
@@ -80,7 +80,7 @@ void kernel_run(char *archivo) {
 		fclose(file);
 	}
 	else {
-		log_error(logger, "[RUN] Error: archivo no encontrado. Ruta: %s", ruta);
+		loguear(error, logger, "[RUN] Error: archivo no encontrado. Ruta: %s", ruta);
 	}
 	free(ruta);
 }

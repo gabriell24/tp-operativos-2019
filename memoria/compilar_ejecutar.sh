@@ -4,7 +4,7 @@ if [[ $? == 0 ]]; then
   echo "./compilar_ejecutar {valgrind}Opcional {leaks}Opcional"
   if [[ $1 = "valgrind" ]]; then
     if [[ $2 = "leaks" ]]; then
-      valgrind --leak-check=yes ./memoria.out
+      valgrind --leak-check=full ./memoria.out
     else
       valgrind ./memoria.out
     fi

@@ -7,24 +7,24 @@ void iniciar_listas_de_criterios() {
 }
 
 void agregar_memoria_a_criterio(criterio criterio, int numero_memoria) {
-	log_debug(logger, "Criterio recibido %s - Numero recibido: %d", criterio_to_string(criterio), socket);
+	loguear(debug, logger, "Criterio recibido %s - Numero recibido: %d", criterio_to_string(criterio), socket);
 	bool _buscar_memoria(t_memoria_conectada *memoria_conectada) {
 		return memoria_conectada->nombre == numero_memoria;
 	}
 	t_memoria_conectada *memoria_conectada = list_find(tabla_gossip, (void *)_buscar_memoria);
 	if(!memoria_conectada) {
-		log_error(logger, "No encontré esa memoria conectada, configuraste el memoria.config?");
+		loguear(error, logger, "No encontré esa memoria conectada, configuraste el memoria.config?");
 		return;
 	} else {
 		if(memoria_conectada->socket < 1)
-			log_error(logger, "La memoria que querés agregar, aún no se conectó, valor de socket: %d", memoria_conectada->socket);
+			loguear(error, logger, "La memoria que querés agregar, aún no se conectó, valor de socket: %d", memoria_conectada->socket);
 	}
 	int *aux = malloc(sizeof(int));
 	*aux = memoria_conectada->socket;
 	switch(criterio) {
 		case SC: {
 			if(list_size(lista_sc)) {
-				log_error(logger, "[Error] El criterio SC solo puede asociarse a UNA memoria");
+				loguear(error, logger, "[Error] El criterio SC solo puede asociarse a UNA memoria");
 				return;
 			}
 			list_add(lista_sc, aux);
@@ -35,7 +35,7 @@ void agregar_memoria_a_criterio(criterio criterio, int numero_memoria) {
 		case EC: {
 			list_add(lista_ec, aux);
 		} break;
-		default: log_error(logger, "Criterio no reconocido");
+		default: loguear(error, logger, "Criterio no reconocido");
 	}
 	//free(aux);
 }
@@ -58,12 +58,12 @@ void quitar_de_lista(t_list *lista, int *elemento) {
 }
 
 void imprimir_elementos(t_list *list, char *lista) {
-	log_debug(logger, "COMIENZO - LISTA %s", lista);
+	loguear(debug, logger, "COMIENZO - LISTA %s", lista);
 	void _print(void *elemento) {
 		printf("\tElemento: %d\n", *((int*)elemento));
 	}
 	list_iterate(list, _print);
-	log_debug(logger, "---------------------------------------");
+	loguear(debug, logger, "---------------------------------------");
 }
 
 void limpiar_listas() {
@@ -85,7 +85,7 @@ void limpiar_listas() {
  */
 int elegir_memoria_shc(char *tabla) {
 	if(!list_size(lista_shc)) {
-		log_error(logger, "Error: no se asocio una memoria al criterio SHC");
+		loguear(error, logger, "Error: no se asocio una memoria al criterio SHC");
 		return -1;
 	}
 	char primer_letra = pasar_char_minuscula(tabla[0]);
@@ -93,11 +93,11 @@ int elegir_memoria_shc(char *tabla) {
 	int cantidad_letras_abecedario = 26; //Sin la enie
 	int letras_por_grupo = redondear_hacia_arriba(cantidad_letras_abecedario, list_size(lista_shc));
 	int grupo_correspondiente_base_cero = redondear_hacia_arriba(nro_de_letra, letras_por_grupo) - 1;
-	log_debug(logger, "[Elegir SHC] Se calculó la memoria en la posición: %d", grupo_correspondiente_base_cero);
+	loguear(debug, logger, "[Elegir SHC] Se calculó la memoria en la posición: %d", grupo_correspondiente_base_cero);
 	//TODO MUTEX AT THIS POINT
 	int *socket = list_get(lista_shc, grupo_correspondiente_base_cero);
 	if(!socket) {
-		log_error(logger, "No se pudo obtener una memoria criterio EC");
+		loguear(error, logger, "No se pudo obtener una memoria criterio EC");
 		return -1;
 	}
 	return *socket;
@@ -110,12 +110,12 @@ int pasar_char_minuscula(char letra) {
 
 int elegir_memoria_ec() {
 	if(!list_size(lista_ec)) {
-		log_error(logger, "Error: no se asocio una memoria al criterio EC");
+		loguear(error, logger, "Error: no se asocio una memoria al criterio EC");
 		return -1;
 	}
 	int *socket = list_get(lista_ec, rand() % list_size(lista_ec));
 	if(!socket) {
-		log_error(logger, "No se pudo obtener una memoria criterio EC");
+		loguear(error, logger, "No se pudo obtener una memoria criterio EC");
 		return -1;
 	}
 	return *socket;
@@ -127,7 +127,7 @@ t_list *memorias_conectadas() {
 	}
 	t_list *memorias_conectadas = list_filter(tabla_gossip, (void *)_buscar_conectadas);
 	if(!list_size(memorias_conectadas)) {
-		log_error(logger, "ERROR: get_memoria() no hay memoria conectada, esto no debería pasar.");
+		loguear(error, logger, "ERROR: get_memoria() no hay memoria conectada, esto no debería pasar.");
 		return NULL;
 	}
 	return memorias_conectadas;
@@ -153,13 +153,13 @@ int get_memoria(char *tabla) {
 		}
 		t_response_describe *metadata = list_find(describe_tablas, (void *)_buscar_metadata);
 		if(!metadata) {
-			log_error(logger, "No existe metadata para %s", tabla);
+			loguear(error, logger, "No existe metadata para %s", tabla);
 			return -1;
 		}
 		switch(metadata->consistencia) {
 			case SC: {
 				if(!list_size(lista_sc)) {
-					log_error(logger, "Error: no se asocio una memoria al criterio SC");
+					loguear(error, logger, "Error: no se asocio una memoria al criterio SC");
 					return -1;
 				}
 				socket_retorno = *(int *)list_get(lista_sc, 0);

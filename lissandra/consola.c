@@ -43,20 +43,20 @@ t_consola parse(char* linea){
 
 	if(string_equals_ignore_case(comando, SELECT)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
+			loguear(error, logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 		} else {
 			char** separador = string_n_split(argumentos, 2, " ");
 			char *tabla = separador[0];
 			char *key = separador[1];
 			if (tabla == NULL || key == NULL) {
-				log_error(logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
+				loguear(error, logger, "Error: ejemplo de uso \"SELECT TABLA1 3\"");
 			} else {
 				char *resultado_string = fs_select(tabla, (uint16_t)strtoul(key, NULL, 10));
 				/*char *resultado_string = malloc(strlen(resultado_stream)+1);
 				memset(resultado_string, 0, strlen(resultado_stream)+1);
 				memcpy(resultado_string, resultado_stream, strlen(resultado_stream));
 				resultado_string[strlen(resultado_string)] = '\0';*/
-				log_info(logger, "[Select] Resultado: %s", resultado_string);
+				loguear(info, logger, "[Select] Resultado: %s", resultado_string);
 				if(!string_equals_ignore_case(resultado_string, ERROR_KEY_NO_ENCONTRADA) &&
 						!string_equals_ignore_case(resultado_string, ERROR_NO_EXISTE_TABLA)) {
 					free(resultado_string);
@@ -69,7 +69,7 @@ t_consola parse(char* linea){
 	}
 	else if(string_equals_ignore_case(comando, INSERT)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es Lissandra\" 1548421507\'");
+			loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es Lissandra\" 1548421507\'");
 		} else {
 			char** comillas = string_n_split(argumentos, 3, "\"");
 			char** separador = string_n_split(comillas[0], 2, " ");
@@ -78,7 +78,7 @@ t_consola parse(char* linea){
 			char *key = separador[1];
 			char *value = comillas[1];
 			if (tabla == NULL || key == NULL || value == NULL) {
-				log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es Lissandra\" 1548421507\'");
+				loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es Lissandra\" 1548421507\'");
 			} else {
 				int epoch = comillas[2] != NULL ? atoi(comillas[2]) : get_timestamp();
 				fs_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
@@ -91,7 +91,7 @@ t_consola parse(char* linea){
 	}
 	else if(string_equals_ignore_case(comando, CREATE)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+			loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 		} else {
 			char** separador = string_n_split(argumentos, 4, " ");
 			char *tabla = separador[0];
@@ -99,7 +99,7 @@ t_consola parse(char* linea){
 			char *particiones = separador[2];
 			char *compactacion = separador[3];
 			if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
-				log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+				loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			} else {
 				fs_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
 			}
@@ -114,7 +114,7 @@ t_consola parse(char* linea){
 	}
 	else if(string_equals_ignore_case(comando, DROP)) {
 		if(!argumentos) {
-			log_error(logger, "Error: ejemplo de uso \"DROP [NOMBRE_TABLA]\"\n");
+			loguear(error, logger, "Error: ejemplo de uso \"DROP [NOMBRE_TABLA]\"\n");
 		}
 		else {
 			fs_drop(argumentos);
@@ -130,7 +130,7 @@ t_consola parse(char* linea){
 		efectuar_compactacion(argumentos);
 	}
 	else {
-		log_error(logger, "Error: No se encontro operacion tipeada.\n");
+		loguear(error, logger, "Error: No se encontro operacion tipeada.\n");
 		operaciones_disponibles();
 	}
 

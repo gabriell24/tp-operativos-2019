@@ -2,7 +2,7 @@
 
 void iniciar_fs(char *path) {
 	if(path[strlen(path)-1] != '/') {
-		log_error(logger, "La ruta del FileSystem debe terminar con /");
+		loguear(error, logger, "La ruta del FileSystem debe terminar con /");
 		exit(1);
 	}
 	datos_fs.path_raiz = string_duplicate(path);
@@ -28,7 +28,7 @@ void cargar_metadata(char *path, char *archivo) {
 	int fd = open(aux_path, O_RDWR, S_IRWXU );
 
 	if(fd == -1) {
-	log_debug(logger, "\nLevanto configuraciones %s de ejemplo", archivo);
+	loguear(debug, logger, "\nLevanto configuraciones %s de ejemplo", archivo);
 	fd = open(aux_path, O_RDWR | O_CREAT, S_IRWXU );
 		if(string_contains(archivo, "Metadata.bin")) {
 			escribir(fd, "BLOCK_SIZE=64\n");
@@ -118,7 +118,7 @@ bool crear_sub_rutas(char *archivo) {
 	char **sub_rutas = string_split(archivo, "/");
 	int posicion = 0;
 	while(sub_rutas[posicion+1]!=NULL) {
-		log_info(logger, "Creando ruta: %s", sub_rutas[posicion]);
+		loguear(info, logger, "Creando ruta: %s", sub_rutas[posicion]);
 		string_append(&crear_en, string_from_format("%s/",sub_rutas[posicion++]));
 		mkdir(crear_en, S_IRWXU);
 	}
@@ -132,7 +132,7 @@ void crear_archivo_particion(char *tabla, int particion, int bloque) {
 	string_append(&crear_en, tabla);
 	char *raiz = string_new();
 	string_append_with_format(&raiz,"%s/%d.bin", crear_en, particion);
-	log_debug(logger, "[Particion] ruta: %s\n",raiz);
+	loguear(debug, logger, "[Particion] ruta: %s\n",raiz);
 	int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
 	escribir(fd,"SIZE=0\n");
 	char *blocks = string_new();
@@ -172,15 +172,18 @@ void guardar_archivo_temporal(char *tabla, char *archivo_temporal, int size, int
 		string_append(&crear_en, tabla);
 		char *raiz = string_new();
 		string_append_with_format(&raiz,"%s/%s", crear_en, archivo_temporal);
-		log_debug(logger, "[Particion] ruta: %s\n",raiz);
+		loguear(debug, logger, "[Particion] ruta: %s\n",raiz);
 		int fd = open(raiz, O_RDWR | O_CREAT, S_IRWXU );
 		char *tamanio = string_new();
 		string_append_with_format(&tamanio, "SIZE=%d\n", size);
 		escribir(fd, tamanio );
+		free(tamanio);
 		char *bloques_usados = string_from_format("BLOCKS=[%d", bloques[0]);
 		int index = 1;
 		while (index < cantidad_bloques){
-			string_append(&bloques_usados, string_from_format(", %d", bloques[index]));
+			char *bloque_string = string_from_format(", %d", bloques[index]);
+			string_append(&bloques_usados, bloque_string);
+			free(bloque_string);
 			index ++;
 		}
 		string_append(&bloques_usados, "]");
@@ -237,20 +240,20 @@ char *path_bloques() {
 }
 
 void finalizar_estructuras_fs() {
-	log_info(logger, "Saliendo...");
+	loguear(info, logger, "Saliendo...");
 	/*char *ruta_bitmap = datos_fs.path_raiz;
 	string_append(&ruta_bitmap, "Metadata/Bitmap.bin");
 	guardar_bitmap(ruta_bitmap);
 	free(ruta_bitmap);*/
 
 	bitarray_destroy(datos_fs.bitarray);
-	if(munmap(datos_fs._bitmap, datos_fs._bytes_bitmap) == 1) log_error(logger, "Error en munmap()");
+	if(munmap(datos_fs._bitmap, datos_fs._bytes_bitmap) == 1) loguear(error, logger, "Error en munmap()");
 	close(datos_fs._fd);
 	free(datos_fs.path_raiz);
 }
 
 bool existe_tabla(char *tabla) {
-	log_info(logger, "[Busqueda] Verifico si existe tabla");
+	loguear(info, logger, "[Busqueda] Verifico si existe tabla");
 	char *buscar_en = path_tablas();
 	bool resultado = false;
 	struct dirent *de;
@@ -274,7 +277,7 @@ bool existe_tabla(char *tabla) {
 	closedir(dr);
 
 	free(buscar_en);
-	log_info(logger, resultado ? "[Busqueda - Resultado] Se encontro la tabla" : "[Busqueda - Resultado] No se encontro la tabla");
+	loguear(info, logger, resultado ? "[Busqueda - Resultado] Se encontro la tabla" : "[Busqueda - Resultado] No se encontro la tabla");
 	return resultado;
 }
 
@@ -285,7 +288,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 		string_append(&buscar_en, path);
 		FILE *archivo;
 
-		log_debug(logger, "Busco en: %s", buscar_en);
+		loguear(debug, logger, "Busco en: %s", buscar_en);
 		datos_archivo = config_create(buscar_en);
 		int max_tamanio = config_get_int_value(datos_archivo, "SIZE");
 		char** bloques_usados = config_get_array_value(datos_archivo, "BLOCKS");
@@ -305,7 +308,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 		for(int indice_bloque = 0; indice_bloque < total_de_bloques_usados_por_archivo; indice_bloque++) {
 			char *nombre_del_bloque = path_bloques();
 			string_append_with_format(&nombre_del_bloque, "%s.bin", bloques_usados[indice_bloque]);
-			log_debug(logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
+			loguear(debug, logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
 			archivo = fopen(nombre_del_bloque, "rb");
 			linea = malloc(sizeof(char) * maximo_caracteres_linea);
 
@@ -316,7 +319,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 						memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
 						memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
 						//parte_de_linea[strlen(parte_de_linea)] = '\0';
-						log_warning(logger, "-%s-", parte_de_linea );
+						loguear(warning, logger, "-%s-", parte_de_linea );
 					} else {
 						size_t bytes_leidos = strlen(linea);
 						parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
@@ -338,7 +341,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 						parte_de_linea = NULL;
 					}
 					if(matchea_key_en_linea(linea, key)) {
-						log_info(logger, "[Key encontrada] %s", linea);
+						loguear(info, logger, "[Key encontrada] %s", linea);
 						//retorno = cargar_datos_timestamp_value(linea);
 						list_add(retorno, string_duplicate(linea));
 						//key_encontrada = true;
@@ -428,13 +431,13 @@ t_list *obtener_registros_por_key(char *tabla, uint16_t key) {
 }
 
 void printear_memtable() {
-	log_debug(logger, "Tablas en la memtable::");
+	loguear(debug, logger, "Tablas en la memtable::");
 	void _mostrar_nombre(void *unaTabla) {
 		void _mostrar_valores(void *unRegistro) {
-			log_debug(logger, "%d - %d - %s", ((t_registro*)unRegistro)->timestamp , ((t_registro*)unRegistro)->key, ((t_registro*)unRegistro)->value);
+			loguear(debug, logger, "%d - %d - %s", ((t_registro*)unRegistro)->timestamp , ((t_registro*)unRegistro)->key, ((t_registro*)unRegistro)->value);
 		}
-		//log_debug(logger, "Tabla - %s", (*(t_memtable*)unaTabla).tabla);
-		log_warning(logger, "Tabla - %s", ((t_memtable*)unaTabla)->tabla);
+		//loguear(debug(logger, "Tabla - %s", (*(t_memtable*)unaTabla).tabla);
+		loguear(warning, logger, "Tabla - %s", ((t_memtable*)unaTabla)->tabla);
 		list_iterate(((t_memtable*)unaTabla)->t_registro, _mostrar_valores);
 		printf("______________________________________________\n");
 	}

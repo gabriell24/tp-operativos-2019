@@ -72,3 +72,45 @@ int contar_items(char **lista) {
 	while(lista[total] != NULL) total++;
 	return total;
 }
+
+void loguear(tipo_log tipo, t_log *logger, char* message, ...) {
+	int redisplay = (rl_readline_state & RL_STATE_READCMD) > 0;
+	int saved_point;
+	char *saved_line;
+	if(redisplay) {
+		saved_point = rl_point;
+		saved_line = rl_copy_text(0, rl_end);
+		rl_replace_line("", 0);
+		rl_redisplay();
+	}
+
+	va_list arguments;
+	va_start(arguments, message);
+	char *mensaje = string_from_vformat(message, arguments);
+
+	switch(tipo) {
+		case info: {
+			log_info(logger, mensaje);
+		} break;
+		case debug: {
+			log_debug(logger, mensaje);
+		} break;
+		case warning: {
+			log_warning(logger, mensaje);
+		} break;
+		case error: {
+			log_error(logger, mensaje);
+		}
+	}
+	free(mensaje);
+	va_end(arguments);
+
+	if(redisplay) {
+		rl_restore_prompt();
+		//printf("need hack :%d\n", need_hack);
+		if(redisplay) rl_replace_line(saved_line, 0);
+		rl_point = saved_point;
+		rl_redisplay();
+		free(saved_line);
+	}
+}

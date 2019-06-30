@@ -14,7 +14,7 @@ void iniciar_listas_planificacion() {
 	}
 	sem_init(&lqls_en_ready, 0, 0);
 	sem_init(&instancias_exec, 0, kernel_config.multiprocesamiento);
-	log_debug(logger, "Iniciando planificacion");
+	loguear(debug, logger, "Iniciando planificacion");
 	pthread_mutex_init(&mutex_listas, NULL);
 	planificar();
 	pthread_mutex_destroy(&mutex_listas);
@@ -36,7 +36,6 @@ void admitir_lql(compartir_info_lql *datos){
 	t_lql *un_lql = datos->lql;
 	un_lql->prox_linea_ejecutar = 0;
 	if(datos->desde_consola) {
-		int tamanio_linea = strlen(datos->data);
 		un_lql->lineas_a_ejecutar = 1;
 		un_lql->lineas = list_create();
 		list_add(un_lql->lineas, string_duplicate(datos->data));
@@ -79,9 +78,9 @@ void crear_un_lql(bool desde_consola, char *data) {
 void planificar() {
 
 	while(!consola_ejecuto_exit) {
-		log_debug(logger, "Esperando lqls que lleguen a ready");
+		loguear(debug, logger, "Esperando lqls que lleguen a ready");
 		sem_wait(&lqls_en_ready);
-		log_debug(logger, "Esperando tener un exec");
+		loguear(debug, logger, "Esperando tener un exec");
 		sem_wait(&instancias_exec);
 		pthread_t hilos_exec;
 		pthread_create(&hilos_exec, NULL, (void *)round_robin, NULL);
@@ -93,13 +92,13 @@ void round_robin() {
 	pthread_mutex_lock(&mutex_listas);
 	t_lql *lql_a_ejecutar = list_remove(lista_ready, 0);
 	pthread_mutex_unlock(&mutex_listas);
-	log_debug(logger, "Tomé un lql desde ready");
+	loguear(debug, logger, "Tomé un lql desde ready");
 	int numero_exec_asignado = 0;
-	log_debug(logger, "Busco un exec libre");
+	loguear(debug, logger, "Busco un exec libre");
 	pthread_mutex_lock(&mutex_listas);
 	numero_exec_asignado = obtener_exec_libre();
 	pthread_mutex_unlock(&mutex_listas);
-	log_debug(logger, "exec asignado: %d", numero_exec_asignado);
+	loguear(debug, logger, "exec asignado: %d", numero_exec_asignado);
 	bool finalizo = false;
 
 	//prot_enviar_mensaje(memoria_destino, ESTAS_FULL, 0, NULL);
@@ -107,9 +106,9 @@ void round_robin() {
 	//No me interesa que responda algo, sino, bloquear con el receive para que que no siga ejecutando, si esta en journal.
 	while(!finalizo && ut_consumidas < kernel_config.quantum && lql_a_ejecutar->prox_linea_ejecutar < list_size(lql_a_ejecutar->lineas)) {
 
-		log_debug(logger, "Proxima linea antes de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
+		loguear(debug, logger, "Proxima linea antes de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
 		char *linea_a_ejecutar = list_get(lql_a_ejecutar->lineas, lql_a_ejecutar->prox_linea_ejecutar);
-		log_debug(logger, "Ejecuto: %s", linea_a_ejecutar);
+		loguear(debug, logger, "Ejecuto: %s", linea_a_ejecutar);
 
 		t_parser parser = leer(linea_a_ejecutar);
 		if(parser.valido) {
@@ -169,19 +168,19 @@ void round_robin() {
 					list_destroy(memorias);
 				} break;
 
-				default: log_warning(logger, "codealo vos e.e");
+				default: loguear(warning, logger, "codealo vos e.e");
 			}
 
 			if(!finalizo) {
-				log_debug(logger, "Ejecutando quantum %d", ut_consumidas);
+				loguear(debug, logger, "Ejecutando quantum %d", ut_consumidas);
 				lql_a_ejecutar->prox_linea_ejecutar++;
-				log_debug(logger, "Proxima linea despues de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
+				loguear(debug, logger, "Proxima linea despues de ejecutar: %d", lql_a_ejecutar->prox_linea_ejecutar);
 				ut_consumidas++;
-				log_debug(logger, "Fin de cicloo, retardando: %d milisegundos", kernel_config.retardo_ciclo_ejecucion);
+				loguear(debug, logger, "Fin de cicloo, retardando: %d milisegundos", kernel_config.retardo_ciclo_ejecucion);
 				finalizo = lql_a_ejecutar->prox_linea_ejecutar == list_size(lql_a_ejecutar->lineas);
 			}
 		} else {
-			log_warning(logger, "La línea parseada [%s] no es valida, paso el proceso a EXIT", linea_a_ejecutar);
+			loguear(warning, logger, "La línea parseada [%s] no es valida, paso el proceso a EXIT", linea_a_ejecutar);
 			finalizo = true;
 		}
 		destruir_parseo(parser);
@@ -211,17 +210,17 @@ void corte_quantum(int nro_exec) {
 int obtener_exec_libre() {
 	int iteraciones = 1;
 	bool _libre(estado_exec *estado) {
-		log_debug(logger, "Iteracion nro %d ", iteraciones++);
+		loguear(debug, logger, "Iteracion nro %d ", iteraciones++);
 		return !estado->ocupada;
 	}
 	estado_exec* exec_nro = list_find(lista_exec, (void *)_libre);
 	exec_nro->ocupada = true;
-	log_debug(logger, "exec elegido %d", exec_nro->posicion);
+	loguear(debug, logger, "exec elegido %d", exec_nro->posicion);
 	return exec_nro->posicion;
 }
 
 void exit_lql(t_lql *lql) {
 	list_destroy_and_destroy_elements(lql->lineas, (void *)free);
 	free(lql);
-	log_info(logger, "[Planificacion] Fin de ejecución de un LQL");
+	loguear(info, logger, "[Planificacion] Fin de ejecución de un LQL");
 }

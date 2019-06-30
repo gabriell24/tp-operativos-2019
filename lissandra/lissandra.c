@@ -9,7 +9,7 @@ int main() {
 	iniciar_fs(fs_config.punto_montaje);
 	maximo_caracteres_linea = 12 + 2 + 5 + fs_config.tamanio_value + 1; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), el value y un barra n
 	socket_servidor = levantar_servidor(fs_config.puerto_escucha);
-	log_info(logger, "Lissandra iniciado");
+	loguear(info, logger, "Lissandra iniciado");
 	printear_configuraciones();
 
 	pthread_mutex_init(&mutex_compactacion, NULL);
@@ -32,7 +32,7 @@ int main() {
 	pthread_create(&hilo_dump, NULL, (void*)dump_automatico, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 	pthread_join(hilo_consola, NULL);
-	log_info(logger, "[Lissandra] Proceso finalizado.");
+	loguear(info, logger, "[Lissandra] Proceso finalizado.");
 	//pthread_join(hilo_conexion_memoria, NULL);
 	pthread_join(hilo_observer_configs, NULL);
 
@@ -51,10 +51,10 @@ int main() {
  * dispare el evento onChange
  */
 void printear_configuraciones() {
-	log_debug(logger, "[Configuración] Iniciando en %s", fs_config.punto_montaje);
-	log_debug(logger, "[Configuración] Puerto: %d", fs_config.puerto_escucha);
-	log_debug(logger, "[Configuración] Retardo: %d", fs_config.retardo_ms);
-	log_debug(logger, "[Configuración] Tiempo para dumpeo: %d", fs_config.tiempo_dump_ms);
+	loguear(debug, logger, "[Configuración] Iniciando en %s", fs_config.punto_montaje);
+	loguear(debug, logger, "[Configuración] Puerto: %d", fs_config.puerto_escucha);
+	loguear(debug, logger, "[Configuración] Retardo: %d", fs_config.retardo_ms);
+	loguear(debug, logger, "[Configuración] Tiempo para dumpeo: %d", fs_config.tiempo_dump_ms);
 }
 
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
@@ -75,10 +75,10 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 				if((event->mask & IN_MODIFY) &&
 					string_equals_ignore_case("lissandra.config", event->name)) {
 
-						log_info(logger, "[Info] Se modificó lissandra.config");
-						log_debug(logger, "[DEBUG] pre releer configs");
+						loguear(info, logger, "[Info] Se modificó lissandra.config");
+						loguear(debug, logger, "[DEBUG] pre releer configs");
 						levantar_archivo_configuracion();
-						log_debug(logger, "[DEBUG] termino de leer configs");
+						loguear(debug, logger, "[DEBUG] termino de leer configs");
 						printear_configuraciones();
 
 				}
@@ -157,7 +157,7 @@ void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
 			switch(cliente_recibido) {
 
 			case MEMORIA: {
-				log_info(logger, "[Conexión] Memoria conectada. Enviando tamanio del value");
+				loguear(info, logger, "[Conexión] Memoria conectada. Enviando tamanio del value");
 
 				//Envio el tamanio del value
 				size_t tamanio_buffer = sizeof(int);
@@ -174,7 +174,7 @@ void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
 				pthread_create(&recibir_mensajes_de_memoria, NULL, (void*)escuchar_memoria, socket_kernel);
 			} break;
 			default:
-				log_error(logger, "[Conexión] Cliente desconocido");
+				loguear(error, logger, "[Conexión] Cliente desconocido");
 			}
 			prot_destruir_mensaje(mensaje_del_cliente);
 		}
@@ -190,20 +190,20 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 		t_prot_mensaje *mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
 		switch(mensaje_de_memoria->head) {
 			case DESCONEXION: {
-				log_warning(logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
+				loguear(warning, logger, "[Desconexión] Mato el hilo, ya no podrá recibir mensajes");
 				cortar_while = true;
 			} break;
 
 			case FUNCION_SELECT: {
 				t_request_select *buffer = deserializar_request_select(mensaje_de_memoria);
-				log_info(logger, "[Select] Tabla: %s", buffer->tabla);
+				loguear(info, logger, "[Select] Tabla: %s", buffer->tabla);
 				char *buffer_send = fs_select(buffer->tabla, buffer->key);
 				free(buffer->tabla);
 				free(buffer);
 				prot_enviar_mensaje(socket_memoria, REGISTRO_TABLA, strlen(buffer_send), buffer_send);
 				if(string_equals_ignore_case(buffer_send, ERROR_NO_EXISTE_TABLA) ||
 				   string_equals_ignore_case(buffer_send, ERROR_KEY_NO_ENCONTRADA)) {
-					log_error(logger, "Error no hay q¿ky");
+					loguear(error, logger, "Error no hay q¿ky");
 				}
 				else {
 					//Valido que para hacer free sea sobre memoria dinamica
@@ -213,7 +213,7 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			} break;
 			case FUNCION_CREATE: {
 				t_request_create *buffer = deserializar_request_create(mensaje_de_memoria);
-				log_info(logger, "[Create] Tabla: %s", buffer->nombre_tabla);
+				loguear(info, logger, "[Create] Tabla: %s", buffer->nombre_tabla);
 				fs_create(buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
 				free(buffer->nombre_tabla);
 				free(buffer->tipo_consistencia);
@@ -223,7 +223,7 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 
 			case FUNCION_INSERT: {
 				t_request_insert *buffer = deserializar_request_insert(mensaje_de_memoria);
-				log_info(logger, "[Insert] Tabla: %s", buffer->nombre_tabla);
+				loguear(info, logger, "[Insert] Tabla: %s", buffer->nombre_tabla);
 				fs_insert(buffer->nombre_tabla, buffer->key , buffer->value, buffer->epoch);
 				free(buffer->nombre_tabla);
 				free(buffer->value);
@@ -232,11 +232,11 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				} break;
 
 			case FUNCION_DESCRIBE: {
-				log_debug(logger, "[Conexión] pre deserializar resquest DESCRIBE");
+				loguear(debug, logger, "[Conexión] pre deserializar resquest DESCRIBE");
 				int tam = mensaje_de_memoria->tamanio_total-sizeof(mensaje_de_memoria->head);
 				t_list* respuesta_describe;
 				if(tam == 0){
-					log_info(logger, "Describe nulo");
+					loguear(info, logger, "Describe nulo");
 					respuesta_describe = fs_describe(NULL);
 				}
 				else{
@@ -244,10 +244,10 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 					memset(tabla, 0, tam+1);
 					memcpy(tabla, mensaje_de_memoria->payload,tam);
 					tabla[tam] = '\0';
-					log_info(logger, "Describe con tabla: %s", tabla);
+					loguear(info, logger, "Describe con tabla: %s", tabla);
 					respuesta_describe = fs_describe(tabla);
 					if(!respuesta_describe) {
-						log_error(logger, ERROR_NO_EXISTE_TABLA);
+						loguear(error, logger, ERROR_NO_EXISTE_TABLA);
 						break;
 					}
 					free(tabla);
@@ -257,7 +257,7 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 					tamanio_del_buffer += sizeof(int) + strlen(describe->tabla) + sizeof(describe->consistencia);
 				}
 				list_iterate(respuesta_describe, (void*)_calcular_buffer);
-				log_debug(logger, "[Respuesta Describe] Tamanio del buffer: %d", tamanio_del_buffer);
+				loguear(debug, logger, "[Respuesta Describe] Tamanio del buffer: %d", tamanio_del_buffer);
 				void *buffer = serializar_response_describe(tamanio_del_buffer, respuesta_describe);
 				prot_enviar_mensaje(socket_memoria, RESPUESTA_DESCRIBE, tamanio_del_buffer, buffer);
 				free(buffer);
@@ -268,9 +268,13 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				list_destroy_and_destroy_elements(respuesta_describe, (void *)limpiar_respuesta_describe);
 			} break;
 
+			case FUNCION_DROP: {
+				loguear(info, logger, "Recibi el drop");
+			} break;
+
 			default: {
 				cortar_while = true;
-				log_warning(logger, "Me llegó un mensaje desconocido %d", mensaje_de_memoria->head);
+				loguear(warning, logger, "Me llegó un mensaje desconocido %d", mensaje_de_memoria->head);
 				break;
 			}
 

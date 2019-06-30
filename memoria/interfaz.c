@@ -6,35 +6,36 @@ char *memoria_select(char *tabla, uint16_t key) {
 		t_est_tdp *pagina = obtener_pagina_por_key(segmento->paginas, key);
 		if(pagina) {
 			pagina->ultima_referencia = get_timestamp();
-			log_info(logger, "[SELECT] Exitoso desde memoria");
+			loguear(info, logger, "[SELECT] Exitoso desde memoria");
 			return obtener_value_de_pagina(pagina->ptr_posicion);
 		}
 	}
-	log_debug(logger, "Solicitar segmento y key a lissandra");
+	loguear(debug, logger, "Solicitar segmento y key a lissandra");
 	return NULL;
 }
 
 void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
+	//Journal puede borrar mi segmento, por ende tamb la tdp.
+	t_est_tdp *frame_libre = obtener_frame();
 	t_est_tds *segmento = obtener_segmento_por_tabla(tabla);
 	if(segmento) {
 		t_est_tdp *pagina = obtener_pagina_por_key(segmento->paginas, key);
 		if(pagina) {
-			log_info(logger, "Existe la página");
+			loguear(info, logger, "Existe la página");
 			int timestamp_guardado = obtener_timestamp_de_pagina(pagina->ptr_posicion);
 			if(timestamp_guardado > timestamp) {
-				log_warning(logger, "El timestamp guardado: %d es mas actualizado que %d, para [%s-%d-%s]",
+				loguear(warning, logger, "El timestamp guardado: %d es mas actualizado que %d, para [%s-%d-%s]",
 						timestamp_guardado, timestamp, tabla, key, value);
 			}
 			pagina->modificado = 1;
 			pagina->ultima_referencia = get_timestamp();
 			settear_timestamp(pagina->ptr_posicion, timestamp);
 			settear_value(pagina->ptr_posicion, value);
-			log_info(logger, "Página actualizada");
+			loguear(info, logger, "Página actualizada");
 		}
 		else {
-			t_est_tdp *frame_libre = obtener_frame();
 			if(!frame_libre) {
-				log_info(logger, "::::::::::::MEMORIA LLENA, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
+				loguear(info, logger, "::::::::::::MEMORIA LLENA TENGO SEGMENTO, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
 			} else {
 				crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
 			}
@@ -43,7 +44,7 @@ void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 	else {
 		t_est_tdp *frame_libre = obtener_frame();
 		if(!frame_libre) {
-			log_info(logger, "::::::::::::MEMORIA LLENA, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
+			loguear(info, logger, "::::::::::::MEMORIA LLENA Y SIN SEGMENTO, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
 			//Acá es necesario hacer un journal
 		} else {
 			crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
@@ -80,12 +81,13 @@ void memoria_drop(char *tabla) {
 		list_remove_and_destroy_by_condition(tds, (void *)_eliminar_tabla, (void *)limpiar_segmento);
 		list_remove_by_condition(tds, (void *)_eliminar_tabla);
 	} else {
-		log_warning(logger, "No existía segmento de %s para eliminar", tabla);
+		loguear(warning, logger, "No existía segmento de %s para eliminar", tabla);
 	}
 }
 
 /* Las validaciones están porque es posible que no esté llena, y se llame desde la terminal */
 void journal() {
+	pthread_mutex_lock(&mutex_journaling);
 	int indice_segmento = 0;
 	void _liberar_segmentos(t_est_tds *segmento) {
 		int posicion_pagina = 0;
@@ -107,7 +109,7 @@ void journal() {
 		}
 		list_iterate(segmento->paginas, (void *)_liberar_modificados);
 		//list_remove_by_condition(segmento->paginas, (void *)_liberar_modificados);
-		log_warning(logger, "Tam lista: %d, list is empty: %d", list_size(segmento->paginas), list_is_empty(segmento->paginas));
+		loguear(warning, logger, "Tam lista: %d, list is empty: %d", list_size(segmento->paginas), list_is_empty(segmento->paginas));
 		if(list_is_empty(segmento->paginas)) {
 			list_destroy(segmento->paginas);
 			free(segmento->nombre_segmento);
@@ -118,4 +120,5 @@ void journal() {
 		}
 	}
 	list_iterate(tds, (void *)_liberar_segmentos);
+	pthread_mutex_unlock(&mutex_journaling);
 }

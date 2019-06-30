@@ -20,14 +20,14 @@ void destruir_parseo(t_parser operacion) {
 }
 
 t_parser leer(char* linea) {
-	if(linea == NULL){
-		fprintf(stderr, "No pude interpretar una linea nula\n");
-		RETURN_ERROR;
-	}
-
 	t_parser retorno = {
 		.valido = false
 	};
+
+	if(linea == NULL){
+		fprintf(stderr, "No pude interpretar una linea nula\n");
+		return retorno;
+	}
 
 	char* aux_linea = string_duplicate(linea);
 	string_trim(&aux_linea);
@@ -40,10 +40,12 @@ t_parser leer(char* linea) {
 
 	if(string_igual_case_sensitive(token_leido, token_select)){
 		char **sub_separador = string_n_split(argumentos, 2, " ");
+		char *fin_strtol;
+		uint16_t key = strtol(sub_separador[1], &fin_strtol, 10);
 		if(sub_separador[0] == NULL || sub_separador[1] == NULL) {
-			log_error(logger, "Error: ejemplo de uso \'SELECT TABLA1 3\'");
-		} else if(atoi(sub_separador[1]) < 1) {
-			log_error(logger, "Error: key debe ser numérica y mayor a 1");
+			loguear(error, logger, "Error: ejemplo de uso \'SELECT TABLA1 3\'");
+		} else if(sub_separador[1] == fin_strtol || key < 0) {
+			loguear(error, logger, "Error: key debe ser numérica y mayor igual a 0");
 		} else {
 			retorno.valido = true;
 			retorno.token = t_select;
@@ -59,19 +61,22 @@ t_parser leer(char* linea) {
 		char** separador = string_n_split(comillas[0], 2, " ");
 
 		char *tabla = separador[0];
-		char *key = separador[1];
+		char *fin_strtol;
+		uint16_t key = strtol(separador[1], &fin_strtol, 10);
 		char *value = comillas[1];
 		char *string_timestamp = comillas[2];
-		if (tabla == NULL || key == NULL || value == NULL) {
-			log_error(logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
+		if (tabla == NULL || value == NULL) {
+			//loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
+			loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
 		}
-		if (atoi(key) < 1) {
-			log_error(logger, "Error: la key debe ser numérica y mayor a 1.");
+		if (separador[1] == fin_strtol || key < 0) {
+			//loguear(error, logger, "Error: la key debe ser numérica y mayor igual a 0.");
+			loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\" 1548421507\'");
 		} else {
 			retorno.valido = true;
 			retorno.token = insert;
 			retorno.parametros.insert.tabla = tabla;
-			retorno.parametros.insert.key = string_to_int16(key);
+			retorno.parametros.insert.key = key;
 			retorno.parametros.insert.value = value;
 			int timestamp = !string_timestamp ? get_timestamp() : atoi(string_timestamp);
 			retorno.parametros.insert.timestamp = timestamp;
@@ -90,7 +95,7 @@ t_parser leer(char* linea) {
 		char *particiones = separador[2];
 		char *compactacion = separador[3];
 		if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
+			loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			retorno.valido = false;
 		} else {
 			retorno.valido = true;
@@ -114,7 +119,7 @@ t_parser leer(char* linea) {
 	}
 	else if(string_igual_case_sensitive(token_leido, token_drop)){
 		if (argumentos == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"DROP TABLA1\n");
+			loguear(error, logger, "Error: ejemplo de uso \"DROP TABLA1\n");
 		} else {
 			retorno.valido = true;
 			retorno.token = drop;
@@ -131,7 +136,7 @@ t_parser leer(char* linea) {
 		char *numero = separador[0];
 		char *criterio = separador[2];
 		if(numero == NULL || criterio == NULL) {
-			log_error(logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
+			loguear(error, logger, "Error: ejemplo de uso \"ADD MEMORY [NÚMERO] TO [CRITERIO]\"");
 			retorno.valido = false;
 		} else {
 			retorno.valido = true;
@@ -149,7 +154,7 @@ t_parser leer(char* linea) {
 	}
 	else {
 		fprintf(stderr, "No se encontro la palabra reservada <%s>\n", token_leido);
-		RETURN_ERROR;
+		retorno.valido = false;
 	}
 
 	//string_iterate_lines(separador, (void*)free);
