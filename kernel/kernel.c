@@ -28,6 +28,7 @@ int main() {
 	pthread_create(&hilo_planificacion, NULL, (void*)iniciar_listas_planificacion, NULL);
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
+	pthread_create(&hilo_metadata_refresh, NULL, (void *)metadata_refresh, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 	pthread_join(hilo_consola, NULL);
 	//log_info(logger, "[Kernel] Proceso finalizado.");
@@ -126,4 +127,20 @@ void actualizar_describe(t_list *nuevos) {
 void limpiar_tabla_describes(t_response_describe *registro) {
 	free(registro->tabla);
 	free(registro);
+}
+
+
+void metadata_refresh() {
+	while(!consola_ejecuto_exit) {
+		loguear(info, logger, "Refrescando metadata");
+
+		int memoria_destino = get_memoria(NULL);
+		if(memoria_destino == -1) {
+			loguear(error, logger, "No hay memoria conectada");
+		} else {
+			kernel_describe(memoria_destino, NULL);
+		}
+		usleep(kernel_config.refrescar_metadata * 1000);
+	}
+	pthread_detach(pthread_self());
 }

@@ -29,6 +29,7 @@ pthread_t hilo_observer_configs;
 pthread_t hilo_consola;
 pthread_t hilo_manejo_memorias;
 pthread_t hilo_planificacion;
+pthread_t hilo_metadata_refresh;
 t_list *lista_sc;
 t_list *lista_shc;
 t_list *lista_ec;
@@ -39,5 +40,5 @@ void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();
 void actualizar_describe(t_list *nuevos);
 void limpiar_tabla_describes(t_response_describe *registro);
-
+void metadata_refresh();
 #endif /* KERNEL_H_ */
