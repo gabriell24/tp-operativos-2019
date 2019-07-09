@@ -29,7 +29,6 @@ void kernel_create(int socket_memoria, char* nombre_tabla, char* tipo_consistenc
 }
 
 void kernel_describe(int socket_memoria, char* nombre_tabla){
-	printf("Hola mundo :) hiciste un describe a kernel (?\n");
 	if(nombre_tabla == NULL){
 		prot_enviar_mensaje(socket_memoria, FUNCION_DESCRIBE, 0, NULL);
 	}
@@ -43,7 +42,6 @@ void kernel_describe(int socket_memoria, char* nombre_tabla){
 
 
 void kernel_drop(int socket_memoria, char* nombre_tabla){
-	printf("Hola mundo :) Dropeaste una tabla (?");
 	prot_enviar_mensaje(socket_memoria, FUNCION_DROP,strlen(nombre_tabla), nombre_tabla);
 	loguear(info, logger, "Drop enviado a memoria");
 }
@@ -52,8 +50,7 @@ void kernel_journal(int socket_memoria){
 	prot_enviar_mensaje(socket_memoria, FUNCION_JOURNAL, 0, NULL);
 }
 void imprimir_metricas() {
-	printf("Implementando métricas version: %d\n", 1);
-
+	loguear(warning, logger, "Funcion removida");
 }
 
 /*
@@ -66,7 +63,6 @@ void kernel_run(char *archivo) {
 	//string_append_with_format(&ruta, "../otros/lql/%s", archivo);
 	string_append(&ruta, archivo);
 	file = fopen(ruta, "r");
-	int total_de_lineas = 0;
 
 	if(file != NULL) {
 		loguear(debug,logger, "archivo abierto");
