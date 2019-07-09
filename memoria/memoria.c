@@ -325,6 +325,7 @@ void escuchar_kernel(int *socket_origen) {
 			}
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
+		usleep(memoria_config.retardo_accesso_a_fs * 1000);
 	}
 }
 
@@ -514,6 +515,7 @@ bool ya_se_conecto_a(char *ip, int puerto) {
 }
 
 void iniciar_gossip() {
+
 	t_memoria_conectada *self = malloc(sizeof(t_memoria_conectada));
 	//TODO VER ESTO
 	self->ip = malloc(strlen(memoria_config.ip_servidor)+1);

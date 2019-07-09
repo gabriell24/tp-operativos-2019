@@ -266,10 +266,12 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 					free(describe);
 				}
 				list_destroy_and_destroy_elements(respuesta_describe, (void *)limpiar_respuesta_describe);
-			} break;
+			}
+			break;
 
 			case FUNCION_DROP: {
 				loguear(info, logger, "Recibi el drop");
+
 			} break;
 
 			default: {
@@ -280,6 +282,7 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 
 		}
 		prot_destruir_mensaje(mensaje_de_memoria);
+		usleep(fs_config.retardo_ms * 1000);
 	}
 }
 
