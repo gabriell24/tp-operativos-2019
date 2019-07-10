@@ -48,11 +48,7 @@ char *fs_select(char *tabla, uint16_t key) {
 		free(metadata.consistency);
 		return ERROR_KEY_NO_ENCONTRADA;
 	} else {
-		char *timestamp_key = string_from_format("%llu;%d;", mayor_timestamp->timestamp, key); //TODO borrar los print de abajo si anda bien
-		loguear(error, logger, "interfaz.c Linea 51: %s", timestamp_key);
-		loguear(info, logger, "interfaz.c Linea 51: %s", timestamp_key);
-		loguear(debug, logger, "interfaz.c Linea 51: %s", timestamp_key);
-		loguear(warning, logger, "interfaz.c Linea 51: %s", timestamp_key);
+		char *timestamp_key = string_from_format("%llu;%d;", mayor_timestamp->timestamp, key);
 		size_t tamanio_del_stream = strlen(timestamp_key)+strlen(mayor_timestamp->value);
 		retorno = malloc(tamanio_del_stream+1);
 		memset(retorno, 0, tamanio_del_stream+1);
@@ -80,10 +76,6 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 		return;
 	}
 	loguear(info, logger, "[EPOCH] timestamp: %llu", timestamp);
-	//Todo Borrarlos, si esta ok
-	loguear(error, logger, "[EPOCH] timestamp: %llu", timestamp);
-	loguear(warning, logger, "[EPOCH] timestamp: %llu", timestamp);
-	loguear(debug, logger, "[EPOCH] timestamp: %llu", timestamp);
 
 	//TODO NO entedí el item 2 del enunciado
 

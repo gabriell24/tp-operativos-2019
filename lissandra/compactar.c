@@ -2,15 +2,29 @@
 
 void compactar(char *tabla) {
 	//TODO ver de que manera se pede cancelar el hilo, si le hacen drop a la tabla
+	//Se podria agregar a la memtable, el id del hilo, y mandarle: pthread_kill
+	uint32_t sleep_compactacion = get_tiempo_compactacion(tabla);
 	while(!consola_ejecuto_exit) {
 		loguear(info, logger, "Reviso si %s necesita compactar", (char *)tabla);
 		efectuar_compactacion((char *)tabla);
-		loguear(info, logger, "Fin revisión para compactar en %s, duermo", (char *)tabla);
-		usleep(fs_config.tiempo_dump_ms * 1000);
+		loguear(info, logger, "Fin revisión para compactar en %s, duermo %d", (char *)tabla, sleep_compactacion);
+		usleep(sleep_compactacion * 1000);
 	}
 	//free(tabla);
 	//pthread_join(pthread_self());
 }
+
+uint32_t get_tiempo_compactacion(char *unaTabla) {
+	uint32_t retorno = 0;
+	char *path_metadata = path_tablas();
+	string_append_with_format(&path_metadata, "%s/Metadata", unaTabla);
+	t_config *metadata_config = config_create(path_metadata);
+	retorno = config_get_int_value(metadata_config, "COMPACTION_TIME");
+	config_destroy(metadata_config);
+	free(path_metadata);
+	return retorno;
+}
+
 void efectuar_compactacion(char *unaTabla) {
 	char *path = string_new();
 
