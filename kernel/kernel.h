@@ -30,11 +30,13 @@ pthread_t hilo_consola;
 pthread_t hilo_manejo_memorias;
 pthread_t hilo_planificacion;
 pthread_t hilo_metadata_refresh;
+pthread_mutex_t mutex_create;
 t_list *lista_sc;
 t_list *lista_shc;
 t_list *lista_ec;
 t_list *describe_tablas;
 t_list *tabla_gossip;
+t_response_describe *ultimo_create_enviado;
 //Prototipos
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();

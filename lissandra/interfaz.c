@@ -106,19 +106,23 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 	}
 }
 
-void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion) {
+char *fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion) {
+	char *retorno = string_new();
 	if(existe_tabla(tabla)) {
 		loguear(error, logger, "[CREATE] ERROR: Ya existe tabla con ese nombre.");
-		return;
+		string_append(&retorno, "[Create] Tabla ya existia");
+		return retorno;
 	}
 	string_to_upper(tipo_consistencia);
 	if(!string_equals_ignore_case(tipo_consistencia, "SC") && !string_equals_ignore_case(tipo_consistencia, "SHC") && !string_equals_ignore_case(tipo_consistencia, "EC")) {
 		loguear(error, logger, "[Error] Consistencia no reconocida");
-		return;
+		string_append(&retorno, "[Create] Consitencia no reconocida");
+		return retorno;
 	}
 	if(particiones < 1 || tiempo_compactacion < 1) {
 		loguear(error, logger, "[Error] Los tiempos y/o cantidades deben ser mayores a cero");
-		return;
+		string_append(&retorno, "[Create] Cantidades no naturales");
+		return retorno;
 	}
 	int bloques_necesarios[particiones];
 	for(int indice_bloque = 0; indice_bloque < particiones; indice_bloque++){
@@ -128,7 +132,8 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 			for(int base = 0; base < indice_bloque; base++) {
 				bitarray_clean_bit(datos_fs.bitarray, bloques_necesarios[base]);
 			}
-			return;
+			string_append_with_format(&retorno, "[Create] No hay suficientes bloques libres");
+			return retorno;
 		}
 	}
 
@@ -149,7 +154,8 @@ void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo
 
 	list_add(t_list_memtable, unaTabla);
 	*/
-
+	string_append_with_format(&retorno, "[Create] Tabla creada %s", tabla);
+	return retorno;
 }
 
 t_list *fs_describe(char *tabla) {

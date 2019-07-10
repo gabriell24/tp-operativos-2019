@@ -9,6 +9,7 @@
 
 void iniciar_listas_de_criterios();
 void agregar_memoria_a_criterio(criterio criterio, int socket);
+void limpiar_conectado_en_gossip(int socket);
 void quitar_memoria_de_criterio(int socket);
 void quitar_de_lista(t_list *lista, int *elemento);
 void imprimir_elementos(t_list *list, char *lista);

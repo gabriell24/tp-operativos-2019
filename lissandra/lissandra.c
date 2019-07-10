@@ -215,11 +215,12 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			case FUNCION_CREATE: {
 				t_request_create *buffer = deserializar_request_create(mensaje_de_memoria);
 				loguear(info, logger, "[Create] Tabla: %s", buffer->nombre_tabla);
-				fs_create(buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
+				char *respuesta = fs_create(buffer->nombre_tabla, buffer->tipo_consistencia, buffer->numero_particiones, buffer->compaction_time);
 				free(buffer->nombre_tabla);
 				free(buffer->tipo_consistencia);
 				free(buffer);
-
+				prot_enviar_mensaje(socket_memoria, RESPUESTA_CREATE, strlen(respuesta), respuesta);
+				free(respuesta);
 				} break;
 
 			case FUNCION_INSERT: {

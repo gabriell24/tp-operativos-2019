@@ -279,6 +279,11 @@ void escuchar_kernel(int *socket_origen) {
 				free(buffer->nombre_tabla);
 				free(buffer->tipo_consistencia);
 				free(buffer);
+				t_prot_mensaje *respuesta_create = prot_recibir_mensaje(socket_lissandra);
+				if(respuesta_create->head == RESPUESTA_CREATE) {
+					prot_enviar_mensaje(socket_kernel, RESPUESTA_CREATE, respuesta_create->tamanio_total - sizeof(t_header), respuesta_create->payload);
+				}
+				prot_destruir_mensaje(respuesta_create);
 
 			} break;
 			case FUNCION_DESCRIBE: {
@@ -481,9 +486,11 @@ void printear_memoria() {
 	void _imprimir_segmentos(t_est_tds *segmento) {
 		loguear(debug, logger, "Segmento: %s", segmento->nombre_segmento);
 		void _imprimir_paginas(t_est_tdp *pagina) {
+			char *value_de_pagina = obtener_value_de_pagina(pagina->ptr_posicion);
 			loguear(debug, logger, "Ut. Ref: %llu | Modificado: %d | Time: %llu | Key: %d | Value: %s",
 					pagina->ultima_referencia, pagina->modificado, obtener_timestamp_de_pagina(pagina->ptr_posicion),
-					obtener_key_de_pagina(pagina->ptr_posicion), obtener_value_de_pagina(pagina->ptr_posicion));
+					obtener_key_de_pagina(pagina->ptr_posicion), value_de_pagina);
+			free(value_de_pagina);
 		}
 		loguear(debug, logger, "-------------------------------------------------------------------");
 		list_iterate(segmento->paginas, (void *)_imprimir_paginas);

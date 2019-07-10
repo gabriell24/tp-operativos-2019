@@ -40,6 +40,15 @@ void agregar_memoria_a_criterio(criterio criterio, int numero_memoria) {
 	//free(aux);
 }
 
+void limpiar_conectado_en_gossip(int socket) {
+	bool _buscar_memoria(t_memoria_conectada *memoria_conectada) {
+		return memoria_conectada->socket == socket;
+	}
+	t_memoria_conectada *memoria_conectada = list_find(tabla_gossip, (void *)_buscar_memoria);
+	if(memoria_conectada) {
+		memoria_conectada->socket = 0;
+	}
+}
 void quitar_memoria_de_criterio(int socket) {
 	quitar_de_lista(lista_sc, &socket);
 	quitar_de_lista(lista_shc, &socket);
@@ -128,7 +137,7 @@ t_list *memorias_conectadas() {
 	t_list *memorias_conectadas = list_filter(tabla_gossip, (void *)_buscar_conectadas);
 	if(!list_size(memorias_conectadas)) {
 		loguear(error, logger, "ERROR: get_memoria() no hay memoria conectada, esto no debería pasar.");
-		return NULL;
+		//return NULL;
 	}
 	return memorias_conectadas;
 }

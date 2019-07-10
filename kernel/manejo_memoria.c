@@ -49,6 +49,7 @@ void recibir_mensajes_de_memoria(int *ptr_socket) {
 			loguear(info, logger, "Llegó el describe");
 			t_list *describe_recibido = deserializar_response_describe(mensaje_de_memoria, logger);
 			//list_add_all(describe_tablas, deserializar_response_describe(mensaje_de_memoria, logger));
+			//TODO SINCRONIZAR EL _ADD EN DESCRIBE
 			actualizar_describe(describe_recibido);
 			list_destroy(describe_recibido);
 			if(!describe_tablas) loguear(error, logger, "[Describe] Llego vació");
@@ -65,8 +66,31 @@ void recibir_mensajes_de_memoria(int *ptr_socket) {
 			free(respuesta_select);
 		} break;
 
+		case RESPUESTA_CREATE: {
+			size_t tamanio_respuesta_create = mensaje_de_memoria->tamanio_total-sizeof(t_header);
+			char *respuesta_create = malloc(tamanio_respuesta_create+1);
+			memset(respuesta_create, 0, tamanio_respuesta_create+1);
+			memcpy(respuesta_create, mensaje_de_memoria->payload, tamanio_respuesta_create);
+			respuesta_create[tamanio_respuesta_create] = '\0';
+			loguear(info, logger, "[Respuesta Create] %s", respuesta_create);
+			if(string_starts_with(respuesta_create, "[Create] Tabla creada ")) {
+				//TODO SINCRONIZAR EL _ADD EN DESCRIBE
+				/*char *tabla = string_substring_from(respuesta_create, strlen("[Create] Tabla creada "));*/
+				t_response_describe *agregar = malloc(sizeof(t_response_describe));
+				agregar->tabla = string_duplicate(ultimo_create_enviado->tabla);
+				agregar->consistencia = ultimo_create_enviado->consistencia;
+				list_add(describe_tablas, agregar);
+			}
+			free(ultimo_create_enviado->tabla);
+			free(ultimo_create_enviado);
+			free(respuesta_create);
+			pthread_mutex_unlock(&mutex_create);
+		} break;
+
 		case DESCONEXION: {
 			loguear(error, logger, "Se desconectó memoria");
+			quitar_memoria_de_criterio(socket_memoria);
+			limpiar_conectado_en_gossip(socket_memoria);
 			cortar_while = true;
 		} break;
 

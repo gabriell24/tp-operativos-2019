@@ -36,6 +36,7 @@ typedef enum{
 
 	REGISTRO_TABLA, //TIMESTAMP;KEY;VALUE
 	RESPUESTA_DESCRIBE, //Se utiliza para responder al describe de forma unitaria o del global de tablas
+	RESPUESTA_CREATE,
 
 	INTERCAMBIAR_TABLA_GOSSIP, //El flujo lo empieza una memoria mandando su tabla, del otro lado reciben esta tabla y la fusionan con la propia
 	INTERCAMBIAR_TABLA_GOSSIP_FIN //La otra memoria me manda su tabla completa, y la fusiono con la mía.

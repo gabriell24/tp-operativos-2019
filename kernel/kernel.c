@@ -1,12 +1,6 @@
 #include "kernel.h"
 
 int main() {
-	printf("Tiempo: %llu\n", get_timestamp());
-	printf("Tiempo: %llu\n", get_timestamp());
-	printf("Tiempo: %llu\n", get_timestamp());
-	printf("Tiempo: %llu\n", get_timestamp());
-	printf("Tiempo: %llu\n", get_timestamp());
-	printf("Tiempo: %llu\n", get_timestamp());
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
@@ -17,6 +11,7 @@ int main() {
 
 	//log_info(logger, "Kernel iniciado");
 	loguear(info, logger, "Kernel iniciado");
+	pthread_mutex_init(&mutex_create, NULL);
 	printear_configuraciones();
 	iniciar_listas_de_criterios();
 
@@ -46,6 +41,7 @@ int main() {
 	free(ptr_fd_inotify);
 	log_destroy(logger);
 	limpiar_listas();
+	pthread_mutex_destroy(&mutex_create);
 	sem_destroy(&lqls_en_ready);
 	sem_destroy(&instancias_exec);
 	list_destroy_and_destroy_elements(describe_tablas, (void *)limpiar_tabla_describes);

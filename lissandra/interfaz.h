@@ -11,6 +11,7 @@
 #include "filesystem.h"
 #include "lissandra.h"
 #include "compactar.h"
+#include <commons/string.h>
 //Defines
 #define ERROR_NO_EXISTE_TABLA "NO_EXISTE_TABLA"
 #define ERROR_KEY_NO_ENCONTRADA "KEY_NO_ENCONTRADA"
@@ -20,7 +21,7 @@
 //Prototipos
 char *fs_select(char *tabla, uint16_t key);
 void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp);
-void fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion);
+char *fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion);
 t_list *fs_describe(char *tabla);
 void fs_drop(char *tabla);
 

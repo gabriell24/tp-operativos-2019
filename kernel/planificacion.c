@@ -114,9 +114,14 @@ void round_robin() {
 		if(parser.valido) {
 			switch(parser.token) {
 				case create: {
+					pthread_mutex_lock(&mutex_create); //TODO Validar con el tp, por los lql que tiran, creo que si va.
+					ultimo_create_enviado = malloc(sizeof(t_response_describe));
+					ultimo_create_enviado->tabla = string_duplicate(parser.parametros.create.tabla);
+					ultimo_create_enviado->consistencia = criterio_from_string(parser.parametros.create.tipo_consistencia);
 					int memoria_destino = get_memoria(NULL);
 					if(memoria_destino == -1) {
 						finalizo = true;
+						pthread_mutex_unlock(&mutex_create);
 						break;
 					}
 					kernel_create(memoria_destino, parser.parametros.create.tabla, parser.parametros.create.tipo_consistencia,
@@ -131,15 +136,19 @@ void round_robin() {
 					kernel_describe(memoria_destino, parser.parametros.describe.tabla);
 				} break;
 				case insert: {
+					pthread_mutex_lock(&mutex_create); //TODO Validar con el tp, por los lql que tiran, creo que si va.
 					int memoria_destino = get_memoria(parser.parametros.insert.tabla);
 					if(memoria_destino == -1) {
 						finalizo = true;
+						pthread_mutex_unlock(&mutex_create);
 						break;
 					}
 					kernel_insert(memoria_destino, parser.parametros.insert.tabla, parser.parametros.insert.key,
 							parser.parametros.insert.value, parser.parametros.insert.timestamp);
+					pthread_mutex_unlock(&mutex_create);
 				} break;
 				case t_select: {
+					//TODO Chequear si va con un criterio determinado.
 					int memoria_destino = get_memoria(NULL);
 					if(memoria_destino == -1) {
 						finalizo = true;
@@ -151,12 +160,15 @@ void round_robin() {
 					kernel_add(parser.parametros.add.memoria, parser.parametros.add.tipo_consistencia);
 				} break;
 				case drop: {
+					pthread_mutex_lock(&mutex_create);
 					int memoria_destino = get_memoria(parser.parametros.describe.tabla);
 					if(memoria_destino == -1) {
 						finalizo = true;
+						pthread_mutex_unlock(&mutex_create);
 						break;
 					}
 					kernel_drop(memoria_destino, parser.parametros.drop.tabla);
+					pthread_mutex_unlock(&mutex_create);
 				} break;
 
 				case journal: {
