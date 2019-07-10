@@ -349,3 +349,12 @@ t_list *deserializar_tabla_gossip(t_prot_mensaje *mensaje, t_log *logger) {
 	}
 	return retorno;
 }
+
+void mostrar_tabla_gossip(t_list *tabla_gossip, t_log *logger) {
+	loguear(debug, logger, "+--------------- TABLA GOSSIP -------------+");
+	void _imprimir(t_memoria_conectada *memoria) {
+		loguear(debug, logger, "| Nombre: %d | Ip: %s | Puerto: %d |", memoria->nombre, memoria->ip, memoria->puerto);
+	}
+	list_iterate(tabla_gossip, (void *)_imprimir);
+	loguear(debug, logger, "+------------------------------------------+");
+}

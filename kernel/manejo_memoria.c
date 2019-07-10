@@ -28,6 +28,7 @@ void conectar_a_memoria(char *ip, int puerto) {
 	memcpy(&memoria_conectada->socket, &socket_memoria, sizeof(int));
 	list_add(tabla_gossip, memoria_conectada);
 	prot_destruir_mensaje(respuesta_memoria);
+	prot_enviar_mensaje(socket_memoria, DAME_POOL_MEMORIAS, 0, NULL);
 
 	loguear(info, logger, "[Conexión] Memoria conectada, hago un describe");
 	kernel_describe(socket_memoria, "");
@@ -54,6 +55,20 @@ void recibir_mensajes_de_memoria(int *ptr_socket) {
 			list_destroy(describe_recibido);
 			if(!describe_tablas) loguear(error, logger, "[Describe] Llego vació");
 			imprimir_datos_describe(describe_tablas);
+		} break;
+
+		case RESPUESTA_POOL_MEMORIAS: {
+			loguear(info, logger, "Llego el mensaje respuesta pool de memorias");
+			t_list *tabla_gossip_recibida = deserializar_tabla_gossip(mensaje_de_memoria, logger);
+			/*mostrar_tabla_gossip(tabla_gossip_recibida, logger);
+			intercambir_memorias_conectadas(tabla_gossip, tabla_gossip_recibida);
+			mostrar_tabla_gossip(tabla_gossip, logger);*/
+			void _conectar_todas(t_memoria_conectada *memoria) {
+				loguear(info, logger, "Conectando a %s:%d", memoria->ip, memoria->puerto);
+				conectar_a_memoria(memoria->ip, memoria->puerto);
+			}
+			list_iterate(tabla_gossip_recibida, (void *)_conectar_todas);
+			//list_destroy_and_destroy_elements(tabla_gossip_recibida, (void *)_limpiar_tabla_gossip); //TODO COMPLETAR
 		} break;
 
 		case FUNCION_SELECT: {

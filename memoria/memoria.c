@@ -20,6 +20,7 @@ int main() {
 	socket_servidor = levantar_servidor(memoria_config.puerto_escucha);
 	//pthread_create(&hilo_gossip, NULL, (void *)iniciar_gossip, NULL);
 	loguear(info, logger, "Memoria %d iniciado", memoria_config.numero_memoria);
+	cargar_tabla_gossip();
 	printear_configuraciones();
 
 	//<<1- inotify
@@ -180,6 +181,18 @@ void escuchar_kernel(int *socket_origen) {
 				handshake[largo_de_handshake] = '\0';
 				loguear(info, logger, "[Conexión] Saludo: %s, Número: %d", handshake, numero);
 				free(handshake);
+			} break;
+
+			case DAME_POOL_MEMORIAS: {
+				loguear(info, logger, "llego dame pool");
+				size_t tamanio_del_buffer = 0;
+				void _calcular_buffer(t_memoria_conectada *memoria) {
+					tamanio_del_buffer += sizeof(int)*3 + strlen(memoria->ip);
+				}
+				list_iterate(tabla_gossip, (void*)_calcular_buffer);
+				void *buffer = serializar_tabla_gossip(tamanio_del_buffer, tabla_gossip);
+				prot_enviar_mensaje(socket_kernel, RESPUESTA_POOL_MEMORIAS, tamanio_del_buffer, buffer);
+				free(buffer);
 			} break;
 
 			case FUNCION_SELECT: {
@@ -521,6 +534,28 @@ bool ya_se_conecto_a(char *ip, int puerto) {
 	return list_find(tabla_gossip, (void *)_conectado) != NULL;
 }
 
+void cargar_tabla_gossip() {
+	if(contar_items(memoria_config.ip_seeds) != contar_items(memoria_config.puerto_seeds)) {
+		loguear(error, logger, "[ERROR] No coincide la cantidad de ip y puerto seeds.");
+		exit(1);
+	}
+	loguear(info, logger, "[Gossiping] proceso iniciado");
+	int posicion = 0;
+	int cero = 0;
+	while(memoria_config.ip_seeds[posicion] != NULL) {
+		t_memoria_conectada *memoria = malloc(sizeof(t_memoria_conectada));
+		//TODO VER ESTO
+		memoria->ip = malloc(strlen(memoria_config.ip_seeds[posicion])+1);
+		memset(memoria->ip, 0, strlen(memoria_config.ip_seeds[posicion])+1);
+		memcpy(memoria->ip, memoria_config.ip_seeds[posicion], strlen(memoria_config.ip_seeds[posicion]));
+		memoria->puerto = atoi(memoria_config.puerto_seeds[posicion]);
+		memoria->nombre = 0;
+		list_add(tabla_gossip, memoria);
+		posicion++;
+	}
+	mostrar_tabla_gossip(tabla_gossip, logger);
+}
+
 void iniciar_gossip() {
 
 	t_memoria_conectada *self = malloc(sizeof(t_memoria_conectada));
@@ -569,7 +604,7 @@ void iniciar_gossip() {
 					agregar_nuevos_a_seeds(nuevos_seeds);
 				}*/
 
-				mostrar_tabla_gossip();
+				mostrar_tabla_gossip(tabla_gossip, logger);
 			}
 			posicion++;
 		}

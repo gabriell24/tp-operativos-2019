@@ -87,6 +87,7 @@ void settear_key(void* frame, uint16_t key);
 void settear_value(void *frame, char* value);
 void printear_memoria();
 t_est_tdp *frame_desde_lru();
+void cargar_tabla_gossip();
 bool ya_se_conecto_a(char *ip, int puerto);
 void iniciar_gossip();
 void reiniciar_frame(t_est_tdp *frame);

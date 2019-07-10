@@ -39,7 +39,9 @@ typedef enum{
 	RESPUESTA_CREATE,
 
 	INTERCAMBIAR_TABLA_GOSSIP, //El flujo lo empieza una memoria mandando su tabla, del otro lado reciben esta tabla y la fusionan con la propia
-	INTERCAMBIAR_TABLA_GOSSIP_FIN //La otra memoria me manda su tabla completa, y la fusiono con la mía.
+	INTERCAMBIAR_TABLA_GOSSIP_FIN, //La otra memoria me manda su tabla completa, y la fusiono con la mía.
+	DAME_POOL_MEMORIAS,
+	RESPUESTA_POOL_MEMORIAS
 
 } t_header;
 

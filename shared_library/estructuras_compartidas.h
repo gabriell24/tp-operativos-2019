@@ -63,6 +63,7 @@ void imprimir_datos_describe(t_list *tablas);
 void intercambir_memorias_conectadas(t_list *una_lista, t_list *otra_lista);
 void *serializar_tabla_gossip(size_t tamanio_del_buffer, t_list *tabla);
 t_list *deserializar_tabla_gossip(t_prot_mensaje *mensaje, t_log *logger);
+void mostrar_tabla_gossip(t_list *tabla_gossip, t_log *logger);
 
 #endif
 

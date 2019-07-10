@@ -115,7 +115,7 @@ t_consola parse(char* linea){
 		printear_memoria();
 	}
 	else if(string_equals_ignore_case(comando, GOSSIP)) {
-		mostrar_tabla_gossip();
+		mostrar_tabla_gossip(tabla_gossip, logger);
 	}
 	else {
 		loguear(error, logger, "Error: No se encontro operacion tipeada.\n");

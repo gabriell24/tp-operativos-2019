@@ -17,7 +17,7 @@ void escuchar_memoria(int *socket_origen) {
 			case INTERCAMBIAR_TABLA_GOSSIP: {
 				t_list *tabla_gossip_recibida = deserializar_tabla_gossip(mensaje_de_memoria, logger);
 				intercambir_memorias_conectadas(tabla_gossip, tabla_gossip_recibida);
-				mostrar_tabla_gossip();
+				mostrar_tabla_gossip(tabla_gossip, logger);
 				//liberar_tabla_gossip(tabla_gossip_recibida);
 				size_t tamanio_del_buffer = 0;
 				void _calcular_buffer(t_memoria_conectada *memoria) {
@@ -60,13 +60,4 @@ void liberar_tabla_gossip(t_list *tabla) {
 		free(memoria);
 	}
 	list_destroy_and_destroy_elements(tabla, (void *)_liberar);
-}
-
-void mostrar_tabla_gossip() {
-	loguear(debug, logger, "+--------------- TABLA GOSSIP -------------+");
-	void _imprimir(t_memoria_conectada *memoria) {
-		loguear(debug, logger, "| Nombre: %d | Ip: %s | Puerto: %d |", memoria->nombre, memoria->ip, memoria->puerto);
-	}
-	list_iterate(tabla_gossip, (void *)_imprimir);
-	loguear(debug, logger, "+------------------------------------------+");
 }
