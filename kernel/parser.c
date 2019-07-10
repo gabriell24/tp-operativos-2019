@@ -78,7 +78,7 @@ t_parser leer(char* linea) {
 			retorno.parametros.insert.tabla = tabla;
 			retorno.parametros.insert.key = key;
 			retorno.parametros.insert.value = value;
-			int timestamp = !string_timestamp ? get_timestamp() : atoi(string_timestamp);
+			uint64_t timestamp = !string_timestamp ? get_timestamp() : string_to_timestamp(string_timestamp);
 			retorno.parametros.insert.timestamp = timestamp;
 		}
 		/*string_iterate_lines(separador, (void*)free);

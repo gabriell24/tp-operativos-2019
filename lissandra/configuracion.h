@@ -5,6 +5,7 @@
 #include <commons/config.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct {
 	int puerto_escucha;
@@ -16,7 +17,7 @@ typedef struct {
 } t_fs_config;
 
 typedef struct {
-	int timestamp;
+	uint64_t timestamp;
 	char *value;
 } t_timestamp_value;
 

@@ -20,6 +20,7 @@
 #include "../shared_library/conexiones.h"
 #include "../shared_library/protocolo.h"
 #include "../shared_library/estructuras_compartidas.h"
+#include "../shared_library/utiles.h"
 #include "conexion_memoria.h"
 
 //Defines
@@ -55,7 +56,7 @@ typedef struct {
 	int nro_pag;
 	void* ptr_posicion;
 	int8_t modificado;
-	long ultima_referencia;
+	uint64_t ultima_referencia;
 } t_est_tdp;
 
 /*typedef struct {
@@ -76,12 +77,12 @@ t_est_tdp *obtener_pagina_por_key(t_list *lista, uint16_t key);
 t_est_tdp *obtener_frame_libre();
 t_est_tdp *obtener_frame();
 uint16_t obtener_key_de_pagina(void *frame);
-int obtener_timestamp_de_pagina(void *frame);
+uint64_t obtener_timestamp_de_pagina(void *frame);
 char *obtener_value_de_pagina(void *frame);
-void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value);
+void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, uint64_t timestamp, uint16_t key, char *value);
 void limpiar_segmento(t_est_tds *segmento);
 void limpiar_memoria();
-void settear_timestamp(void* frame, int time);
+void settear_timestamp(void* frame, uint64_t time);
 void settear_key(void* frame, uint16_t key);
 void settear_value(void *frame, char* value);
 void printear_memoria();

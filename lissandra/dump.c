@@ -14,7 +14,7 @@ void dumpear() {
 	void _obtener_tablas(t_memtable *unaTabla) {
 		char *linea = string_new();
 		void _writear_valores(t_registro *unRegistro) {
-			string_append_with_format(&linea, "%d;%d;%s\n", unRegistro->timestamp , unRegistro->key, unRegistro->value);
+			string_append_with_format(&linea, "%llu;%d;%s\n", unRegistro->timestamp , unRegistro->key, unRegistro->value);
 		}
 		bool _orderar_por_time_desc(t_registro *elemento, t_registro *otroElemento) {
 			return elemento->timestamp > otroElemento->timestamp;

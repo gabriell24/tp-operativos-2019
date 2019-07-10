@@ -1,6 +1,12 @@
 #include "kernel.h"
 
 int main() {
+	printf("Tiempo: %llu\n", get_timestamp());
+	printf("Tiempo: %llu\n", get_timestamp());
+	printf("Tiempo: %llu\n", get_timestamp());
+	printf("Tiempo: %llu\n", get_timestamp());
+	printf("Tiempo: %llu\n", get_timestamp());
+	printf("Tiempo: %llu\n", get_timestamp());
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();

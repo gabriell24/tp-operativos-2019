@@ -1,20 +1,37 @@
 #include "utiles.h"
 
 /* Usar esta
- * ulong get_timestamp() {
+ * Observacion: separo el retorno de la funcion, de multiplicación/división, porque sino da cualquier cosa*/
+uint64_t get_timestamp() {
+	uint64_t retorno = 0;
+	uint64_t micro_segundos = 0;
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
-}*/
 
-/* Esta no se usa más */
+	//printf("valor: %lu\n", tv.tv_sec);
+	//printf("valor*1000: %lu\n", tv.tv_sec * 1000);
+
+	retorno = tv.tv_sec;
+	//printf("retorno: %llu\n", retorno);
+	retorno *= 1000;
+	//printf("retorno*1000: %llu\n", retorno);
+
+	micro_segundos = tv.tv_usec;
+	micro_segundos /= 1000;
+
+	retorno += micro_segundos;
+	//retorno += tv.tv_usec / 1000;
+	return retorno;
+}
+
+/* Esta no se usa más
 int get_timestamp() {
 	time_t result = time(NULL);
 	if(result == ((time_t) -1)) {
 		perror("no se pudo obtener epoch");
 	}
 	return result;
-}
+}*/
 
 int calcular_particion(int particion,uint16_t key) {
 	return key%particion;
@@ -47,6 +64,10 @@ char *criterio_to_string(criterio t_criterio) {
 
 uint16_t string_to_int16(char *string) {
 	return (uint16_t)strtoul(string, NULL, 10);
+}
+
+uint64_t string_to_timestamp(char *string) {
+	return strtoull(string, NULL, 10);
 }
 
 int redondear_hacia_arriba(int numerador, int denominador) {
@@ -100,7 +121,7 @@ void loguear(tipo_log tipo, t_log *logger, char* message, ...) {
 		} break;
 		case error: {
 			log_error(logger, mensaje);
-		}
+		} break;
 	}
 	free(mensaje);
 	va_end(arguments);

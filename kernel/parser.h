@@ -36,7 +36,7 @@ typedef struct {
 			char *tabla;
 			uint16_t key;
 			char *value;
-			int timestamp;
+			uint64_t timestamp;
 		} insert;
 		struct {
 			char *tabla;

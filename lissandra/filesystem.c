@@ -363,7 +363,7 @@ t_list *obtener_datos_de_particion(char *path, uint16_t key) {
 t_timestamp_value *cargar_datos_timestamp_value(char *linea) {
 	char **separador = string_n_split(linea, 3, ";");
 	t_timestamp_value *retorno = malloc(sizeof(t_timestamp_value));
-	retorno->timestamp = atoi(separador[0]);
+	retorno->timestamp = string_to_timestamp(separador[0]);
 	retorno->value = string_duplicate(separador[2]);
 	string_iterate_lines(separador, (void*)free);
 	free(separador);
@@ -422,7 +422,7 @@ t_list *obtener_registros_por_key(char *tabla, uint16_t key) {
 	list_sort(area_de_tabla->t_registro, (void*)_orderar_por_time_desc);*/
 	void _buscar_por_key(t_registro *elemento) {
 		if (elemento->key == key){
-			char *elemento_string = string_from_format("%d;%d;%s", elemento->timestamp, elemento->key, elemento->value);
+			char *elemento_string = string_from_format("%llu;%d;%s", elemento->timestamp, elemento->key, elemento->value);
 			list_add(retorno, elemento_string);
 		}
 	}
@@ -434,7 +434,7 @@ void printear_memtable() {
 	loguear(debug, logger, "Tablas en la memtable::");
 	void _mostrar_nombre(void *unaTabla) {
 		void _mostrar_valores(void *unRegistro) {
-			loguear(debug, logger, "%d - %d - %s", ((t_registro*)unRegistro)->timestamp , ((t_registro*)unRegistro)->key, ((t_registro*)unRegistro)->value);
+			loguear(debug, logger, "%llu - %d - %s", ((t_registro*)unRegistro)->timestamp , ((t_registro*)unRegistro)->key, ((t_registro*)unRegistro)->value);
 		}
 		//loguear(debug(logger, "Tabla - %s", (*(t_memtable*)unaTabla).tabla);
 		loguear(warning, logger, "Tabla - %s", ((t_memtable*)unaTabla)->tabla);
@@ -467,12 +467,12 @@ t_timestamp_value *devolver_timestamp_mayor(t_list *lista) {
 		char **separador = string_n_split(unaLinea, 3, ";");
 		if (!aux) {
 			aux = malloc(sizeof(t_timestamp_value));
-			aux->timestamp = atoi(separador[0]);
+			aux->timestamp = string_to_timestamp(separador[0]);
 			aux->value = string_duplicate(separador[2]);
 		}
-		else if (aux->timestamp <= atoi(separador[0])) {
+		else if (aux->timestamp <= string_to_timestamp(separador[0])) {
 			free(aux->value);
-			aux->timestamp = atoi(separador[0]);
+			aux->timestamp = string_to_timestamp(separador[0]);
 			aux->value = string_duplicate(separador[2]);
 
 		}

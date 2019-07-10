@@ -43,7 +43,7 @@ typedef struct {
 } t_metadata;
 
 typedef struct {
-	int timestamp;
+	uint64_t timestamp;
 	uint16_t key;
 	char *value;
 } t_registro;

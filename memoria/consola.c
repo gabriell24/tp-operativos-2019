@@ -71,7 +71,7 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL || value == NULL) {
 				loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es kernel\"\'");
 			} else {
-				int epoch = get_timestamp();
+				uint64_t epoch = get_timestamp(); //TODO le podrian pasar el timestamp??
 				memoria_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
 			}
 			string_iterate_lines(separador, (void*)free);

@@ -216,7 +216,7 @@ void escuchar_kernel(int *socket_origen) {
 									loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
 									//TODO EJECUTAR ALGORITMO DE REEMPLAZO
 								} else {
-									crear_asignar_segmento(false, segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+									crear_asignar_segmento(false, segmento, registro, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
 								}
 							}
 							else {
@@ -227,13 +227,13 @@ void escuchar_kernel(int *socket_origen) {
 									t_est_tdp *registro = obtener_frame();
 									t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
 									if(!segmento) {
-											crear_asignar_segmento(false, segmento, registro, buffer->tabla, atoi(separador[0]), string_to_int16(separador[1]), separador[2]);
+											crear_asignar_segmento(false, segmento, registro, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
 									}
 									else if(registro == NULL) {
 										loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
 									} else {
 										registro->modificado = 0;
-										settear_timestamp(registro->ptr_posicion, atoi(separador[0]));
+										settear_timestamp(registro->ptr_posicion, string_to_timestamp(separador[0]));
 										settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
 										settear_value(registro->ptr_posicion, separador[2]);
 										list_add(segmento->paginas, registro);
@@ -263,7 +263,7 @@ void escuchar_kernel(int *socket_origen) {
 			case FUNCION_INSERT: {
 				loguear(debug, logger, "[Conexión] pre deserializar request insert");
 				t_request_insert *biffer = deserializar_request_insert(mensaje_de_kernel);
-				loguear(info, logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %d]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
+				loguear(info, logger, "Hacer insert con [TABLA = %s, KEY = %d, VALUE = %s, EPOCH = %llu]", biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 				//prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, mensaje_de_kernel->tamanio_total - sizeof(t_header), mensaje_de_kernel->payload);
 				memoria_insert(biffer->nombre_tabla, biffer->key, biffer->value, biffer->epoch);
 				free(biffer->nombre_tabla);
@@ -325,7 +325,7 @@ void escuchar_kernel(int *socket_origen) {
 			}
 		}
 		prot_destruir_mensaje(mensaje_de_kernel);
-		usleep(memoria_config.retardo_accesso_a_fs * 1000);
+		usleep(memoria_config.retardo_accesso_a_fs * 1000); //TODO Este semaforo no va aca, ejemplo: select responde desde mp
 	}
 }
 
@@ -334,7 +334,7 @@ void iniciar_memoria() {
 	memoria = malloc(memoria_config.tamanio_de_memoria);
 	loguear(debug, logger, "Inicio de memoria: [Hex]=%p", memoria);
 	size_t tamanio_key = sizeof(uint16_t);
-	size_t tamanio_timestamp = sizeof(int); //TODO CAMBIAR A LONG
+	size_t tamanio_timestamp = sizeof(uint64_t);
 	loguear(debug, logger, "SizeOf Key: %d, SizeOf Timestamp:%d", tamanio_key, tamanio_timestamp);
 	tamanio_de_pagina = tamanio_value + tamanio_key + tamanio_timestamp;
 	/*
@@ -383,38 +383,38 @@ t_est_tdp *obtener_frame_libre() {
 uint16_t obtener_key_de_pagina(void *frame) {
 	uint16_t retorno;
 	memset(&retorno, 0, sizeof(uint16_t));
-	memcpy(&retorno, frame+sizeof(int), sizeof(uint16_t));
+	memcpy(&retorno, frame+sizeof(uint64_t), sizeof(uint16_t));
 	return retorno;
 }
 
-int obtener_timestamp_de_pagina(void *frame) {
-	int retorno;
-	memset(&retorno, 0, sizeof(int));
-	memcpy(&retorno, frame, sizeof(int));
+uint64_t obtener_timestamp_de_pagina(void *frame) {
+	uint64_t retorno;
+	memset(&retorno, 0, sizeof(uint64_t));
+	memcpy(&retorno, frame, sizeof(uint64_t));
 	return retorno;
 }
 
 char *obtener_value_de_pagina(void *frame) {
 	char *retorno = malloc(sizeof(char)*tamanio_value+1);
 	memset(retorno, 0, tamanio_value+1);
-	memcpy(retorno, frame+sizeof(int)+sizeof(uint16_t), tamanio_value);
+	memcpy(retorno, frame+sizeof(uint64_t)+sizeof(uint16_t), tamanio_value);
 	return retorno;
 }
 
-void settear_timestamp(void* frame, int time) {
-	memcpy(frame, &time, sizeof(int));
+void settear_timestamp(void* frame, uint64_t time) {
+	memcpy(frame, &time, sizeof(uint64_t));
 }
 
 void settear_key(void* frame, uint16_t key) {
-	memcpy(frame+sizeof(int), &key, sizeof(uint16_t));
+	memcpy(frame+sizeof(uint64_t), &key, sizeof(uint16_t));
 }
 
 void settear_value(void *frame, char* value) {
-	memset(frame+sizeof(int)+sizeof(uint16_t), 0, tamanio_value);
-	memcpy(frame+sizeof(int)+sizeof(uint16_t), value, strlen(value));
+	memset(frame+sizeof(uint64_t)+sizeof(uint16_t), 0, tamanio_value);
+	memcpy(frame+sizeof(uint64_t)+sizeof(uint16_t), value, strlen(value));
 }
 
-void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, int timestamp, uint16_t key, char *value) {
+void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, uint64_t timestamp, uint16_t key, char *value) {
 	frame_libre->modificado = es_insert;
 	frame_libre->ultima_referencia = get_timestamp();
 	loguear(warning, logger, "Frame recibido: %d", frame_libre->nro_pag);
@@ -481,7 +481,7 @@ void printear_memoria() {
 	void _imprimir_segmentos(t_est_tds *segmento) {
 		loguear(debug, logger, "Segmento: %s", segmento->nombre_segmento);
 		void _imprimir_paginas(t_est_tdp *pagina) {
-			loguear(debug, logger, "Ut. Ref: %d | Modificado: %d | Time: %d | Key: %d | Value: %s",
+			loguear(debug, logger, "Ut. Ref: %llu | Modificado: %d | Time: %llu | Key: %d | Value: %s",
 					pagina->ultima_referencia, pagina->modificado, obtener_timestamp_de_pagina(pagina->ptr_posicion),
 					obtener_key_de_pagina(pagina->ptr_posicion), obtener_value_de_pagina(pagina->ptr_posicion));
 		}

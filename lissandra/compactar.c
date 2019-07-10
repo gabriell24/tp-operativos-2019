@@ -137,7 +137,7 @@ void efectuar_compactacion(char *unaTabla) {
 						uint16_t key_from_line = (uint16_t)strtoul(separador[1], NULL, 10);
 						t_registro *registro = malloc(sizeof(t_registro));
 						registro->key = key_from_line;
-						registro->timestamp = atoi(separador[0]);
+						registro->timestamp = string_to_timestamp(separador[0]);
 						/*registro->value = NULL;
 						registro->value = malloc(strlen(separador[2])+1);
 						loguear(debug, logger, "Separador[2]: -%s-", separador[2]);
@@ -166,7 +166,7 @@ void efectuar_compactacion(char *unaTabla) {
 	limpiar_lista_de_duplicados(lineas_a_compactar, lineas_leidas);
 
 	pthread_mutex_lock(&mutex_compactacion);
-	int tiempo_inicio = get_timestamp();
+	uint64_t tiempo_inicio = get_timestamp();
 
 	void limpiar_bitarray(char *bloque) {
 		bitarray_clean_bit(datos_fs.bitarray, atoi(bloque));
@@ -206,7 +206,7 @@ void efectuar_compactacion(char *unaTabla) {
 			void _generar_lineas(t_registro *linea) {
 				//char *timestamp = string_itoa(linea->timestamp);
 				//char *key = string_itoa(linea->key);
-				char *linea_formada = string_from_format("%d;%d;%s", linea->timestamp, linea->key, linea->value);
+				char *linea_formada = string_from_format("%llu;%d;%s", linea->timestamp, linea->key, linea->value);
 				//char *linea_para_escribir = string_from_format("%s;%s;%s\n", timestamp, key, linea->value);
 				string_append(&lineas_compactar, linea_formada);
 				caracteres_para_escribir += strlen(linea_formada);
@@ -277,10 +277,10 @@ void efectuar_compactacion(char *unaTabla) {
 	}
 	list_destroy_and_destroy_elements(archivos_a_borrar, (void *)_borrar_temporalesc);
 
-	int tiempo_utilizado = get_timestamp() - tiempo_inicio;
+	uint64_t tiempo_utilizado = get_timestamp() - tiempo_inicio;
 
 	pthread_mutex_unlock(&mutex_compactacion);
-	loguear(info, logger, "En total, la tabla %s se bloqueo %d segundos", unaTabla, tiempo_utilizado);
+	loguear(info, logger, "En total, la tabla %s se bloqueo %d milisegundos", unaTabla, tiempo_utilizado);
 
 
 

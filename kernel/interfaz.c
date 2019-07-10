@@ -8,8 +8,8 @@ void kernel_select(int socket_memoria, char *tabla, uint16_t key) {
 	loguear(info, logger, "Select enviado a memoria");
 }
 
-void kernel_insert(int socket_memoria, char* nombre_tabla, uint16_t key, char* value, int epoch){
-	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*3 ;
+void kernel_insert(int socket_memoria, char* nombre_tabla, uint16_t key, char* value, uint64_t epoch){
+	size_t tamanio_del_buffer = strlen(nombre_tabla) + sizeof(uint16_t) + strlen(value) + sizeof(int)*2 + sizeof(uint64_t);
 	void *buffer = serializar_request_insert(nombre_tabla, key, value, epoch);
 	prot_enviar_mensaje(socket_memoria, FUNCION_INSERT, tamanio_del_buffer, buffer);
 	free(buffer);

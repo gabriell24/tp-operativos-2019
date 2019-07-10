@@ -48,7 +48,11 @@ char *fs_select(char *tabla, uint16_t key) {
 		free(metadata.consistency);
 		return ERROR_KEY_NO_ENCONTRADA;
 	} else {
-		char *timestamp_key = string_from_format("%d;%d;", mayor_timestamp->timestamp, key);
+		char *timestamp_key = string_from_format("%llu;%d;", mayor_timestamp->timestamp, key); //TODO borrar los print de abajo si anda bien
+		loguear(error, logger, "interfaz.c Linea 51: %s", timestamp_key);
+		loguear(info, logger, "interfaz.c Linea 51: %s", timestamp_key);
+		loguear(debug, logger, "interfaz.c Linea 51: %s", timestamp_key);
+		loguear(warning, logger, "interfaz.c Linea 51: %s", timestamp_key);
 		size_t tamanio_del_stream = strlen(timestamp_key)+strlen(mayor_timestamp->value);
 		retorno = malloc(tamanio_del_stream+1);
 		memset(retorno, 0, tamanio_del_stream+1);
@@ -66,7 +70,7 @@ char *fs_select(char *tabla, uint16_t key) {
 
 }
 
-void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
+void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 	if(!existe_tabla(tabla)) {
 		loguear(error, logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
 		return;
@@ -75,7 +79,11 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 		loguear(error, logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
 		return;
 	}
-	loguear(info, logger, "[EPOCH] timestamp: %d", timestamp);
+	loguear(info, logger, "[EPOCH] timestamp: %llu", timestamp);
+	//Todo Borrarlos, si esta ok
+	loguear(error, logger, "[EPOCH] timestamp: %llu", timestamp);
+	loguear(warning, logger, "[EPOCH] timestamp: %llu", timestamp);
+	loguear(debug, logger, "[EPOCH] timestamp: %llu", timestamp);
 
 	//TODO NO entedí el item 2 del enunciado
 
@@ -90,7 +98,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
 	}
 	else {
-		loguear(info, logger, "Creo hilo para compactación");
+		loguear(info, logger, "Creo hilo para compactación, DESCOMENTAR DE LA 102 A LA 104 (interfaz.c)");
 		/*pthread_t hilo_dump_por_tabla;
 		char *nombre_tabla = string_duplicate(tabla);
 		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);*/

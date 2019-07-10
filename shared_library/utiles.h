@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <time.h>
+//#include <time.h>
+#include <sys/time.h>
 #include <stdint.h>
 #include <readline/readline.h>
 #include <commons/string.h>
@@ -16,12 +17,12 @@
 typedef enum { SC, SHC, EC, INVALIDO } criterio;
 typedef enum { debug, info, warning, error } tipo_log;
 
-int get_timestamp_millis();
-int get_timestamp();
+uint64_t get_timestamp();
 int calcular_particion(int particion,uint16_t key);
 criterio criterio_from_string(char *string_criterio);
 char *criterio_to_string(criterio t_criterio);
 uint16_t string_to_int16(char *string);
+uint64_t string_to_timestamp(char *string);
 int redondear_hacia_arriba(int numerador, int denominador);
 int number_string(char *texto);
 int contar_items(char **lista);

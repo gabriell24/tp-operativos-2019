@@ -14,7 +14,7 @@ char *memoria_select(char *tabla, uint16_t key) {
 	return NULL;
 }
 
-void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
+void memoria_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 	//Journal puede borrar mi segmento, por ende tamb la tdp.
 	t_est_tdp *frame_libre = obtener_frame();
 	t_est_tds *segmento = obtener_segmento_por_tabla(tabla);
@@ -22,9 +22,9 @@ void memoria_insert(char *tabla, uint16_t key, char *value, int timestamp) {
 		t_est_tdp *pagina = obtener_pagina_por_key(segmento->paginas, key);
 		if(pagina) {
 			loguear(info, logger, "Existe la página");
-			int timestamp_guardado = obtener_timestamp_de_pagina(pagina->ptr_posicion);
+			uint64_t timestamp_guardado = obtener_timestamp_de_pagina(pagina->ptr_posicion);
 			if(timestamp_guardado > timestamp) {
-				loguear(warning, logger, "El timestamp guardado: %d es mas actualizado que %d, para [%s-%d-%s]",
+				loguear(warning, logger, "El timestamp guardado: %llu es mas actualizado que %llu, para [%s-%d-%s]",
 						timestamp_guardado, timestamp, tabla, key, value);
 			}
 			pagina->modificado = 1;
@@ -97,7 +97,7 @@ void journal() {
 				void *buffer = serializar_request_insert(segmento->nombre_segmento, obtener_key_de_pagina(pagina->ptr_posicion),
 						value, obtener_timestamp_de_pagina(pagina->ptr_posicion));
 
-				size_t tamanio_del_paquete = ((strlen(segmento->nombre_segmento) + strlen(value))*sizeof(char)) + (sizeof(int)*3 + sizeof(uint16_t));
+				size_t tamanio_del_paquete = ((strlen(segmento->nombre_segmento) + strlen(value))*sizeof(char)) + (sizeof(int)*2 + sizeof(uint64_t) + sizeof(uint16_t));
 				prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, tamanio_del_paquete, buffer);
 				free(buffer);
 				free(value);

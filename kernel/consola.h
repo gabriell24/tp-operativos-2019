@@ -42,7 +42,6 @@ t_consola parse(char* linea);
 void destruir_operacion(t_consola);
 
 void consola();
-int get_timestamp();
 
 #endif
 

@@ -80,7 +80,7 @@ t_consola parse(char* linea){
 			if (tabla == NULL || key == NULL || value == NULL) {
 				loguear(error, logger, "Error: ejemplo de uso \'INSERT TABLA1 3 \"Mi nombre es Lissandra\" 1548421507\'");
 			} else {
-				int epoch = comillas[2] != NULL ? atoi(comillas[2]) : get_timestamp();
+				uint64_t epoch = comillas[2] != NULL ? string_to_timestamp(comillas[2]) : get_timestamp();
 				fs_insert(tabla, (uint16_t)strtoul(key, NULL, 10), value, epoch);
 			}
 			string_iterate_lines(separador, (void*)free);

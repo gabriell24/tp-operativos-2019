@@ -7,7 +7,7 @@ int main() {
 	logger = log_create("lissandra.log","LISSANDRA", true,
 			fs_config.en_produccion ? LOG_LEVEL_INFO : LOG_LEVEL_DEBUG);
 	iniciar_fs(fs_config.punto_montaje);
-	maximo_caracteres_linea = 12 + 2 + 5 + fs_config.tamanio_value + 1; //una linea se forma de maximo int (12 caracteres) 2 ; , max uint16(5 caracteres), el value y un barra n
+	maximo_caracteres_linea = 13 + 2 + 5 + fs_config.tamanio_value + 1; //una linea se forma de 13 caracteres (valor actual timestamp) 2 x ; una , max uint16(5 caracteres), el value y un barra n
 	socket_servidor = levantar_servidor(fs_config.puerto_escucha);
 	loguear(info, logger, "Lissandra iniciado");
 	printear_configuraciones();
@@ -95,6 +95,7 @@ void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 
 }
 
+/*
 void cargar_datos_fake() {
 	printf("##################### INICIO TESTS ###################");
 	char *tabla = "miTabla";
@@ -126,17 +127,17 @@ void cargar_datos_fake() {
 	fwrite("\n", 1, 1, fd);
 	fclose(fd);
 
-	/*libero memoria:
-	 * Limpio los datos en medida de no perder referencia,
-	 * es decir, no destruyo una lista, sin antes liberar
-	 * los datos en el heap que haya guardado
-	 */
+	//libero memoria:
+	// * Limpio los datos en medida de no perder referencia,
+	// * es decir, no destruyo una lista, sin antes liberar
+	// * los datos en el heap que haya guardado
+	//
 
 	list_destroy(registros);
 	free(pathfinal);
 	printf("##################### FIN TESTS ###################\n");
 
-}
+}*/
 
 void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
 	int socket_servidor = *ptr_socket_servidor;

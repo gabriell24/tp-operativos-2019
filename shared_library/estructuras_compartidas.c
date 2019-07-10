@@ -134,10 +134,10 @@ t_request_select *deserializar_request_select(t_prot_mensaje *mensaje) {
 
 
 //Insert
-void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, int epoch) {
+void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, uint64_t epoch) {
 	int largo_nombre_de_tabla = strlen(nombre_tabla);
 	int largo_value = strlen(value);
-	size_t tamanio_del_paquete = ((largo_nombre_de_tabla + largo_value)*sizeof(char)) + (sizeof(int)*3 + sizeof(uint16_t));
+	size_t tamanio_del_paquete = ((largo_nombre_de_tabla + largo_value)*sizeof(char)) + (sizeof(int)*2 + sizeof(uint64_t) + sizeof(uint16_t));
 
 	void *buffer = malloc(tamanio_del_paquete);
 	int desplazamiento = 0;
@@ -166,8 +166,8 @@ void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, i
 
 
 	//Copio el valor de largo de timestamp
-	memcpy(buffer+desplazamiento, &epoch, sizeof(int));
-	desplazamiento += sizeof(int);
+	memcpy(buffer+desplazamiento, &epoch, sizeof(uint64_t));
+	desplazamiento += sizeof(uint64_t);
 
 	if (tamanio_del_paquete != desplazamiento) {
 		printf("::::::::::::::::::::MAL SERIALIZADOOOOOOOOOOOOOOOOOOOO::::::::::::::::!!!!!!!!!1!!11!!111!!!!1111111!!!!!!!\n");
@@ -180,7 +180,8 @@ void* serializar_request_insert(char* nombre_tabla, uint16_t key, char* value, i
 }
 
 t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
-	int epoch, desplazamiento, largo_nombre_de_tabla, largo_value;
+	int desplazamiento, largo_nombre_de_tabla, largo_value;
+	uint64_t epoch;
 	//char *value, *key, *nombre_tabla;
 	desplazamiento = 0;
 	size_t tamanio_del_paquete = mensaje->tamanio_total - sizeof(t_header);
@@ -213,8 +214,8 @@ t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
 	desplazamiento += largo_value;
 
 
-	memcpy(&epoch, mensaje->payload+desplazamiento, sizeof(int));
-	desplazamiento += sizeof(int);
+	memcpy(&epoch, mensaje->payload+desplazamiento, sizeof(uint64_t));
+	desplazamiento += sizeof(uint64_t);
 	retorno->epoch = epoch;
 
 
