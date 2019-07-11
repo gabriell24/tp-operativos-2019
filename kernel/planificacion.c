@@ -148,13 +148,15 @@ void round_robin() {
 					pthread_mutex_unlock(&mutex_create);
 				} break;
 				case t_select: {
+					pthread_mutex_lock(&mutex_create);
 					//TODO Chequear si va con un criterio determinado.
-					int memoria_destino = get_memoria(NULL);
+					int memoria_destino = get_memoria(parser.parametros.select.tabla);
 					if(memoria_destino == -1) {
 						finalizo = true;
 						break;
 					}
 					kernel_select(memoria_destino, parser.parametros.select.tabla, parser.parametros.select.key);
+					pthread_mutex_unlock(&mutex_create);
 				} break;
 				case add: {
 					kernel_add(parser.parametros.add.memoria, parser.parametros.add.tipo_consistencia);

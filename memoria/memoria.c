@@ -33,6 +33,7 @@ int main() {
 	*ptr_fd_inotify = fd_inotify;
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
+	pthread_create(&hilo_journal, NULL, (void *)journal, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
 	int *ptr_socket_servidor = malloc(sizeof(int));

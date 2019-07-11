@@ -1,6 +1,7 @@
 #include "interfaz.h"
 
 char *fs_select(char *tabla, uint16_t key) {
+	pthread_mutex_lock(&mutex_compactacion);
 	if(!existe_tabla(tabla)) {
 		loguear(error, logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
 		return ERROR_NO_EXISTE_TABLA;
@@ -26,6 +27,7 @@ char *fs_select(char *tabla, uint16_t key) {
 	string_append(&ruta_tabla, tabla);
 	DIR *dp;
 	struct dirent *ep;
+	pthread_mutex_lock(&mutex_rename_tmp);
 	dp = opendir(ruta_tabla);
 	if (dp != NULL) {
 		while ((ep = readdir (dp))) {
@@ -40,6 +42,7 @@ char *fs_select(char *tabla, uint16_t key) {
 		}
 	}
 	closedir(dp);
+	pthread_mutex_unlock(&mutex_rename_tmp);
 	free(ruta_tabla);
 
 	mayor_timestamp = devolver_timestamp_mayor(key_encontradas);
@@ -61,12 +64,13 @@ char *fs_select(char *tabla, uint16_t key) {
 
 	list_destroy_and_destroy_elements(key_encontradas, (void*)free);
 	free(metadata.consistency);
-
+	pthread_mutex_unlock(&mutex_compactacion);
 	return retorno;
 
 }
 
 void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
+	pthread_mutex_lock(&mutex_compactacion);
 	if(!existe_tabla(tabla)) {
 		loguear(error, logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
 		return;
@@ -104,6 +108,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 		loguear(debug, logger, "[MEMTABLE] Agrego el area %s", tabla);
 		list_add(t_list_memtable, unaTabla);
 	}
+	pthread_mutex_unlock(&mutex_compactacion);
 }
 
 char *fs_create(char *tabla, char *tipo_consistencia, int particiones, int tiempo_compactacion) {
@@ -205,6 +210,10 @@ t_list *fs_describe(char *tabla) {
 }
 
 void fs_drop(char *tabla) {
-	//Dummy
+	pthread_mutex_lock(&mutex_compactacion);
+
+	//escribir aqui
+
+	pthread_mutex_unlock(&mutex_compactacion);
 }
 
