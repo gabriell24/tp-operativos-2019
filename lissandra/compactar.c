@@ -1,7 +1,7 @@
 #include "compactar.h"
 
 void compactar(char *tabla) {
-	//TODO ver de que manera se pede cancelar el hilo, si le hacen drop a la tabla
+	//TODO ver de que manera se puede cancelar el hilo, si le hacen drop a la tabla
 	//Se podria agregar a la memtable, el id del hilo, y mandarle: pthread_kill
 	uint32_t sleep_compactacion = get_tiempo_compactacion(tabla);
 	while(!consola_ejecuto_exit) {

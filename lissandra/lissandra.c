@@ -272,7 +272,9 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			break;
 
 			case FUNCION_DROP: {
-				loguear(info, logger, "Recibi el drop");
+				t_request_select *buffer = deserializar_request_insert(mensaje_de_memoria);
+				loguear(info, logger, "Recibi el drop de: %s", buffer->tabla);
+				fs_drop(buffer->tabla);
 
 			} break;
 

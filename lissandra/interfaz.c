@@ -205,6 +205,12 @@ t_list *fs_describe(char *tabla) {
 }
 
 void fs_drop(char *tabla) {
-	//Dummy
+	if(!existe_tabla(tabla)) {
+			loguear(error, logger, "[DROP] ERROR: No existe una tabla con ese nombre.");
+			return;
+		}
+		removerArchivo(tabla);
+		loguear(debug, logger, "[DROP] Se elimino la tabla %s", tabla);
+
 }
 
