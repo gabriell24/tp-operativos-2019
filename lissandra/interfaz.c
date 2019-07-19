@@ -209,11 +209,22 @@ t_list *fs_describe(char *tabla) {
 	return metadatas;
 }
 
-void fs_drop(char *tabla) {
+bool fs_drop(char *tabla) {
 	pthread_mutex_lock(&mutex_compactacion);
 
-	//escribir aqui
-
-	pthread_mutex_unlock(&mutex_compactacion);
+	if(!existe_tabla(tabla)) {
+			loguear(error, logger, "[DROP] ERROR: No existe una tabla con ese nombre.");
+			pthread_mutex_unlock(&mutex_compactacion);
+			return false;
+		}
+		if(removerArchivo(tabla)){
+			loguear(debug, logger, "[DROP] Se elimino la tabla %s", tabla);
+			pthread_mutex_unlock(&mutex_compactacion);
+			return true;
+		}else{
+			loguear(debug, logger, "[DROP] No se pudo eliminar la tabla %s", tabla);
+			pthread_mutex_unlock(&mutex_compactacion);
+			return false;
+		}
 }
 

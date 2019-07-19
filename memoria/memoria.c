@@ -329,6 +329,10 @@ void escuchar_kernel(int *socket_origen) {
 				memoria_drop(tabla);
 				prot_enviar_mensaje(socket_lissandra, FUNCION_DROP, tab, mensaje_de_kernel->payload);
 				loguear(info, logger, "Drop con tabla: %s", tabla);
+				t_prot_mensaje *resp_liss = prot_recibir_mensaje(socket_lissandra);
+				if(resp_liss->head == RESPUESTA_DROP){
+					prot_enviar_mensaje(socket_kernel, RESPUESTA_DROP, resp_liss->tamanio_total - sizeof(t_header), resp_liss->payload);
+				}
 				free(tabla);
 
 			} break;

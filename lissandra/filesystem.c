@@ -456,9 +456,6 @@ void limpiar_tablas_memtable(t_memtable *unaTabla) {
 	free(unaTabla);
 }
 
-
-
-
 t_timestamp_value *devolver_timestamp_mayor(t_list *lista) {
 
 	t_timestamp_value *aux = NULL;
@@ -516,9 +513,49 @@ t_response_describe *devolver_metadata(char *path_tabla, char *tabla) {
 	return retorno;
 }
 
-void liberar_bloques_de_particion(char **lista_bloques) {
-	int posicion = 0;
-	while(lista_bloques[posicion] != NULL) {
-		bitarray_clean_bit(datos_fs.bitarray, atoi(lista_bloques[posicion++]));
+void liberar_bloques_de_particion(char **lista_bloques) {}
+
+
+
+bool removerArchivo(char* tabla){
+	char *buscar_en = path_tablas();
+	string_append(&buscar_en, tabla);
+
+	bool resultado = false;
+	struct dirent *de;
+
+	DIR *dr = opendir(buscar_en);
+
+	if (dr == NULL) //Si falla la apertura mato el proceso, porque no puedo determinar si existe o no
+	{
+		perror("error al abrir directorio");
+		return false;
 	}
+	//Opcional: ignorar . y ..
+	while ((de = readdir(dr)) != NULL) {
+		char *ruta_completa = string_duplicate(buscar_en);
+		string_append_with_format(&ruta_completa, "/%s", de->d_name);
+		if(string_contains(de->d_name, ".bin") || string_contains(de->d_name, ".tmp") ) {
+
+			loguear(info, logger, "%s", ruta_completa);
+			t_config *particion_config = config_create(ruta_completa);
+					char **bloques_usados = config_get_array_value(particion_config, "BLOCKS");
+					int posicion = 0;
+					while (bloques_usados[posicion] != NULL){
+						bitarray_clean_bit(datos_fs.bitarray, atoi(bloques_usados[posicion]));
+						posicion++;
+					}
+					string_iterate_lines(bloques_usados, (void *)free);
+					free(bloques_usados);
+					config_destroy(particion_config);
+					remove(ruta_completa);
+		}else if(!string_starts_with(de->d_name, ".")){
+			remove(ruta_completa);
+		}
+		free(ruta_completa);
+	}
+	closedir(dr);
+	rmdir(buscar_en);
+	free(buscar_en);
+	return true;
 }
