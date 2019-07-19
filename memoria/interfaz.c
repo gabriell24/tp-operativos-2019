@@ -121,5 +121,5 @@ void journal() {
 	}
 	list_iterate(tds, (void *)_liberar_segmentos);
 	pthread_mutex_unlock(&mutex_journaling);
-	usleep(memoria_config.tiempo_journaling * 1000);
+	//usleep(memoria_config.tiempo_journaling * 1000);
 }

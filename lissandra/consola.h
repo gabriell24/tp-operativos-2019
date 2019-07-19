@@ -28,6 +28,7 @@
 #define COMPACTAR "compactar"
 
 //Variables
+pthread_mutex_t mutex_ejecuto_exit;
 typedef struct{
 	char* keyword;
 	char* ruta;
@@ -42,7 +43,7 @@ void destruir_operacion(t_consola);
 
 void consola();
 void operaciones_disponibles();
-
+bool finalizo_proceso();
 
 #endif
 

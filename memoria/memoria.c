@@ -33,7 +33,7 @@ int main() {
 	*ptr_fd_inotify = fd_inotify;
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
-	pthread_create(&hilo_journal, NULL, (void *)journal, NULL);
+	pthread_create(&hilo_journal, NULL, (void *)journal_automatico, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
 	int *ptr_socket_servidor = malloc(sizeof(int));
@@ -619,6 +619,13 @@ void reiniciar_frame(t_est_tdp *frame) {
 	frame->ultima_referencia = 0;
 }
 
+void journal_automatico() {
+	while(!consola_ejecuto_exit) {
+		loguear(info, logger, "[Journal Automático] Comenzó");
+		journal();
+		usleep(memoria_config.tiempo_journaling * 1000);
+	}
+}
 /*void agregar_nuevos_a_seeds(int nuevos_seeds) {
 	loguear(debug, logger, "nuevos seeds: %d", nuevos_seeds);
 	loguear(debug, logger, "Items antes: %d", contar_items(memoria_config.ip_seeds));

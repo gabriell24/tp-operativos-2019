@@ -1,11 +1,11 @@
 #include "dump.h"
 
 void dump_automatico() {
-	while(!consola_ejecuto_exit)
+	while(!finalizo_proceso())
 	{
+		loguear(info, logger, "[Dump] Ejecutando dump");
+		dumpear();
 		usleep(fs_config.tiempo_dump_ms * 1000);
-		//loguear(info(logger, "[Dump] Ejecutando dump");
-		//dumpear();
 	}
 }
 
@@ -25,8 +25,9 @@ void dumpear() {
 		free(linea);
 	}
 	list_iterate(t_list_memtable, (void *)_obtener_tablas);
-	list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
-	t_list_memtable = list_create();
+	//list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	//t_list_memtable = list_create();
 }
 
 //falta añadir el size (bytes) y los bloquess que ocupa

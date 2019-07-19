@@ -4,7 +4,7 @@ void compactar(char *tabla) {
 	//TODO ver de que manera se pede cancelar el hilo, si le hacen drop a la tabla
 	//Se podria agregar a la memtable, el id del hilo, y mandarle: pthread_kill
 	uint32_t sleep_compactacion = get_tiempo_compactacion(tabla);
-	while(!consola_ejecuto_exit) {
+	while(!finalizo_proceso()) {
 		loguear(info, logger, "Reviso si %s necesita compactar", (char *)tabla);
 		efectuar_compactacion((char *)tabla);
 		loguear(info, logger, "Fin revisión para compactar en %s, duermo %d", (char *)tabla, sleep_compactacion);

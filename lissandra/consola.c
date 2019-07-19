@@ -2,6 +2,7 @@
 
 void consola(){
 	char * linea;
+
 	while(1) {
 		linea = readline(ANSI_COLOR_CYAN"LISSANDRA$ "ANSI_COLOR_RESET);
 	    if(linea)
@@ -9,7 +10,9 @@ void consola(){
 	    if(!strncmp(linea, "exit", 4)) {
 	    	free(linea);
 	    	//finalizar_estructuras_fs();
+	    	pthread_mutex_lock(&mutex_ejecuto_exit);
 	    	consola_ejecuto_exit = true;
+			pthread_mutex_unlock(&mutex_ejecuto_exit);
 	    	break;
 	    }
 	    t_consola comando = parse(linea);
@@ -148,4 +151,12 @@ void operaciones_disponibles() {
 	printf("create(4)\n");
 	printf("describe(0,1 para tabla específica)\n");
 	printf("drop(1)\n");
+}
+
+bool finalizo_proceso() {
+	bool retorno = false;
+	pthread_mutex_lock(&mutex_ejecuto_exit);
+	retorno = consola_ejecuto_exit;
+	pthread_mutex_unlock(&mutex_ejecuto_exit);
+	return retorno;
 }

@@ -94,10 +94,10 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
 	}
 	else {
-		loguear(info, logger, "Creo hilo para compactación, DESCOMENTAR DE LA 102 A LA 104 (interfaz.c)");
-		/*pthread_t hilo_dump_por_tabla;
+		loguear(info, logger, "Creo hilo para compactación");
+		pthread_t hilo_dump_por_tabla;
 		char *nombre_tabla = string_duplicate(tabla);
-		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);*/
+		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);
 		t_list *registros = list_create();
 		list_add(registros, unRegistro);
 

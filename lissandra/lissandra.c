@@ -2,6 +2,7 @@
 
 int main() {
 	//Variable global para avisarle al hilo del observer que frene.
+	pthread_mutex_init(&mutex_ejecuto_exit, NULL);
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
 	logger = log_create("lissandra.log","LISSANDRA", true,
@@ -44,6 +45,7 @@ int main() {
 	finalizar_estructuras_fs();
 	log_destroy(logger);
 	free(fs_config.punto_montaje);
+	pthread_mutex_destroy(&mutex_ejecuto_exit);
 	return 0;
 }
 
@@ -60,7 +62,7 @@ void printear_configuraciones() {
 void escuchar_cambios_en_configuraciones(void *ptr_fd) {
 	int file_descriptor = *((int *) ptr_fd);
 
-	while(!consola_ejecuto_exit) {
+	while(!finalizo_proceso()) {
 	    char buffer[BUF_LEN];
 	    struct inotify_event *event = NULL;
 
@@ -146,7 +148,7 @@ void aceptar_conexion_de_memoria(int *ptr_socket_servidor) {
 	struct sockaddr_in direccion_cliente;
 	unsigned int tamanio_direccion = sizeof(direccion_cliente);
 
-	while(!consola_ejecuto_exit) {
+	while(!finalizo_proceso()) {
 		socket_cliente = accept(socket_servidor, (void*) &direccion_cliente, &tamanio_direccion);
 		if(!(socket_cliente > 0)) {
 			perror("No pude aceptar a memoria: ");
@@ -187,7 +189,7 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 	free(ptr_socket_cliente);
 	bool cortar_while = false;
 	//t_prot_mensaje *mensaje_de_kernel;
-	while (!consola_ejecuto_exit && !cortar_while) {
+	while (!finalizo_proceso() && !cortar_while) {
 		t_prot_mensaje *mensaje_de_memoria = prot_recibir_mensaje(socket_memoria);
 		switch(mensaje_de_memoria->head) {
 			case DESCONEXION: {

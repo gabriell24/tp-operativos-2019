@@ -92,5 +92,6 @@ void cargar_tabla_gossip();
 bool ya_se_conecto_a(char *ip, int puerto);
 void iniciar_gossip();
 void reiniciar_frame(t_est_tdp *frame);
+void journal_automatico();
 //void agregar_nuevos_a_seeds(int nuevos_seeds);
 #endif /* MEMORIA_H_ */
