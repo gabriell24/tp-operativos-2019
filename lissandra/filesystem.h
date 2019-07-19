@@ -74,7 +74,7 @@ char *path_tablas();
 char *path_bloques();
 void check(int posicion, bool esCorrecto);
 char bit_in_char(int bit, int mode);
-bool crear_sub_rutas(char*);
+void crear_sub_rutas(char*);
 bool existe_tabla(char*);
 t_timestamp_value *cargar_datos_timestamp_value(char *linea);
 t_list *obtener_datos_de_particion(char *path, uint16_t key);

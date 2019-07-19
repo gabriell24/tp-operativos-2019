@@ -6,6 +6,10 @@ void iniciar_fs(char *path) {
 		exit(1);
 	}
 	datos_fs.path_raiz = string_duplicate(path);
+
+	crear_sub_rutas("Tables/");
+	crear_sub_rutas("Bloques/");
+	crear_sub_rutas("Metadata/");
 	cargar_metadata(path, "Metadata/Metadata.bin");
 	cargar_metadata(path, "Metadata/Bitmap.bin");
 	crear_archivos_de_bloques(datos_fs.cantidad_bloques);
@@ -113,18 +117,18 @@ int tomar_bloque_libre() {
 /*
  * Quizás no sea necesaria.
  */
-bool crear_sub_rutas(char *archivo) {
-	char *crear_en = path_tablas();
-	char **sub_rutas = string_split(archivo, "/");
-	int posicion = 0;
+void crear_sub_rutas(char *archivo) {
+	char *crear_en = string_duplicate(datos_fs.path_raiz);
+	string_append(&crear_en, string_from_format("%s", archivo));
+	char **sub_rutas = string_split(crear_en, "/");
+	int posicion = 1;
+	loguear(info, logger, "Creando ruta: %s", crear_en);
 	while(sub_rutas[posicion+1]!=NULL) {
-		loguear(info, logger, "Creando ruta: %s", sub_rutas[posicion]);
-		string_append(&crear_en, string_from_format("%s/",sub_rutas[posicion++]));
 		mkdir(crear_en, S_IRWXU);
+		posicion++;
 	}
 
 	free(crear_en);
-	return true;
 }
 
 void crear_archivo_particion(char *tabla, int particion, int bloque) {

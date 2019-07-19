@@ -216,6 +216,21 @@ void efectuar_compactacion(char *unaTabla) {
 		}
 		t_list *lineas_para_particion = list_filter(lineas_a_compactar, (void *)_filtrar_key);
 		if(list_size(lineas_para_particion)) {
+			//for(int i=0; i < total_particiones; i++){
+					char *path_particion = string_from_format("%s%d.bin", path, particion);
+					//loguear(debug, logger, "ruta particion: %s", path_a_particion);
+					t_config *archivo_particion = config_create(path_particion);
+					char **bloques_usados = config_get_array_value(archivo_particion, "BLOCKS");
+					int posicion = 0;
+					while (bloques_usados[posicion] != NULL){
+						bitarray_clean_bit(datos_fs.bitarray, atoi(bloques_usados[posicion]));
+						posicion++;
+					}
+					string_iterate_lines(bloques_usados, (void *)free);
+					free(bloques_usados);
+					config_destroy(archivo_particion);
+					free(path_particion);
+			//	}
 			char *lineas_compactar = string_new();
 
 			int caracteres_para_escribir = 0;
