@@ -36,6 +36,8 @@ t_list *t_list_memtable;
 int socket_servidor;
 
 //Prototipos
+void iniciar_semaforos();
+void destruir_semaforos();
 void aceptar_conexion_de_memoria(int *ptr_socket_servidor);
 void printear_configuraciones();
 void escuchar_cambios_en_configuraciones();

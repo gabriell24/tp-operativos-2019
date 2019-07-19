@@ -10,6 +10,7 @@ void compactar(char *tabla) {
 		loguear(info, logger, "Fin revisión para compactar en %s, duermo %d", (char *)tabla, sleep_compactacion);
 		usleep(sleep_compactacion * 1000);
 	}
+	pthread_detach(pthread_self());
 	//free(tabla);
 	//pthread_join(pthread_self());
 }
@@ -392,4 +393,56 @@ char *nombre_basado_en_tmpc(char *tabla, char *ruta_tabla) {
 	closedir(dp);
 	string_append_with_format(&nombre, "%d.tmpc", cantidad_de_temporales);
 	return nombre;
+}
+
+void agregar_tabla_a_compactar(char *tabla) {
+	pthread_mutex_lock(&mutex_lista_compactacion);
+	t_tabla_compactacion *existe = obtener_tabla_compactacion(tabla);
+	if(!existe) {
+		pthread_t hilo_dump_por_tabla;
+		char *nombre_tabla = string_duplicate(tabla);
+		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);
+		loguear(info, logger, "Creo hilo para compactación: %d", &hilo_dump_por_tabla);
+		t_tabla_compactacion *nueva = malloc(sizeof(t_tabla_compactacion));
+		nueva->nombre = string_duplicate(tabla);
+		nueva->tid = hilo_dump_por_tabla;
+		list_add(tablas_en_compactacion, nueva);
+	}
+	pthread_mutex_unlock(&mutex_lista_compactacion);
+
+
+}
+
+t_tabla_compactacion *obtener_tabla_compactacion(char *tabla) {
+	bool _ya_existia(t_tabla_compactacion *registros) {
+		return string_equals_ignore_case(registros->nombre, tabla);
+	}
+	return list_find(tablas_en_compactacion, (void *)_ya_existia);
+}
+
+void cancelar_hilo_compactacion(char *tabla) {
+	pthread_mutex_lock(&mutex_lista_compactacion);
+	t_tabla_compactacion *existe = obtener_tabla_compactacion(tabla);
+	bool _ya_existia(t_tabla_compactacion *registros) {
+		return string_equals_ignore_case(registros->nombre, tabla);
+	}
+	if(existe) {
+		loguear(info, logger, "Voy a cancelar el hilo: %d", &existe->tid);
+		//TODO Testear si agregando un pthread_join desp del cancel, hace que limpie la memoria
+		if(pthread_cancel(existe->tid) != 0) {
+			perror("Tipo de fallo: ");
+			loguear(error, logger, "No se pudo cortar el hilo de compactación para la tabla: %s", tabla);
+		}
+		list_remove_and_destroy_by_condition(tablas_en_compactacion, (void *)_ya_existia, (void*) liberar_registro_tabla_compactacion);
+	}
+	pthread_mutex_unlock(&mutex_lista_compactacion);
+}
+
+void liberar_registro_tabla_compactacion(t_tabla_compactacion *tabla) {
+	free(tabla->nombre);
+	free(tabla);
+}
+
+void limpiar_lista_compactacion() {
+	list_destroy_and_destroy_elements(tablas_en_compactacion, (void *)liberar_registro_tabla_compactacion);
 }

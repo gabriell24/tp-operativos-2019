@@ -2,7 +2,7 @@
 
 int main() {
 	//Variable global para avisarle al hilo del observer que frene.
-	pthread_mutex_init(&mutex_ejecuto_exit, NULL);
+	iniciar_semaforos();
 	consola_ejecuto_exit = false;
 	levantar_archivo_configuracion();
 	logger = log_create("lissandra.log","LISSANDRA", true,
@@ -13,8 +13,8 @@ int main() {
 	loguear(info, logger, "Lissandra iniciado");
 	printear_configuraciones();
 
-	pthread_mutex_init(&mutex_compactacion, NULL);
 	t_list_memtable = list_create();
+	tablas_en_compactacion = list_create();
 	//cargar_datos_fake();
 
 	//<<1- inotify
@@ -45,10 +45,21 @@ int main() {
 	finalizar_estructuras_fs();
 	log_destroy(logger);
 	free(fs_config.punto_montaje);
-	pthread_mutex_destroy(&mutex_ejecuto_exit);
+	destruir_semaforos();
 	return 0;
 }
 
+void iniciar_semaforos() {
+	pthread_mutex_init(&mutex_ejecuto_exit, NULL);
+	pthread_mutex_init(&mutex_compactacion, NULL);
+	pthread_mutex_init(&mutex_lista_compactacion, NULL);
+}
+
+void destruir_semaforos() {
+	pthread_mutex_destroy(&mutex_ejecuto_exit);
+	pthread_mutex_destroy(&mutex_compactacion);
+	pthread_mutex_destroy(&mutex_lista_compactacion);
+}
 /* Funcióm creada para verificar que recargue las variables luego de que inotify
  * dispare el evento onChange
  */

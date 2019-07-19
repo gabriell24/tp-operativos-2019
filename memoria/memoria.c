@@ -333,6 +333,7 @@ void escuchar_kernel(int *socket_origen) {
 				if(resp_liss->head == RESPUESTA_DROP){
 					prot_enviar_mensaje(socket_kernel, RESPUESTA_DROP, strlen(tabla), tabla);
 				}
+				prot_destruir_mensaje(resp_liss);
 				free(tabla);
 
 			} break;

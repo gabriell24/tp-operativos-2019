@@ -119,7 +119,7 @@ int tomar_bloque_libre() {
  */
 void crear_sub_rutas(char *archivo) {
 	char *crear_en = string_duplicate(datos_fs.path_raiz);
-	string_append(&crear_en, string_from_format("%s", archivo));
+	string_append(&crear_en, archivo);
 	char **sub_rutas = string_split(crear_en, "/");
 	int posicion = 1;
 	loguear(info, logger, "Creando ruta: %s", crear_en);
@@ -127,7 +127,8 @@ void crear_sub_rutas(char *archivo) {
 		mkdir(crear_en, S_IRWXU);
 		posicion++;
 	}
-
+	string_iterate_lines(sub_rutas, (void *)free);
+	free(sub_rutas);
 	free(crear_en);
 }
 

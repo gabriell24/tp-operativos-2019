@@ -98,10 +98,6 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 		list_add(tabla_existente_en_memtable->t_registro, unRegistro);
 	}
 	else {
-		loguear(info, logger, "Creo hilo para compactación");
-		pthread_t hilo_dump_por_tabla;
-		char *nombre_tabla = string_duplicate(tabla);
-		pthread_create(&hilo_dump_por_tabla, NULL, (void *)compactar, nombre_tabla);
 		t_list *registros = list_create();
 		list_add(registros, unRegistro);
 
@@ -111,6 +107,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 
 		loguear(debug, logger, "[MEMTABLE] Agrego el area %s", tabla);
 		list_add(t_list_memtable, unaTabla);
+		agregar_tabla_a_compactar(tabla);
 	}
 	pthread_mutex_unlock(&mutex_compactacion);
 }
@@ -217,18 +214,19 @@ bool fs_drop(char *tabla) {
 	pthread_mutex_lock(&mutex_compactacion);
 
 	if(!existe_tabla(tabla)) {
-			loguear(error, logger, "[DROP] ERROR: No existe una tabla con ese nombre.");
-			pthread_mutex_unlock(&mutex_compactacion);
-			return false;
-		}
-		if(removerArchivo(tabla)){
-			loguear(debug, logger, "[DROP] Se elimino la tabla %s", tabla);
-			pthread_mutex_unlock(&mutex_compactacion);
-			return true;
-		}else{
-			loguear(debug, logger, "[DROP] No se pudo eliminar la tabla %s", tabla);
-			pthread_mutex_unlock(&mutex_compactacion);
-			return false;
-		}
+		loguear(error, logger, "[DROP] ERROR: No existe una tabla con ese nombre.");
+		pthread_mutex_unlock(&mutex_compactacion);
+		return false;
+	}
+	if(removerArchivo(tabla)) {
+		loguear(debug, logger, "[DROP] Se elimino la tabla %s", tabla);
+		cancelar_hilo_compactacion(tabla);
+		pthread_mutex_unlock(&mutex_compactacion);
+		return true;
+	} else {
+		loguear(debug, logger, "[DROP] No se pudo eliminar la tabla %s", tabla);
+		pthread_mutex_unlock(&mutex_compactacion);
+		return false;
+	}
 }
 
