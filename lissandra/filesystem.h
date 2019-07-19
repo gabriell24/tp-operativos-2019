@@ -90,5 +90,6 @@ void limpiar_timestampvalue_si_corresponde(t_timestamp_value *registro);
 t_response_describe *devolver_metadata(char *path_tabla, char *tabla);
 void guardar_archivo_temporal(char *tabla, char *archivo_temporal, int size, int bloques[], int cantidad_bloques);
 void liberar_bloques_de_particion(char **lista_de_bloques);
+bool removerArchivo(char* ruta);
 
 #endif /* FILESYSTEM_H_ */

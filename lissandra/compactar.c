@@ -39,6 +39,7 @@ void efectuar_compactacion(char *unaTabla) {
 	bool necesita_compactar = false;
 
 	t_list *archivos_a_borrar = list_create();
+	pthread_mutex_lock(&mutex_rename_tmp);
 	dp = opendir(path);
 	if (dp != NULL) {
 		while ((ep = readdir (dp))) { /*Renombro tmp por tmpc*/
@@ -69,6 +70,7 @@ void efectuar_compactacion(char *unaTabla) {
 		}
 	}
 	closedir(dp);
+	pthread_mutex_unlock(&mutex_rename_tmp);
 	t_list *bloques_temporales = list_duplicate(bloques_que_uso);
 	if(!necesita_compactar) {
 		list_destroy(bloques_que_uso);

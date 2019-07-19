@@ -33,6 +33,7 @@ int main() {
 	*ptr_fd_inotify = fd_inotify;
 	pthread_create(&hilo_observer_configs,NULL, (void*)escuchar_cambios_en_configuraciones, (void*)ptr_fd_inotify);
 	//1>>
+	pthread_create(&hilo_journal, NULL, (void *)journal, NULL);
 	pthread_create(&hilo_consola, NULL, (void*)consola, NULL);
 
 	int *ptr_socket_servidor = malloc(sizeof(int));
@@ -328,6 +329,10 @@ void escuchar_kernel(int *socket_origen) {
 				memoria_drop(tabla);
 				prot_enviar_mensaje(socket_lissandra, FUNCION_DROP, tab, mensaje_de_kernel->payload);
 				loguear(info, logger, "Drop con tabla: %s", tabla);
+				t_prot_mensaje *resp_liss = prot_recibir_mensaje(socket_lissandra);
+				if(resp_liss->head == RESPUESTA_DROP){
+					prot_enviar_mensaje(socket_kernel, RESPUESTA_DROP, resp_liss->tamanio_total - sizeof(t_header), resp_liss->payload);
+				}
 				free(tabla);
 
 			} break;

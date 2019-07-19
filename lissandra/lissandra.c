@@ -272,9 +272,17 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 			break;
 
 			case FUNCION_DROP: {
-				t_request_select *buffer = deserializar_request_insert(mensaje_de_memoria);
-				loguear(info, logger, "Recibi el drop de: %s", buffer->tabla);
-				fs_drop(buffer->tabla);
+				int largo_tabla = mensaje_de_memoria->tamanio_total - sizeof(t_header);
+				char *buffer_de_tabla = malloc(largo_tabla + 1);
+				memset(buffer_de_tabla, 0, largo_tabla);
+				memcpy(buffer_de_tabla, mensaje_de_memoria->payload, largo_tabla);
+				buffer_de_tabla[largo_tabla] = '\0';
+				loguear(info, logger, "Recibi el drop de: %s", buffer_de_tabla);
+				bool *resultado = malloc(sizeof(bool));
+				*resultado = fs_drop(buffer_de_tabla);
+				prot_enviar_mensaje(socket_memoria, RESPUESTA_DROP, sizeof(bool), resultado);
+				free(resultado);
+				free(buffer_de_tabla);
 
 			} break;
 

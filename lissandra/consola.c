@@ -101,7 +101,9 @@ t_consola parse(char* linea){
 			if (tabla == NULL || consistencia == NULL || particiones == NULL || compactacion == NULL) {
 				loguear(error, logger, "Error: ejemplo de uso \"CREATE TABLA1 SC 4 60000\"");
 			} else {
-				fs_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
+				char*respuesta = fs_create(tabla, consistencia, atoi(particiones), atoi(compactacion));
+				loguear(info, logger, "SOLO RESPUESTA: %s :::::::::::::::::::::", respuesta );
+				free(respuesta);
 			}
 			string_iterate_lines(separador, (void*)free);
 			free(separador);

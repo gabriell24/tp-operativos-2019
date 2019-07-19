@@ -35,6 +35,7 @@ pthread_t hilo_consola;
 pthread_t hilo_aceptar_clientes;
 pthread_t hilo_gossip;
 pthread_t recibir_mensajes_de_kernel;
+pthread_t hilo_journal;
 pthread_mutex_t mutex_journaling;
 int socket_servidor;
 int tamanio_value;

@@ -513,16 +513,14 @@ t_response_describe *devolver_metadata(char *path_tabla, char *tabla) {
 	return retorno;
 }
 
-void liberar_bloques_de_particion(char **lista_bloques) {
+void liberar_bloques_de_particion(char **lista_bloques) {}
 
 
 
-int removerArchivo(char* tabla){
-		//Eliminar MEMTABLE
-		//Eliminar Archivos de la tabla
-		//Elimino los bloques
-		//Directorio e info administrativa (actualizar bitmap y bitarray??)
+bool removerArchivo(char* tabla){
 	char *buscar_en = path_tablas();
+	string_append(&buscar_en, tabla);
+
 	bool resultado = false;
 	struct dirent *de;
 
@@ -531,73 +529,33 @@ int removerArchivo(char* tabla){
 	if (dr == NULL) //Si falla la apertura mato el proceso, porque no puedo determinar si existe o no
 	{
 		perror("error al abrir directorio");
-		exit(1);
+		return false;
 	}
-
 	//Opcional: ignorar . y ..
 	while ((de = readdir(dr)) != NULL) {
-		//Si la commons nos brinda case insensitive no veo el objetivo de comparar en mayúsculas o minúsculas
-		if(string_equals_ignore_case(de->d_name, tabla)) {
-			resultado = true;
-		}
-	}
+		char *ruta_completa = string_duplicate(buscar_en);
+		string_append_with_format(&ruta_completa, "/%s", de->d_name);
+		if(string_contains(de->d_name, ".bin") || string_contains(de->d_name, ".tmp") ) {
 
-	closedir(dr);
-
-	free(buscar_en);
-
-
-
-
-
-
-
-
-			t_config * archivo = config_create(rutaArchivo);
-			Tnodo * nodo;
-			char * keyBloqueCopias;
-			char * keyBloqueNCopiaM;
-			char **nombreYPosicion;
-			int cantidadCopias;
-			int i = 0;
-			int j;
-			int cantidadBloques = cantidadDeBloquesDeUnArchivo(config_get_long_value(archivo,"TAMANIO"));
-			while(i < cantidadBloques){
-			keyBloqueCopias = generarStringBloqueNCopias(i);
-			cantidadCopias = config_get_int_value(archivo, keyBloqueCopias);
-			j = 0;
-			while(j < cantidadCopias){
-				keyBloqueNCopiaM = generarStringDeBloqueNCopiaN(i,j);
-				nombreYPosicion = config_get_array_value(archivo,keyBloqueNCopiaM);
-				nodo = buscarNodoPorNombre(listaDeNodos, nombreYPosicion[0]);
-				if(nodo == NULL){
-					nodo = buscarNodoPorNombre(listaDeNodosDesconectados, nombreYPosicion[0]);
-					if(nodo == NULL){
-						liberarPunteroDePunterosAChar(nombreYPosicion);
-						free(nombreYPosicion);
-						free(keyBloqueCopias);
-						free(keyBloqueNCopiaM);
-						return 0;
+			loguear(info, logger, "%s", ruta_completa);
+			t_config *particion_config = config_create(ruta_completa);
+					char **bloques_usados = config_get_array_value(particion_config, "BLOCKS");
+					int posicion = 0;
+					while (bloques_usados[posicion] != NULL){
+						bitarray_clean_bit(datos_fs.bitarray, atoi(bloques_usados[posicion]));
+						posicion++;
 					}
-				}
-				desocuparBloque(nodo, atoi(nombreYPosicion[1]));
-				liberarPunteroDePunterosAChar(nombreYPosicion);
-				free(nombreYPosicion);
-				free(keyBloqueNCopiaM);
-				j++;
-			}
-			free(keyBloqueCopias);
-			i++;
-			}
-
-			remove(rutaArchivo);
-			free(rutaArchivo);
-			config_destroy(archivo);
-			return 1;
-
+					string_iterate_lines(bloques_usados, (void *)free);
+					free(bloques_usados);
+					config_destroy(particion_config);
+					remove(ruta_completa);
+		}else if(!string_starts_with(de->d_name, ".")){
+			remove(ruta_completa);
 		}
-	int posicion = 0;
-	while(lista_bloques[posicion] != NULL) {
-		bitarray_clean_bit(datos_fs.bitarray, atoi(lista_bloques[posicion++]));
+		free(ruta_completa);
 	}
+	closedir(dr);
+	rmdir(buscar_en);
+	free(buscar_en);
+	return true;
 }
