@@ -102,6 +102,20 @@ void recibir_mensajes_de_memoria(int *ptr_socket) {
 			pthread_mutex_unlock(&mutex_create);
 		} break;
 
+		case RESPUESTA_DROP: {
+			size_t tamanio_respuesta_drop = mensaje_de_memoria->tamanio_total-sizeof(t_header);
+			char *respuesta_drop = malloc(tamanio_respuesta_drop+1);
+			memset(respuesta_drop, 0, tamanio_respuesta_drop+1);
+			memcpy(respuesta_drop, mensaje_de_memoria->payload, tamanio_respuesta_drop);
+			respuesta_drop[tamanio_respuesta_drop] = '\0';
+			loguear(info, logger, "[DROP] Se eliminó: %s", respuesta_drop);
+			bool _eliminar_por_nombre(t_response_describe *metadata) {
+				return string_equals_ignore_case(metadata->tabla, respuesta_drop);
+			}
+			list_remove_by_condition(describe_tablas, (void *)_eliminar_por_nombre);
+			free(respuesta_drop);
+		} break;
+
 		case DESCONEXION: {
 			loguear(error, logger, "Se desconectó memoria");
 			quitar_memoria_de_criterio(socket_memoria);

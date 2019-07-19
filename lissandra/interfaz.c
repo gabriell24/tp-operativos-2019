@@ -4,6 +4,7 @@ char *fs_select(char *tabla, uint16_t key) {
 	pthread_mutex_lock(&mutex_compactacion);
 	if(!existe_tabla(tabla)) {
 		loguear(error, logger, "[SELECT] ERROR: No existe una tabla con ese nombre.");
+		pthread_mutex_unlock(&mutex_compactacion);
 		return ERROR_NO_EXISTE_TABLA;
 	}
 	t_metadata metadata = obtener_metadata(tabla);
@@ -49,6 +50,7 @@ char *fs_select(char *tabla, uint16_t key) {
 	if(!mayor_timestamp) {
 		list_destroy(key_encontradas);
 		free(metadata.consistency);
+		pthread_mutex_unlock(&mutex_compactacion);
 		return ERROR_KEY_NO_ENCONTRADA;
 	} else {
 		char *timestamp_key = string_from_format("%llu;%d;", mayor_timestamp->timestamp, key);
@@ -73,10 +75,12 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 	pthread_mutex_lock(&mutex_compactacion);
 	if(!existe_tabla(tabla)) {
 		loguear(error, logger, "[INSERT] ERROR: No existe una tabla con ese nombre.");
+		pthread_mutex_unlock(&mutex_compactacion);
 		return;
 	}
 	if(strlen(value) > fs_config.tamanio_value) {
 		loguear(error, logger, "[Error] El value no puede superar %d caracteres", fs_config.tamanio_value);
+		pthread_mutex_unlock(&mutex_compactacion);
 		return;
 	}
 	loguear(info, logger, "[EPOCH] timestamp: %llu", timestamp);
