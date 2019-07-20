@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "memoria.h"
 
+bool en_journal;
 
 char *memoria_select(char *tabla, uint16_t key);
 void memoria_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp);

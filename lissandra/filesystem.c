@@ -402,10 +402,10 @@ t_metadata obtener_metadata(char *tabla) {
 }
 
 t_memtable *obtener_tabla_en_memtable(char *tabla) {
-	bool _buscar_por_nombre(void *elemento) {
-		return string_equals_ignore_case((*(t_memtable*)elemento).tabla, tabla);
+	bool _buscar_por_nombre(t_memtable *elemento) {
+		return string_equals_ignore_case(elemento->tabla, tabla);
 	}
-	return (t_memtable*)list_find(t_list_memtable, _buscar_por_nombre);
+	return (t_memtable*)list_find(t_list_memtable, (void *)_buscar_por_nombre);
 }
 
 t_list *obtener_registros_por_key(char *tabla, uint16_t key) {

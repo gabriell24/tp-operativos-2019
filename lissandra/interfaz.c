@@ -87,6 +87,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 
 	//TODO NO entedí el item 2 del enunciado
 
+	pthread_mutex_lock(&mutex_memtable);
 	t_registro *unRegistro = malloc(sizeof(t_registro));
 	unRegistro->key = key;
 	unRegistro->timestamp = timestamp;
@@ -109,6 +110,7 @@ void fs_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 		list_add(t_list_memtable, unaTabla);
 		agregar_tabla_a_compactar(tabla);
 	}
+	pthread_mutex_unlock(&mutex_memtable);
 	pthread_mutex_unlock(&mutex_compactacion);
 }
 

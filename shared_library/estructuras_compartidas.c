@@ -187,7 +187,7 @@ t_request_insert *deserializar_request_insert(t_prot_mensaje *mensaje) {
 	size_t tamanio_del_paquete = mensaje->tamanio_total - sizeof(t_header);
 	t_request_insert *retorno = malloc(sizeof(t_request_insert));
 
-	//memset(retorno, 0, sizeof(t_request_insert));
+	memset(retorno, 0, sizeof(t_request_insert));
 	memcpy(&largo_nombre_de_tabla, mensaje->payload+desplazamiento, sizeof(int));
 	retorno->nombre_tabla = malloc(largo_nombre_de_tabla+1);
 	memset(retorno->nombre_tabla, 0, largo_nombre_de_tabla+1);

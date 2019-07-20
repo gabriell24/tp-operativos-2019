@@ -31,6 +31,8 @@ pthread_t hilo_conexion_memoria;
 pthread_t hilo_dump;
 pthread_mutex_t mutex_compactacion;
 pthread_mutex_t mutex_rename_tmp;
+pthread_mutex_t mutex_memtable;
+pthread_mutex_t mutex_insert;
 int maximo_caracteres_linea;
 t_list *t_list_memtable;
 int socket_servidor;

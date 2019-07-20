@@ -2,6 +2,10 @@
 
 int main() {
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
+	en_journal = false;
+	pthread_mutex_init(&mutex_insert, NULL);
+	pthread_mutex_init(&mutex_memoria, NULL);
+	pthread_mutex_init(&mutex_en_juornaling, NULL);
 	consola_ejecuto_exit = false;
 	tabla_gossip = list_create();
 	levantar_archivo_configuracion();
@@ -53,6 +57,8 @@ int main() {
 	limpiar_memoria();
 	limpiar_configuraciones();
 	log_destroy(logger);
+	pthread_mutex_destroy(&mutex_memoria);
+	pthread_mutex_destroy(&mutex_en_juornaling);
 }
 
 int recibir_datos_de_fs(int socket) {
@@ -439,9 +445,10 @@ void settear_value(void *frame, char* value) {
 }
 
 void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* frame_libre, char *tabla, uint64_t timestamp, uint16_t key, char *value) {
+	pthread_mutex_lock(&mutex_memoria);
 	frame_libre->modificado = es_insert;
 	frame_libre->ultima_referencia = get_timestamp();
-	loguear(warning, logger, "Frame recibido: %d", frame_libre->nro_pag);
+
 	memset(frame_libre->ptr_posicion, 0, tamanio_de_pagina);
 	settear_timestamp(frame_libre->ptr_posicion, timestamp);
 	settear_key(frame_libre->ptr_posicion, key);
@@ -453,9 +460,12 @@ void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* fram
 		nuevo_segmento->paginas = list_create();
 		list_add(nuevo_segmento->paginas, frame_libre);
 		list_add(tds, nuevo_segmento);
+		loguear(warning, logger, "Frame CREATE111 recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
 	} else {
 		list_add(segmento->paginas, frame_libre);
+		loguear(warning, logger, "Frame CREATE22 recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
 	}
+	pthread_mutex_unlock(&mutex_memoria);
 }
 
 void limpiar_segmento(t_est_tds *segmento) {
@@ -491,10 +501,10 @@ t_est_tdp *obtener_frame() {
 		un_frame = frame_desde_lru();
 		if(un_frame == NULL) {
 				loguear(warning, logger, "Memoria llena, efectuando journaling");
-				journal();
-				pthread_mutex_lock(&mutex_journaling);
+				//pthread_mutex_lock(&mutex_journaling);
+			 	journal();
+				//pthread_mutex_unlock(&mutex_journaling);
 				un_frame = obtener_frame();
-				pthread_mutex_unlock(&mutex_journaling);
 		}
 	}
 	return un_frame;

@@ -16,12 +16,17 @@ char *memoria_select(char *tabla, uint16_t key) {
 
 void memoria_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) {
 	//Journal puede borrar mi segmento, por ende tamb la tdp.
+	pthread_mutex_lock(&mutex_insert);
+	if(en_journal) pthread_mutex_lock(&mutex_en_juornaling);
+	//pthread_mutex_lock(&mutex_journaling);
 	t_est_tdp *frame_libre = obtener_frame();
 	t_est_tds *segmento = obtener_segmento_por_tabla(tabla);
+	loguear(error, logger, "Insert adrop tabla: %s", tabla);
 	if(segmento) {
+		loguear(error, logger, "Insert adrop segmento abla: %s", segmento->nombre_segmento);
 		t_est_tdp *pagina = obtener_pagina_por_key(segmento->paginas, key);
 		if(pagina) {
-			loguear(info, logger, "Existe la página");
+			loguear(info, logger, "Existe la página %s", obtener_value_de_pagina(pagina->ptr_posicion));
 			uint64_t timestamp_guardado = obtener_timestamp_de_pagina(pagina->ptr_posicion);
 			if(timestamp_guardado > timestamp) {
 				loguear(warning, logger, "El timestamp guardado: %llu es mas actualizado que %llu, para [%s-%d-%s]",
@@ -42,14 +47,17 @@ void memoria_insert(char *tabla, uint16_t key, char *value, uint64_t timestamp) 
 		}
 	}
 	else {
-		t_est_tdp *frame_libre = obtener_frame();
 		if(!frame_libre) {
 			loguear(info, logger, "::::::::::::MEMORIA LLENA Y SIN SEGMENTO, SI ESTAS LEYENDO ESTO ESTAAA MAALLL::::::");
 			//Acá es necesario hacer un journal
 		} else {
+			loguear(info, logger, ":::::::::::: entro al elseL::::::");
 			crear_asignar_segmento(true, segmento, frame_libre, tabla, timestamp, key, value);
 		}
 	}
+	//pthread_mutex_unlock(&mutex_journaling);
+	//pthread_mutex_unlock(&mutex_en_juornaling);
+	pthread_mutex_unlock(&mutex_insert);
 }
 
 void memoria_create(char *tabla, char *consistencia, int particiones, int compaction_time) {
@@ -88,6 +96,8 @@ void memoria_drop(char *tabla) {
 /* Las validaciones están porque es posible que no esté llena, y se llame desde la terminal */
 void journal() {
 	pthread_mutex_lock(&mutex_journaling);
+	en_journal = true;
+	//pthread_mutex_lock(&mutex_en_juornaling);
 	int indice_segmento = 0;
 	void _liberar_segmentos(t_est_tds *segmento) {
 		int posicion_pagina = 0;
@@ -97,15 +107,17 @@ void journal() {
 				void *buffer = serializar_request_insert(segmento->nombre_segmento, obtener_key_de_pagina(pagina->ptr_posicion),
 						value, obtener_timestamp_de_pagina(pagina->ptr_posicion));
 
+				//loguear(error, logger, "JOURNAL %s, Key %d, Value %s", segmento->nombre_segmento, obtener_key_de_pagina(pagina->ptr_posicion), obtener_value_de_pagina(pagina->ptr_posicion));
 				size_t tamanio_del_paquete = ((strlen(segmento->nombre_segmento) + strlen(value))*sizeof(char)) + (sizeof(int)*2 + sizeof(uint64_t) + sizeof(uint16_t));
 				prot_enviar_mensaje(socket_lissandra, FUNCION_INSERT, tamanio_del_paquete, buffer);
 				free(buffer);
 				free(value);
-				list_remove(segmento->paginas, posicion_pagina);
+				//list_remove(segmento->paginas, posicion_pagina);
 				reiniciar_frame(pagina);
-			} else {
+			} /*else {
 				posicion_pagina++;
-			}
+			}*/
+			list_remove(segmento->paginas, posicion_pagina);
 		}
 		list_iterate(segmento->paginas, (void *)_liberar_modificados);
 		//list_remove_by_condition(segmento->paginas, (void *)_liberar_modificados);
@@ -120,6 +132,11 @@ void journal() {
 		}
 	}
 	list_iterate(tds, (void *)_liberar_segmentos);
+	//pthread_mutex_unlock(&mutex_en_juornaling);
+
+	en_journal = false;
+	if(!en_journal) pthread_mutex_unlock(&mutex_en_juornaling);
 	pthread_mutex_unlock(&mutex_journaling);
+
 	//usleep(memoria_config.tiempo_journaling * 1000);
 }

@@ -50,12 +50,16 @@ int main() {
 }
 
 void iniciar_semaforos() {
+	pthread_mutex_init(&mutex_memtable, NULL);
+	pthread_mutex_init(&mutex_insert, NULL);
 	pthread_mutex_init(&mutex_ejecuto_exit, NULL);
 	pthread_mutex_init(&mutex_compactacion, NULL);
 	pthread_mutex_init(&mutex_lista_compactacion, NULL);
 }
 
 void destruir_semaforos() {
+	pthread_mutex_destroy(&mutex_memtable);
+	pthread_mutex_destroy(&mutex_insert);
 	pthread_mutex_destroy(&mutex_ejecuto_exit);
 	pthread_mutex_destroy(&mutex_compactacion);
 	pthread_mutex_destroy(&mutex_lista_compactacion);
@@ -237,12 +241,14 @@ void escuchar_memoria(int *ptr_socket_cliente) {
 				} break;
 
 			case FUNCION_INSERT: {
+				pthread_mutex_lock(&mutex_insert);
 				t_request_insert *buffer = deserializar_request_insert(mensaje_de_memoria);
-				loguear(info, logger, "[Insert] Tabla: %s", buffer->nombre_tabla);
+				loguear(info, logger, "[Insert] Tabla: %s, Key: %d, Value: %s", buffer->nombre_tabla, buffer->key, buffer->value);
 				fs_insert(buffer->nombre_tabla, buffer->key , buffer->value, buffer->epoch);
 				free(buffer->nombre_tabla);
 				free(buffer->value);
 				free(buffer);
+				pthread_mutex_unlock(&mutex_insert);
 
 				} break;
 

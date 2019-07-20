@@ -37,6 +37,10 @@ pthread_t hilo_gossip;
 pthread_t recibir_mensajes_de_kernel;
 pthread_t hilo_journal;
 pthread_mutex_t mutex_journaling;
+pthread_mutex_t mutex_insert;
+pthread_mutex_t mutex_memoria;
+pthread_mutex_t mutex_en_juornaling;
+
 int socket_servidor;
 int tamanio_value;
 int tamanio_de_pagina;

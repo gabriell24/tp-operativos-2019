@@ -3,7 +3,7 @@
 void dump_automatico() {
 	while(!finalizo_proceso())
 	{
-		loguear(info, logger, "[Dump] Ejecutando dump");
+		//loguear(info, logger, "[Dump] Ejecutando dump");
 		dumpear();
 		usleep(fs_config.tiempo_dump_ms * 1000);
 	}
