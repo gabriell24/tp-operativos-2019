@@ -3,14 +3,16 @@
 void dump_automatico() {
 	while(!finalizo_proceso())
 	{
-		//loguear(info, logger, "[Dump] Ejecutando dump");
+		loguear(info, logger, "[Dump] Ejecutando dump");
 		dumpear();
+		loguear(info, logger, "[Dump] Finalizado.");
 		usleep(fs_config.tiempo_dump_ms * 1000);
 	}
 }
 
 void dumpear() {
 
+	pthread_mutex_lock(&mutex_memtable);
 	void _obtener_tablas(t_memtable *unaTabla) {
 		char *linea = string_new();
 		void _writear_valores(t_registro *unRegistro) {
@@ -27,6 +29,7 @@ void dumpear() {
 	list_iterate(t_list_memtable, (void *)_obtener_tablas);
 	//list_destroy_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
 	list_clean_and_destroy_elements(t_list_memtable, (void*)limpiar_tablas_memtable);
+	pthread_mutex_unlock(&mutex_memtable);
 	//t_list_memtable = list_create();
 }
 

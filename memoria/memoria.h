@@ -15,6 +15,7 @@
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include "configuracion.h"
 #include "consola.h"
 #include "../shared_library/conexiones.h"
@@ -40,6 +41,8 @@ pthread_mutex_t mutex_journaling;
 pthread_mutex_t mutex_insert;
 pthread_mutex_t mutex_memoria;
 pthread_mutex_t mutex_en_juornaling;
+pthread_mutex_t mutex_frame;
+sem_t contador_frames;
 
 int socket_servidor;
 int tamanio_value;
@@ -91,6 +94,7 @@ void settear_timestamp(void* frame, uint64_t time);
 void settear_key(void* frame, uint16_t key);
 void settear_value(void *frame, char* value);
 void printear_memoria();
+void quitar_referencia(t_est_tdp *pagina);
 t_est_tdp *frame_desde_lru();
 void cargar_tabla_gossip();
 bool ya_se_conecto_a(char *ip, int puerto);

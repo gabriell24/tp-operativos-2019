@@ -564,3 +564,141 @@ bool removerArchivo(char* tabla){
 	free(buscar_en);
 	return true;
 }
+
+void exportar() {
+	char *buscar_en = path_tablas();
+	struct dirent *de;
+
+	DIR *dr = opendir(buscar_en);
+
+	char *guardar_en = string_duplicate(datos_fs.path_raiz);
+	string_append(&guardar_en, "exportacion.xls");
+	int fd = open(guardar_en, O_RDWR | O_CREAT, S_IRWXU );
+	if (dr == NULL) //Si falla la apertura mato el proceso, porque no puedo determinar si existe o no
+	{
+		perror("error al abrir directorio");
+		exit(1);
+	}
+
+
+	//Opcional: ignorar . y ..
+	while ((de = readdir(dr)) != NULL) {
+		t_list *bloques_que_uso = list_create();
+		//Si la commons nos brinda case insensitive no veo el objetivo de comparar en mayúsculas o minúsculas
+		if(!string_contains(de->d_name, ".")) {
+			char *tabla_descripcion = string_from_format("TABLA %s;\n", de->d_name);
+			escribir(fd, tabla_descripcion);
+			free(tabla_descripcion);
+
+			char *path = string_from_format("%s%s/", buscar_en, de->d_name);
+
+
+
+
+			char *path_a_metadata = string_from_format("%sMetadata", path);
+			t_config *metadata_config = config_create(path_a_metadata);
+			int total_particiones = config_get_int_value(metadata_config, "PARTITIONS");
+			config_destroy(metadata_config);
+			free(path_a_metadata);
+
+			for(int i=0; i < total_particiones; i++){
+				char *path_a_particion = string_from_format("%s%d.bin", path, i);
+				loguear(debug, logger, "ruta particion: %s", path_a_particion);
+				t_config *particion_config = config_create(path_a_particion);
+				char **bloques_usados = config_get_array_value(particion_config, "BLOCKS");
+				int posicion = 0;
+				while (bloques_usados[posicion] != NULL){
+					list_add(bloques_que_uso, string_duplicate(bloques_usados[posicion]));
+					posicion++;
+				}
+				string_iterate_lines(bloques_usados, (void *)free);
+				free(bloques_usados);
+				config_destroy(particion_config);
+				free(path_a_particion);
+			}
+			//t_list *lineas_leidas = list_create();
+			int bytes_leidos = 0;
+			char *parte_de_linea = NULL;
+			void cargar_lineas(char *bloque){
+				char *nombre_del_bloque = path_bloques();
+				string_append_with_format(&nombre_del_bloque, "%s.bin", bloque);
+				loguear(debug, logger, "[Leyendo] Bloque: %s", nombre_del_bloque);
+				FILE *archivo = fopen(nombre_del_bloque, "rb");
+				char *linea = malloc(sizeof(char) * maximo_caracteres_linea);
+
+				while(fgets(linea, maximo_caracteres_linea, archivo) != NULL) {
+					if(linea[strlen(linea)-1] != '\n') {
+						if (parte_de_linea != NULL){
+							parte_de_linea = realloc(parte_de_linea, strlen(parte_de_linea) + strlen(linea) +1);
+							memset(parte_de_linea + strlen(parte_de_linea), 0, strlen(linea)+1);
+							memcpy(parte_de_linea + strlen(parte_de_linea), linea, strlen(linea));
+							loguear(warning, logger, "-%s-", parte_de_linea );
+						} else {
+							size_t bytes_leidos = strlen(linea);
+							parte_de_linea = malloc(sizeof(char)*bytes_leidos+1);
+							memset(parte_de_linea, 0, bytes_leidos+1);
+							memcpy(parte_de_linea, linea, bytes_leidos);
+						}
+					} else {
+						if(parte_de_linea != NULL) {
+							char *auxiliar = malloc(strlen(linea)+1);
+							memset(auxiliar, 0, strlen(linea)+1);
+							memcpy(auxiliar, linea, strlen(linea));
+							size_t tamanio_nuevo = strlen(linea)+strlen(parte_de_linea);
+							memset(linea, 0, tamanio_nuevo);
+							memcpy(linea, parte_de_linea, strlen(parte_de_linea));
+							memcpy(linea+strlen(parte_de_linea), auxiliar, strlen(auxiliar));
+							linea[tamanio_nuevo] = '\0';
+							free(parte_de_linea);
+							free(auxiliar);
+							parte_de_linea = NULL;
+						}
+						if(linea[strlen(linea)-2] == '\0') {
+							loguear(error, logger, "Lei barra cero");
+							loguear(error, logger, "Lei barra cero");
+							loguear(error, logger, "Lei barra cero");
+							loguear(error, logger, "Lei barra cero");
+						}
+						//Para que no lea el barra cero
+						if(strlen(linea) > 0) {
+							loguear(debug, logger, "Leido: -%s- caracteres: %d", linea, strlen(linea));
+							char **separador = string_n_split(linea, 3, ";");
+							if(separador[0] != NULL || separador[1] != NULL || separador[2] != NULL) {
+								loguear(debug, logger, "Lo agrego a leidos");
+								uint16_t key_from_line = (uint16_t)strtoul(separador[1], NULL, 10);
+								char *string = string_from_format("%d;%s", key_from_line, separador[2]);
+								escribir(fd, string);
+								free(string);
+							}
+							string_iterate_lines(separador, (void*)free);
+							free(separador);
+							bytes_leidos += strlen(linea);
+						}
+					}
+				}
+				free(linea);
+				fclose(archivo);
+				free(nombre_del_bloque);
+			}
+			list_iterate(bloques_que_uso, (void *)cargar_lineas);
+
+
+
+
+
+
+
+
+
+			free(path);
+
+		}
+		list_destroy_and_destroy_elements(bloques_que_uso, (void *)free);
+	}
+
+	closedir(dr);
+	close(fd);
+	free(guardar_en);
+
+	free(buscar_en);
+}

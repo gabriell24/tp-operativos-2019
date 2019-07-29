@@ -26,6 +26,7 @@
 #define MEMTABLE "memtable"
 #define DUMP "dump"
 #define COMPACTAR "compactar"
+#define EXPORTAR "exportar"
 
 //Variables
 pthread_mutex_t mutex_ejecuto_exit;

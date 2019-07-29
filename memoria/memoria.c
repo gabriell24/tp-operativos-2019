@@ -2,10 +2,10 @@
 
 int main() {
 	//Cómo el observer nunca se detiene, uso una variable global para avisarle
-	en_journal = false;
 	pthread_mutex_init(&mutex_insert, NULL);
 	pthread_mutex_init(&mutex_memoria, NULL);
 	pthread_mutex_init(&mutex_en_juornaling, NULL);
+	pthread_mutex_init(&mutex_frame, NULL);
 	consola_ejecuto_exit = false;
 	tabla_gossip = list_create();
 	levantar_archivo_configuracion();
@@ -59,6 +59,7 @@ int main() {
 	log_destroy(logger);
 	pthread_mutex_destroy(&mutex_memoria);
 	pthread_mutex_destroy(&mutex_en_juornaling);
+	pthread_mutex_destroy(&mutex_frame);
 }
 
 int recibir_datos_de_fs(int socket) {
@@ -229,37 +230,37 @@ void escuchar_kernel(int *socket_origen) {
 						if(!string_equals_ignore_case(linea, ERROR_NO_EXISTE_TABLA) && !string_equals_ignore_case(linea, ERROR_KEY_NO_ENCONTRADA)) {
 							char **separador = string_n_split(linea, 3, ";");
 
+							t_est_tdp *un_frame = obtener_frame();
+							pthread_mutex_lock(&mutex_journaling);
 							t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
 							if(!segmento) {
-								t_est_tdp *registro = obtener_frame();
-								if(registro == NULL) {
+
+								if(un_frame == NULL) {
 									loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
-									//TODO EJECUTAR ALGORITMO DE REEMPLAZO
 								} else {
-									crear_asignar_segmento(false, segmento, registro, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
+									crear_asignar_segmento(false, segmento, un_frame, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
 								}
 							}
 							else {
 								if(obtener_pagina_por_key(segmento->paginas, string_to_int16(separador[1])) != NULL) {
-									//todo no deberia ser posible que teniendo la key, el select vaya a consultar a fs
 									loguear(error, logger, "[SELECT TENIA KEY] ESTO DEBERIA PASAR?");
 								} else {
-									t_est_tdp *registro = obtener_frame();
 									t_est_tds *segmento = obtener_segmento_por_tabla(buffer->tabla);
 									if(!segmento) {
-											crear_asignar_segmento(false, segmento, registro, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
+											crear_asignar_segmento(false, segmento, un_frame, buffer->tabla, string_to_timestamp(separador[0]), string_to_int16(separador[1]), separador[2]);
 									}
-									else if(registro == NULL) {
+									else if(un_frame == NULL) {
 										loguear(error, logger, "[Error] No hay suficientes frames =========== NO DEBE PASAR");
 									} else {
-										registro->modificado = 0;
-										settear_timestamp(registro->ptr_posicion, string_to_timestamp(separador[0]));
-										settear_key(registro->ptr_posicion, string_to_int16(separador[1]));
-										settear_value(registro->ptr_posicion, separador[2]);
-										list_add(segmento->paginas, registro);
+										un_frame->modificado = 0;
+										settear_timestamp(un_frame->ptr_posicion, string_to_timestamp(separador[0]));
+										settear_key(un_frame->ptr_posicion, string_to_int16(separador[1]));
+										settear_value(un_frame->ptr_posicion, separador[2]);
+										list_add(segmento->paginas, un_frame);
 									}
 								}
 							}
+							pthread_mutex_unlock(&mutex_journaling);
 							loguear(debug, logger, "[SELECT-RECIBIDO] llego: %s", linea);
 							prot_enviar_mensaje(socket_kernel, FUNCION_SELECT, strlen(separador[2]), separador[2]);
 							string_iterate_lines(separador, (void*)free);
@@ -376,6 +377,7 @@ void iniciar_memoria() {
 	frames = list_create();
 	tds = list_create();
 	int total_de_frames = memoria_config.tamanio_de_memoria / tamanio_de_pagina;
+	sem_init(&contador_frames, 0, total_de_frames);
 	loguear(debug, logger, "Tamanio de memoria: %d, Tamanio de página: %d, Total de frames: %d", memoria_config.tamanio_de_memoria, tamanio_de_pagina, total_de_frames);
 	int i = 1;
 	for(;i <= total_de_frames; i++) {
@@ -384,7 +386,7 @@ void iniciar_memoria() {
 		pagina->nro_pag = i;
 		pagina->ptr_posicion = memoria + ((i-1) * tamanio_de_pagina);
 		pagina->ultima_referencia = 0;
-		loguear(debug, logger, "Posicion de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
+		loguear(debug, logger, "Posición de memoria pag %d: [Hex]=%p", i, pagina->ptr_posicion);
 		list_add(frames, pagina);
 	}
 }
@@ -453,25 +455,21 @@ void crear_asignar_segmento(bool es_insert, t_est_tds *segmento, t_est_tdp* fram
 	settear_timestamp(frame_libre->ptr_posicion, timestamp);
 	settear_key(frame_libre->ptr_posicion, key);
 	settear_value(frame_libre->ptr_posicion, value);
-	//strcpy(frame_libre->ptr_posicion+sizeof(int)+sizeof(uint16_t), value);
 	if(!segmento) {
 		t_est_tds *nuevo_segmento = malloc(sizeof(t_est_tds));
 		nuevo_segmento->nombre_segmento = string_duplicate(tabla);
 		nuevo_segmento->paginas = list_create();
 		list_add(nuevo_segmento->paginas, frame_libre);
 		list_add(tds, nuevo_segmento);
-		loguear(warning, logger, "Frame CREATE111 recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
+		loguear(info, logger, "No existía segmento, frame recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
 	} else {
 		list_add(segmento->paginas, frame_libre);
-		loguear(warning, logger, "Frame CREATE22 recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
+		loguear(info, logger, "Existía segmento, frame recibido: %d, tabla %s, key %d, value %s", frame_libre->nro_pag, tabla, key, value);
 	}
 	pthread_mutex_unlock(&mutex_memoria);
 }
 
 void limpiar_segmento(t_est_tds *segmento) {
-	/*void _limpiar_paginas(t_est_tdp pagina) {
-		free(pagina);
-	}*/
 	free(segmento->nombre_segmento);
 	list_destroy(segmento->paginas);
 	free(segmento);
@@ -501,10 +499,8 @@ t_est_tdp *obtener_frame() {
 		un_frame = frame_desde_lru();
 		if(un_frame == NULL) {
 				loguear(warning, logger, "Memoria llena, efectuando journaling");
-				//pthread_mutex_lock(&mutex_journaling);
 			 	journal();
-				//pthread_mutex_unlock(&mutex_journaling);
-				un_frame = obtener_frame();
+			 	un_frame = obtener_frame();
 		}
 	}
 	return un_frame;
@@ -540,7 +536,19 @@ t_est_tdp *frame_desde_lru() {
 		}
 	}
 	list_iterate(frames, (void *)_frame_mas_antiguo);
+	quitar_referencia(retorno);
 	return retorno;
+}
+
+void quitar_referencia(t_est_tdp *pagina) {
+	void _buscar_en_segmento(t_est_tds *segmento) {
+
+		bool _remover(t_est_tdp *pagina_de_segmento) {
+			return pagina_de_segmento == pagina;
+		}
+		list_remove_by_condition(segmento->paginas, (void *)_remover);
+	}
+	list_iterate(tds, (void*)_buscar_en_segmento);
 }
 
 bool ya_se_conecto_a(char *ip, int puerto) {

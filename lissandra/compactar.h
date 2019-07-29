@@ -31,5 +31,6 @@ t_tabla_compactacion *obtener_tabla_compactacion(char *tabla);
 void cancelar_hilo_compactacion(char *tabla);
 void liberar_registro_tabla_compactacion(t_tabla_compactacion *tabla);
 void limpiar_lista_compactacion();
+void exportar();
 
 #endif
